@@ -21,6 +21,7 @@ const Dashboard = () => {
   const { items, favorites, deleteItem } = useApp();
   const { boostCredits, hasBoostCredits, getBoostStatus, updateBoostCredits } = useBoost();
   
+  
   // Safe subscription hook usage with error handling
   let subscriptionData = null;
   try {
