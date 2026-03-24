@@ -1,0 +1,49 @@
+{
+  "name": "rentyatra-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "build": "echo 'No build step required for Node.js backend'"
+  },
+  "keywords": [
+    "rentyatra",
+    "backend",
+    "api",
+    "rental",
+    "marketplace"
+  ],
+  "author": "RentYatra Team",
+  "license": "ISC",
+  "description": "RentYatra Backend API - Rental marketplace backend service",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-async-handler": "^1.2.0",
+    "firebase-admin": "^13.5.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.19.1",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.10",
+    "nodemon": "^3.1.10",
+    "or": "^0.2.0",
+    "razorpay": "^2.9.6",
+    "socket.io": "^4.8.1",
+    "tesseract.js": "^6.0.1"
+  }
+}
