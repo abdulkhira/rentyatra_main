@@ -3,8 +3,8 @@ import AdminSidebar from '../components/layout/AdminSidebar';
 import AdminHeader from '../components/layout/AdminHeader';
 import DashboardView from '../components/views/DashboardView';
 import UserManagementView from '../components/views/UserManagementView';
-import ProductManagementView from '../components/views/ProductManagementView';
 import CategoryManagementView from '../components/views/CategoryManagementView';
+import SubCategoryManagementView from '../components/views/SubCategoryManagementView';
 import BannerManagementView from '../components/views/BannerManagementView';
 import RentalListingManagementView from '../components/views/RentalListingManagementView';
 import AdminProfileView from '../components/views/AdminProfileView';
@@ -22,7 +22,7 @@ function PlaceholderView({ title }) {
                 <h1 className="text-3xl font-bold text-slate-800">{title}</h1>
                 <p className="text-slate-600 mt-2">This section is coming soon...</p>
             </div>
-            
+
             <div className="bg-white rounded-xl shadow-lg p-8 border border-slate-200 text-center">
                 <div className="text-6xl text-slate-300 mb-4">🚧</div>
                 <h2 className="text-xl font-semibold text-slate-700 mb-2">Under Development</h2>
@@ -41,10 +41,10 @@ export default function AdminDashboard() {
                 return <DashboardView />;
             case 'Users':
                 return <UserManagementView />;
-            case 'Products':
-                return <ProductManagementView />;
             case 'Categories':
                 return <CategoryManagementView />;
+            case 'Sub Categories':
+                return <SubCategoryManagementView />;
             case 'Rental listing':
                 return <RentalListingManagementView />;
             case 'Subscriptions':

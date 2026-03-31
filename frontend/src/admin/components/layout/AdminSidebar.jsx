@@ -1,12 +1,12 @@
-import { 
-  Home, 
-  Users, 
-  Package, 
-  Tag, 
-  CreditCard, 
-  Zap, 
-  DollarSign, 
-  Image, 
+import {
+  Home,
+  Users,
+  Package,
+  Tag,
+  CreditCard,
+  Zap,
+  DollarSign,
+  Image,
   Settings,
   FileText,
   HelpCircle
@@ -16,8 +16,8 @@ function AdminSidebar({ activePage, setActivePage }) {
   const navItems = [
     { name: 'Dashboard', icon: Home },
     { name: 'Users', icon: Users },
-    { name: 'Products', icon: Package },
-    { name: 'Categories', icon: Tag },
+    { name: 'Categories', icon: Package },
+    { name: 'Sub Categories', icon: Tag },
     { name: 'Rental listing', icon: FileText },
     { name: 'Subscriptions', icon: CreditCard },
     { name: 'Boosts', icon: Zap },
@@ -40,9 +40,8 @@ function AdminSidebar({ activePage, setActivePage }) {
             <button
               key={item.name}
               onClick={() => setActivePage(item.name)}
-              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                isActive ? 'bg-indigo-500 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
-              }`}
+              className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${isActive ? 'bg-indigo-500 text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'
+                }`}
             >
               <Icon className="h-5 w-5 mr-3" />
               {item.name}

@@ -11,7 +11,7 @@ const CategoryGrid = memo(() => {
   const { setSelectedCategory } = useApp();
   const { categories, fetchCategoriesByProduct, loading: categoriesLoading } = useCategories();
   const navigate = useNavigate();
-  
+
   // Use optimized hero data hook
   const { data, loading, errors } = useHeroData();
   const { featuredProducts: products = [] } = data || {};
@@ -71,7 +71,7 @@ const CategoryGrid = memo(() => {
         const scrollLeft = scrollContainer.scrollLeft;
         const scrollWidth = scrollContainer.scrollWidth;
         const clientWidth = scrollContainer.clientWidth;
-        
+
         // Calculate which slide is currently visible
         // Assuming 2 slides: first slide (0) and second slide (1)
         const totalScrollable = scrollWidth - clientWidth;
@@ -125,7 +125,7 @@ const CategoryGrid = memo(() => {
         <div className="hidden md:block">
           {/* Header with View All Button */}
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg lg:text-xl font-bold text-gray-900">Featured Products</h2>
+            <h2 className="text-lg lg:text-xl font-bold text-gray-900">Featured Categories</h2>
             <button
               onClick={handleSeeAll}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
@@ -134,14 +134,14 @@ const CategoryGrid = memo(() => {
               <ChevronRight size={18} strokeWidth={2.5} />
             </button>
           </div>
-          
+
           {productsLoading ? (
             <ProductGridSkeleton count={12} isMobile={false} />
           ) : productsError ? (
             <div className="text-center py-8">
-              <p className="text-red-500 mb-4">Error loading products: {productsError}</p>
-              <button 
-                onClick={() => window.location.reload()} 
+              <p className="text-red-500 mb-4">Error loading categories: {productsError}</p>
+              <button
+                onClick={() => window.location.reload()}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 Retry
@@ -159,7 +159,7 @@ const CategoryGrid = memo(() => {
                   >
                     {/* Hover gradient background */}
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                    
+
                     <div className="relative w-full">
                       {/* Image Container - Larger for 6x2 grid */}
                       <div className="w-full aspect-square rounded-lg overflow-hidden bg-white mb-1 flex items-center justify-center shadow-sm group-hover:shadow-lg transition-all duration-200 border border-gray-100 group-hover:border-blue-200 p-0.5">
@@ -175,7 +175,7 @@ const CategoryGrid = memo(() => {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Product Name */}
                       <div className="text-center px-1">
                         <h3 className="font-medium text-xs text-gray-800 group-hover:text-blue-600 line-clamp-2 tracking-tight transition-colors duration-200">
@@ -195,7 +195,7 @@ const CategoryGrid = memo(() => {
 
         {/* Mobile Grid - 6x2 Grid with horizontal scroll */}
         <div className="md:hidden">
-          <div 
+          <div
             ref={scrollContainerRef}
             className="overflow-x-auto hide-scrollbar"
           >
@@ -203,18 +203,18 @@ const CategoryGrid = memo(() => {
               <ProductGridSkeleton count={12} isMobile={true} />
             ) : productsError ? (
               <div className="text-center py-4">
-                <p className="text-red-500 text-sm mb-2">Error loading products</p>
-                <button 
-                  onClick={() => window.location.reload()} 
+                <p className="text-red-500 text-sm mb-2">Error loading categories</p>
+                <button
+                  onClick={() => window.location.reload()}
                   className="px-3 py-1 bg-blue-500 text-white text-xs rounded"
                 >
                   Retry
                 </button>
               </div>
             ) : (
-              <div 
-                className="grid grid-rows-2 auto-cols-max gap-x-2 gap-y-2 pb-2" 
-                style={{ 
+              <div
+                className="grid grid-rows-2 auto-cols-max gap-x-2 gap-y-2 pb-2"
+                style={{
                   gridAutoFlow: 'column',
                   width: 'max-content'
                 }}
@@ -229,9 +229,9 @@ const CategoryGrid = memo(() => {
                       style={{ width: '70px' }}
                     >
                       {/* Image Container with Shadow and Background */}
-                      <div 
+                      <div
                         className="w-full rounded-lg overflow-hidden bg-gray-100 mb-1 flex items-center justify-center p-0.5"
-                        style={{ 
+                        style={{
                           height: '65px',
                           boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
                         }}
@@ -257,16 +257,16 @@ const CategoryGrid = memo(() => {
                     </button>
                   );
                 })}
-                
+
                 {/* See All Card - slides with the grid */}
                 <button
                   onClick={handleSeeAll}
                   className="flex flex-col items-center justify-center active:scale-95 transition-all"
                   style={{ width: '70px', gridRow: 'span 2' }}
                 >
-                  <div 
+                  <div
                     className="w-full h-full rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col items-center justify-center gap-1.5"
-                    style={{ 
+                    style={{
                       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
                     }}
                   >
@@ -279,7 +279,7 @@ const CategoryGrid = memo(() => {
               </div>
             )}
           </div>
-          
+
           {/* Carousel Dots Indicator - Always show if there are products */}
           {!productsLoading && products && products.length > 0 && (
             <div className="flex justify-center items-center gap-2 mt-3 mb-2 relative z-10">
@@ -293,7 +293,7 @@ const CategoryGrid = memo(() => {
                       const scrollWidth = scrollContainer.scrollWidth;
                       const clientWidth = scrollContainer.clientWidth;
                       const scrollableWidth = scrollWidth - clientWidth;
-                      
+
                       if (scrollableWidth > 0) {
                         const targetScroll = (dotIndex / 1) * scrollableWidth;
                         scrollContainer.scrollTo({
@@ -303,11 +303,10 @@ const CategoryGrid = memo(() => {
                       }
                     }
                   }}
-                  className={`transition-all duration-300 rounded-full flex-shrink-0 ${
-                    currentSlide === dotIndex
-                      ? 'w-8 h-2 bg-black'
-                      : 'w-2 h-2 bg-gray-300'
-                  }`}
+                  className={`transition-all duration-300 rounded-full flex-shrink-0 ${currentSlide === dotIndex
+                    ? 'w-8 h-2 bg-black'
+                    : 'w-2 h-2 bg-gray-300'
+                    }`}
                   style={{ minWidth: currentSlide === dotIndex ? '32px' : '8px' }}
                   aria-label={`Go to slide ${dotIndex + 1}`}
                 />

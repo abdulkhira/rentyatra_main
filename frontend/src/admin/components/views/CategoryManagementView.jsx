@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
 import apiService from '../../../services/api';
 
-const CategoryManagementView = () => {
+const CategoriesManagementView = () => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [showEditForm, setShowEditForm] = useState(false);
-    const [editingCategory, setEditingCategory] = useState(null);
-    const [categories, setCategories] = useState([]);
+    const [editingProduct, setEditingProduct] = useState(null);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -24,32 +23,24 @@ const CategoryManagementView = () => {
 
     // Form state
     const [formData, setFormData] = useState({
-        productId: ''
+        name: ''
     });
-
-    const [categoryFields, setCategoryFields] = useState([
-        {
-            id: 1,
-            name: '',
-            images: [],
-            imagePreview: []
-        }
-    ]);
 
     const [editFormData, setEditFormData] = useState({
         name: ''
     });
 
+    const [images, setImages] = useState([]);
+    const [imagePreview, setImagePreview] = useState([]);
     const [editImages, setEditImages] = useState([]);
     const [editImagePreview, setEditImagePreview] = useState([]);
-    const [validationErrors, setValidationErrors] = useState({});
 
-    // Fetch categories
-    const fetchCategories = async () => {
+    // Fetch products
+    const fetchProducts = async () => {
         setLoading(true);
         try {
-            const response = await apiService.getAllCategories(); // Get all categories (default limit is now 100)
-            setCategories(response.data.categories);
+            const data = await apiService.getAllProducts();
+            setProducts(data.data.products || []);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -57,18 +48,7 @@ const CategoryManagementView = () => {
         }
     };
 
-    // Fetch products for dropdown
-    const fetchProducts = async () => {
-        try {
-            const response = await apiService.getAllProducts(1, 100); // Get all products
-            setProducts(response.data.products);
-        } catch (err) {
-            console.error('Error fetching products:', err);
-        }
-    };
-
     useEffect(() => {
-        fetchCategories();
         fetchProducts();
     }, []);
 
@@ -81,62 +61,24 @@ const CategoryManagementView = () => {
         }));
     };
 
-    // Handle category name change
-    const handleCategoryNameChange = (categoryId, value) => {
-        setCategoryFields(prev => prev.map(cat => 
-            cat.id === categoryId ? { ...cat, name: value } : cat
-        ));
-
-        // Clear validation error for this field
-        setValidationErrors(prev => {
-            const newErrors = { ...prev };
-            delete newErrors[categoryId];
-            return newErrors;
-        });
-    };
-
-    // Validate individual category field
-    const validateCategoryField = (categoryId, name) => {
-        const trimmedName = name.trim();
-        if (trimmedName.length === 0) {
-            return 'Category name is required';
-        }
-        if (trimmedName.length < 2) {
-            return 'Category name must be at least 2 characters long';
-        }
-        return null;
-    };
-
-    // Handle category image upload
-    const handleCategoryImageUpload = (categoryId, e) => {
+    // Handle image upload
+    const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
+        setImages(files);
+
+        // Create preview URLs
         const previews = files.map(file => URL.createObjectURL(file));
-        
-        setCategoryFields(prev => prev.map(cat => 
-            cat.id === categoryId ? { 
-                ...cat, 
-                images: files, 
-                imagePreview: previews 
-            } : cat
-        ));
+        setImagePreview(previews);
     };
 
-    // Add new category field
-    const addCategoryField = () => {
-        const newId = Math.max(...categoryFields.map(cat => cat.id)) + 1;
-        setCategoryFields(prev => [...prev, {
-            id: newId,
-            name: '',
-            images: [],
-            imagePreview: []
-        }]);
-    };
+    // Handle edit image upload
+    const handleEditImageUpload = (e) => {
+        const files = Array.from(e.target.files);
+        setEditImages(files);
 
-    // Remove category field
-    const removeCategoryField = (categoryId) => {
-        if (categoryFields.length > 1) {
-            setCategoryFields(prev => prev.filter(cat => cat.id !== categoryId));
-        }
+        // Create preview URLs
+        const previews = files.map(file => URL.createObjectURL(file));
+        setEditImagePreview(previews);
     };
 
     // Handle edit input changes
@@ -148,21 +90,11 @@ const CategoryManagementView = () => {
         }));
     };
 
-    // Handle edit image upload
-    const handleEditImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        setEditImages(files);
-        
-        // Create preview URLs
-        const previews = files.map(file => URL.createObjectURL(file));
-        setEditImagePreview(previews);
-    };
-
     // Open edit modal
-    const handleEditCategory = (category) => {
-        setEditingCategory(category);
+    const handleEditProduct = (product) => {
+        setEditingProduct(product);
         setEditFormData({
-            name: category.name
+            name: product.name
         });
         setEditImages([]);
         setEditImagePreview([]);
@@ -172,11 +104,12 @@ const CategoryManagementView = () => {
     // Close edit modal
     const handleCloseEditForm = () => {
         setShowEditForm(false);
-        setEditingCategory(null);
+        setEditingProduct(null);
         setEditFormData({ name: '' });
         setEditImages([]);
         setEditImagePreview([]);
     };
+
 
     // Handle form submission
     const handleSubmit = async (e) => {
@@ -184,81 +117,53 @@ const CategoryManagementView = () => {
         setLoading(true);
         setError('');
 
+        // Show progress message
+        console.log('Starting product upload...');
+
         try {
             // Validate form data
-            if (!formData.productId) {
-                throw new Error('Product selection is required');
+            if (!formData.name.trim()) {
+                throw new Error('Product name is required');
             }
 
-            // Validate categories
-            const validCategories = categoryFields.filter(cat => cat.name.trim());
-            if (validCategories.length === 0) {
-                throw new Error('At least one category name is required');
-            }
+            // Prepare product data
+            const productData = {
+                name: formData.name.trim(),
+                images: images
+            };
 
-            // Validate each category name length and set validation errors
-            const errors = {};
-            for (const category of validCategories) {
-                const error = validateCategoryField(category.id, category.name);
-                if (error) {
-                    errors[category.id] = error;
-                }
-            }
-
-            if (Object.keys(errors).length > 0) {
-                setValidationErrors(errors);
-                throw new Error('Please fix the validation errors before submitting');
-            }
-
-            // Check for duplicate category names
-            const categoryNames = validCategories.map(cat => cat.name.trim().toLowerCase());
-            const uniqueNames = new Set(categoryNames);
-            if (categoryNames.length !== uniqueNames.size) {
-                throw new Error('Category names must be unique');
-            }
-
-            // Submit each category
-            const results = [];
-            for (const category of validCategories) {
-                const categoryData = {
-                    productId: formData.productId,
-                    name: category.name.trim(),
-                    images: category.images
-                };
-
-                console.log('Submitting category data:', categoryData);
-                console.log('Admin token available:', !!adminToken);
-                console.log('API service admin token:', apiService.adminToken);
-                
-                try {
-                    const result = await apiService.addCategory(categoryData);
-                    results.push(result);
-                    console.log('Category added successfully:', result);
-                } catch (categoryError) {
-                    console.error('Error adding individual category:', categoryError);
-                    throw categoryError; // Re-throw to stop the loop
-                }
-            }
+            console.log('Submitting product data:', productData);
+            const result = await apiService.addProduct(productData);
+            console.log('Product added successfully:', result);
 
             // Reset form
             setFormData({
-                productId: ''
+                name: ''
             });
-            setCategoryFields([{
-                id: 1,
-                name: '',
-                images: [],
-                imagePreview: []
-            }]);
-            setValidationErrors({});
+            setImages([]);
+            setImagePreview([]);
             setShowAddForm(false);
-            
-            // Refresh categories list
-            await fetchCategories();
-            
+
+            // Refresh products list
+            await fetchProducts();
+
         } catch (err) {
-            console.error('Error adding categories:', err);
-            setError(err.message || 'Failed to add categories. Please try again.');
+            console.error('Error adding product:', err);
+
+            // Provide more specific error messages based on error type
+            let errorMessage = 'Failed to add product. Please try again.';
+
+            if (err.message.includes('timeout')) {
+                errorMessage = 'Upload timeout - Please try again with smaller files or check your internet connection.';
+            } else if (err.message.includes('Network error')) {
+                errorMessage = 'Network error - Please check your internet connection and try again.';
+            } else if (err.message.includes('Server error')) {
+                errorMessage = 'Server error - Please try again later or contact support.';
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -273,38 +178,38 @@ const CategoryManagementView = () => {
         try {
             // Validate form data
             if (!editFormData.name.trim()) {
-                throw new Error('Category name is required');
+                throw new Error('Product name is required');
             }
 
-            // Prepare category data
-            const categoryData = {
+            // Prepare product data
+            const productData = {
                 name: editFormData.name.trim(),
                 images: editImages
             };
 
-            console.log('Updating category:', editingCategory._id, categoryData);
-            const result = await apiService.updateCategory(editingCategory._id, categoryData);
-            console.log('Category updated successfully:', result);
+            console.log('Updating product:', editingProduct._id, productData);
+            const result = await apiService.updateProduct(editingProduct._id, productData);
+            console.log('Product updated successfully:', result);
 
             // Close edit form
             handleCloseEditForm();
-            
-            // Refresh categories list
-            await fetchCategories();
-            
+
+            // Refresh products list
+            await fetchProducts();
+
         } catch (err) {
-            console.error('Error updating category:', err);
-            setError(err.message || 'Failed to update category. Please try again.');
+            console.error('Error updating product:', err);
+            setError(err.message || 'Failed to update product. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
-    // Handle delete category
-    const handleDeleteCategory = async (category) => {
+    // Handle delete product
+    const handleDeleteProduct = async (product) => {
         // Show confirmation dialog
         const confirmed = window.confirm(
-            `Are you sure you want to delete the category "${category.name}"? This action cannot be undone.`
+            `Are you sure you want to delete the product "${product.name}"? This action cannot be undone.`
         );
 
         if (!confirmed) {
@@ -315,16 +220,16 @@ const CategoryManagementView = () => {
         setError('');
 
         try {
-            console.log('Deleting category:', category._id);
-            await apiService.deleteCategory(category._id);
-            console.log('Category deleted successfully');
+            console.log('Deleting product:', product._id);
+            await apiService.deleteProduct(product._id);
+            console.log('Product deleted successfully');
 
-            // Refresh categories list
-            await fetchCategories();
-            
+            // Refresh products list
+            await fetchProducts();
+
         } catch (err) {
-            console.error('Error deleting category:', err);
-            setError(err.message || 'Failed to delete category. Please try again.');
+            console.error('Error deleting product:', err);
+            setError(err.message || 'Failed to delete product. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -336,12 +241,15 @@ const CategoryManagementView = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800">Category Management</h1>
-                    <p className="text-slate-600 mt-1">Manage product categories and their images</p>
+                    <p className="text-slate-600 mt-2">Manage all categorys in the system</p>
                 </div>
                 <button
                     onClick={() => setShowAddForm(true)}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                 >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
                     Add Category
                 </button>
             </div>
@@ -353,114 +261,108 @@ const CategoryManagementView = () => {
                 </div>
             )}
 
-            {/* Categories List */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                <div className="p-6">
-                    <h2 className="text-xl font-semibold text-slate-800 mb-4">Categories</h2>
-                    
-                    {loading ? (
-                        <div className="flex justify-center items-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        </div>
-                    ) : categories.length === 0 ? (
-                        <div className="text-center py-8">
-                            <div className="text-6xl mb-4">📂</div>
-                            <h3 className="text-lg font-medium text-slate-700 mb-2">No categories found</h3>
-                            <p className="text-slate-500">Start by adding your first category.</p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-slate-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                            Category
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                            Product
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                            Added By
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-slate-200">
-                                    {categories.map((category) => (
-                                        <tr key={category._id} className="hover:bg-slate-50">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-12 w-12">
-                                                        {category.images && category.images.length > 0 ? (
-                                                            <img
-                                                                className="h-12 w-12 rounded-lg object-cover"
-                                                                src={category.images[0].url}
-                                                                alt={category.name}
-                                                            />
-                                                        ) : (
-                                                            <div className="h-12 w-12 rounded-lg bg-slate-200 flex items-center justify-center">
-                                                                <svg className="h-6 w-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                </svg>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div className="text-sm font-medium text-slate-900">
-                                                            {category.name}
+            {/* Products List */}
+            <div className="bg-white rounded-xl shadow-lg border border-slate-200">
+                <div className="p-6 border-b border-slate-200">
+                    <h2 className="text-xl font-semibold text-slate-800">All categorys</h2>
+                </div>
+
+                {loading ? (
+                    <div className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-slate-600 mt-2">Loading categorys...</p>
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="p-8 text-center">
+                        <div className="text-6xl text-slate-300 mb-4">📦</div>
+                        <h3 className="text-lg font-medium text-slate-700 mb-2">No categorys Found</h3>
+                        <p className="text-slate-500">Start by adding your first category.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-slate-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                        Category
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                        Added By
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-200">
+                                {products.map((product) => (
+                                    <tr key={product._id} className="hover:bg-slate-50">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center">
+                                                <div className="flex-shrink-0 h-12 w-12">
+                                                    {product.images && product.images.length > 0 ? (
+                                                        <img
+                                                            className="h-12 w-12 rounded-lg object-cover"
+                                                            src={product.images[0].url}
+                                                            alt={product.name}
+                                                        />
+                                                    ) : (
+                                                        <div className="h-12 w-12 rounded-lg bg-slate-200 flex items-center justify-center">
+                                                            <svg className="h-6 w-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                            </svg>
                                                         </div>
+                                                    )}
+                                                </div>
+                                                <div className="ml-4">
+                                                    <div className="text-sm font-medium text-slate-900">
+                                                        {product.name}
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                                                {category.product?.name || 'Unknown Product'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    category.status === 'active' 
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : category.status === 'inactive'
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-red-100 text-red-800'
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.status === 'active'
+                                                ? 'bg-green-100 text-green-800'
+                                                : product.status === 'inactive'
+                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                    : 'bg-red-100 text-red-800'
                                                 }`}>
-                                                    {category.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                                                {category.addedBy?.name || 'Admin'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button 
-                                                    onClick={() => handleEditCategory(category)}
-                                                    className="text-blue-600 hover:text-blue-900 mr-3"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDeleteCategory(category)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                                                {product.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                                            {product.addedBy?.name || 'Admin'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <button
+                                                onClick={() => handleEditProduct(product)}
+                                                className="text-blue-600 hover:text-blue-900 mr-3"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteProduct(product)}
+                                                className="text-red-600 hover:text-red-900"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
 
-            {/* Add Category Modal */}
+            {/* Add Product Modal */}
             {showAddForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-8">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-y-auto">
                         <div className="p-6 border-b border-slate-200">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl font-bold text-slate-800">Add New Category</h2>
@@ -476,133 +378,55 @@ const CategoryManagementView = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            {/* Product Selection */}
+                            {/* Product Name */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Select Product *
+                                    Category Name *
                                 </label>
-                                <select
-                                    name="productId"
-                                    value={formData.productId}
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleInputChange}
                                     required
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <option value="">Choose a product</option>
-                                    {products.map(product => (
-                                        <option key={product._id} value={product._id}>
-                                            {product.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="Enter Category name"
+                                />
                             </div>
 
-                            {/* Categories Section */}
+                            {/* Product Images */}
                             <div>
-                                <div className="flex justify-between items-center mb-4">
-                                    <label className="block text-sm font-medium text-slate-700">
-                                        Categories *
-                                    </label>
-                                    <button
-                                        type="button"
-                                        onClick={addCategoryField}
-                                        className="flex items-center gap-2 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Add Category
-                                    </button>
-                                </div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Category Images
+                                </label>
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
 
-                                <div className="space-y-4">
-                                    {categoryFields.map((category, index) => (
-                                        <div key={category.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                                            <div className="flex justify-between items-center mb-3">
-                                                <h4 className="text-sm font-medium text-slate-700">
-                                                    Category {index + 1}
-                                                </h4>
-                                                {categoryFields.length > 1 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeCategoryField(category.id)}
-                                                        className="text-red-600 hover:text-red-800 text-sm"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                )}
-                                            </div>
-
-                                            {/* Category Name */}
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-medium text-slate-600 mb-2">
-                                                    Category Name *
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={category.name}
-                                                    onChange={(e) => handleCategoryNameChange(category.id, e.target.value)}
-                                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
-                                                        validationErrors[category.id] 
-                                                            ? 'border-red-300 focus:ring-red-500' 
-                                                            : 'border-slate-300 focus:ring-blue-500'
-                                                    }`}
-                                                    placeholder="Enter category name (min 2 characters)"
+                                {imagePreview.length > 0 && (
+                                    <div className="mt-4 grid grid-cols-4 gap-4">
+                                        {imagePreview.map((preview, index) => (
+                                            <div key={index} className="relative">
+                                                <img
+                                                    src={preview}
+                                                    alt={`Preview ${index + 1}`}
+                                                    className="w-full h-24 object-cover rounded-lg"
                                                 />
-                                                {validationErrors[category.id] && (
-                                                    <p className="mt-1 text-sm text-red-600">
-                                                        {validationErrors[category.id]}
-                                                    </p>
-                                                )}
                                             </div>
-
-                                            {/* Category Images */}
-                                            <div>
-                                                <label className="block text-sm font-medium text-slate-600 mb-2">
-                                                    Category Images
-                                                </label>
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    accept="image/*"
-                                                    onChange={(e) => handleCategoryImageUpload(category.id, e)}
-                                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                />
-                                                
-                                                {category.imagePreview.length > 0 && (
-                                                    <div className="mt-3 grid grid-cols-4 gap-3">
-                                                        {category.imagePreview.map((preview, imgIndex) => (
-                                                            <div key={imgIndex} className="relative">
-                                                                <img
-                                                                    src={preview}
-                                                                    alt={`Preview ${imgIndex + 1}`}
-                                                                    className="w-full h-20 object-cover rounded-lg"
-                                                                />
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Form Actions */}
                             <div className="flex justify-end gap-4 pt-6 border-t border-slate-200">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setShowAddForm(false);
-                                        setFormData({ productId: '' });
-                                        setCategoryFields([{
-                                            id: 1,
-                                            name: '',
-                                            images: [],
-                                            imagePreview: []
-                                        }]);
-                                        setValidationErrors({});
-                                    }}
+                                    onClick={() => setShowAddForm(false)}
                                     className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors duration-200"
                                 >
                                     Cancel
@@ -620,10 +444,10 @@ const CategoryManagementView = () => {
                 </div>
             )}
 
-            {/* Edit Category Modal */}
-            {showEditForm && editingCategory && (
+            {/* Edit Product Modal */}
+            {showEditForm && editingProduct && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-8">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-y-auto">
                         <div className="p-6 border-b border-slate-200">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl font-bold text-slate-800">Edit Category</h2>
@@ -639,17 +463,7 @@ const CategoryManagementView = () => {
                         </div>
 
                         <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
-                            {/* Product Info (Read-only) */}
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Product
-                                </label>
-                                <div className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-600">
-                                    {editingCategory.product?.name || 'Unknown Product'}
-                                </div>
-                            </div>
-
-                            {/* Category Name */}
+                            {/* Product Name */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
                                     Category Name *
@@ -661,18 +475,18 @@ const CategoryManagementView = () => {
                                     onChange={handleEditInputChange}
                                     required
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="Enter category name"
+                                    placeholder="Enter Category name"
                                 />
                             </div>
 
                             {/* Current Images */}
-                            {editingCategory.images && editingCategory.images.length > 0 && (
+                            {editingProduct.images && editingProduct.images.length > 0 && (
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
                                         Current Images
                                     </label>
                                     <div className="grid grid-cols-4 gap-4">
-                                        {editingCategory.images.map((image, index) => (
+                                        {editingProduct.images.map((image, index) => (
                                             <div key={index} className="relative">
                                                 <img
                                                     src={image.url}
@@ -685,10 +499,10 @@ const CategoryManagementView = () => {
                                 </div>
                             )}
 
-                            {/* New Category Images */}
+                            {/* New Product Images */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    New Category Images (will replace current images)
+                                    New Product Images (will replace current images)
                                 </label>
                                 <input
                                     type="file"
@@ -697,7 +511,7 @@ const CategoryManagementView = () => {
                                     onChange={handleEditImageUpload}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
-                                
+
                                 {editImagePreview.length > 0 && (
                                     <div className="mt-4 grid grid-cols-4 gap-4">
                                         {editImagePreview.map((preview, index) => (
@@ -738,4 +552,4 @@ const CategoryManagementView = () => {
     );
 };
 
-export default CategoryManagementView;
+export default CategoriesManagementView;

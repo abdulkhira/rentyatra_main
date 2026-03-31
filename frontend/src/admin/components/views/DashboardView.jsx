@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Package, 
-  CreditCard, 
+import {
+  Users,
+  Package,
+  CreditCard,
   DollarSign,
   Activity,
   Star,
@@ -123,7 +123,7 @@ const DashboardView = () => {
       color: 'blue'
     },
     {
-      title: 'Total Products',
+      title: 'Total categories',
       value: stats.products.total.toLocaleString(),
       change: `${stats.products.active} active`,
       icon: Package,
@@ -214,11 +214,10 @@ const DashboardView = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-green-600">₹{activity.amount}</p>
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                    activity.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${activity.status === 'active'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                    }`}>
                     {activity.status}
                   </span>
                 </div>

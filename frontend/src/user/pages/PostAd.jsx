@@ -26,10 +26,10 @@ const PostAd = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [productSearch, setProductSearch] = useState('');
-  
+
   // Category management state
   const [productCategories, setProductCategories] = useState([]);
-  
+
   // Location state
   const [coordinates, setCoordinates] = useState(null);
 
@@ -111,7 +111,7 @@ const PostAd = () => {
       const response = await apiService.getCategoriesByProduct(productId);
       if (response.success) {
         const fetchedCategories = response.data.categories || [];
-        
+
         // Transform backend categories to frontend format
         const transformedCategories = fetchedCategories.map(category => ({
           id: category._id,
@@ -121,7 +121,7 @@ const PostAd = () => {
           product: category.product,
           subcategories: [] // Categories from backend don't have subcategories in this structure
         }));
-        
+
         setProductCategories(transformedCategories);
       }
     } catch (error) {
@@ -181,14 +181,14 @@ const PostAd = () => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    
+
     // Check if adding these files would exceed the minimum requirement
     if (images.length + files.length < 4) {
       setError('Please upload at least 4 images');
     } else {
       setError('');
     }
-    
+
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -220,10 +220,10 @@ const PostAd = () => {
         setError('Video file size should be less than 50MB');
         return;
       }
-      
+
       // Clear any previous errors
       setError('');
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setVideo({
@@ -365,7 +365,7 @@ const PostAd = () => {
 
       // Create FormData for file uploads
       const formDataToSend = new FormData();
-      
+
       // Add text fields (matching backend API expectations)
       formDataToSend.append('title', formData.title);
       formDataToSend.append('description', formData.description);
@@ -373,15 +373,15 @@ const PostAd = () => {
       formDataToSend.append('pricePeriod', 'daily');
       formDataToSend.append('product', selectedProduct._id);
       formDataToSend.append('category', selectedCategory.id);
-      
+
       // Location data - send as nested structure as expected by backend
       formDataToSend.append('location', formData.location);
       formDataToSend.append('address', formData.location);
-      
+
       // Extract city and state from location string or use coordinates data
       let city = 'Not specified';
       let state = 'Not specified';
-      
+
       if (coordinates && coordinates.city) {
         // Use city from coordinates if available
         city = coordinates.city;
@@ -391,20 +391,20 @@ const PostAd = () => {
         city = locationParts[0]?.trim() || 'Not specified';
         state = locationParts[1]?.trim() || 'Not specified';
       }
-      
+
       formDataToSend.append('city', city);
       formDataToSend.append('state', state);
       formDataToSend.append('pincode', '000000'); // You can add pincode input field later
-      
+
       formDataToSend.append('phone', formData.phone);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('features', JSON.stringify(['Good condition', 'Well maintained'])); // Default features
       formDataToSend.append('tags', JSON.stringify([selectedProduct.name, selectedCategory.name])); // Default tags
-      
+
       if (coordinates) {
         formDataToSend.append('coordinates', JSON.stringify(coordinates));
       }
-      
+
       // Add service radius
       console.log('Debug - formData.serviceRadius:', formData.serviceRadius);
       if (formData.serviceRadius) {
@@ -441,17 +441,17 @@ const PostAd = () => {
           size: video.file.size,
           preview: video.preview
         });
-        
+
         const videoResponse = await fetch(video.preview);
         const videoBlob = await videoResponse.blob();
         const videoFile = new File([videoBlob], video.name, { type: video.file.type });
-        
+
         console.log('Video file created:', {
           name: videoFile.name,
           type: videoFile.type,
           size: videoFile.size
         });
-        
+
         formDataToSend.append('video', videoFile);
       } catch (error) {
         console.error('Error processing video:', error);
@@ -467,7 +467,7 @@ const PostAd = () => {
           const userId = user.id || user._id;
           await refreshUserSubscription(userId);
         }
-        
+
         // Show success message
         setError(''); // Clear any previous errors
         // Show success notification
@@ -478,7 +478,7 @@ const PostAd = () => {
         // Handle validation errors
         if (response.errors) {
           console.error('Validation errors:', response.errors);
-          const errorMessages = Object.values(response.errors).map(error => 
+          const errorMessages = Object.values(response.errors).map(error =>
             typeof error === 'object' ? error.message : error
           ).join(', ');
           setError(`Validation failed: ${errorMessages}`);
@@ -493,11 +493,11 @@ const PostAd = () => {
         response: error.response,
         data: error.response?.data
       });
-      
+
       // Try to get more specific error information
       if (error.response?.data?.errors) {
         console.error('Validation errors from server:', error.response.data.errors);
-        const errorMessages = Object.values(error.response.data.errors).map(error => 
+        const errorMessages = Object.values(error.response.data.errors).map(error =>
           typeof error === 'object' ? error.message : error
         ).join(', ');
         setError(`Validation failed: ${errorMessages}`);
@@ -516,31 +516,28 @@ const PostAd = () => {
         <div className="mb-4 md:mb-8">
           <div className="flex items-center justify-center gap-1 md:gap-4">
             {[
-              { step: 1, label: 'Product' },
-              { step: 2, label: 'Category' },
+              { step: 1, label: 'Category' },
+              { step: 2, label: 'Sub Category' },
               { step: 3, label: 'Details' }
             ].map((item, index) => (
               <div key={item.step} className="flex items-center">
                 <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-all ${
-                    currentStep > item.step
-                      ? 'bg-green-500 text-white'
-                      : currentStep === item.step
+                  <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center text-sm md:text-base font-bold transition-all ${currentStep > item.step
+                    ? 'bg-green-500 text-white'
+                    : currentStep === item.step
                       ? 'bg-blue-600 text-white shadow-lg md:scale-110'
                       : 'bg-gray-200 text-gray-500'
-                  }`}>
+                    }`}>
                     {currentStep > item.step ? <Check size={14} className="md:w-5 md:h-5" /> : item.step}
                   </div>
-                  <span className={`text-[10px] md:text-sm font-semibold mt-1 md:mt-2 ${
-                    currentStep >= item.step ? 'text-gray-900' : 'text-gray-500'
-                  }`}>
+                  <span className={`text-[10px] md:text-sm font-semibold mt-1 md:mt-2 ${currentStep >= item.step ? 'text-gray-900' : 'text-gray-500'
+                    }`}>
                     {item.label}
                   </span>
                 </div>
                 {index < 2 && (
-                  <div className={`w-8 md:w-20 h-0.5 md:h-1 mx-1 md:mx-2 rounded-full transition-all ${
-                    currentStep > item.step ? 'bg-green-500' : 'bg-gray-200'
-                  }`}></div>
+                  <div className={`w-8 md:w-20 h-0.5 md:h-1 mx-1 md:mx-2 rounded-full transition-all ${currentStep > item.step ? 'bg-green-500' : 'bg-gray-200'
+                    }`}></div>
                 )}
               </div>
             ))}
@@ -551,8 +548,8 @@ const PostAd = () => {
         {currentStep === 1 && (
           <Card className="p-4 md:p-8">
             <div className="mb-4 md:mb-6">
-              <h2 className="text-lg md:text-3xl font-black text-gray-900 mb-1 md:mb-2">Select Product</h2>
-              <p className="text-xs md:text-base text-gray-600">Choose the Product that best fits your item</p>
+              <h2 className="text-lg md:text-3xl font-black text-gray-900 mb-1 md:mb-2">Select Category</h2>
+              <p className="text-xs md:text-base text-gray-600">Choose the Category that best fits your item</p>
             </div>
 
             {/* Search Bar */}
@@ -561,7 +558,7 @@ const PostAd = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="text"
-                  placeholder="Search products..."
+                  placeholder="Search categories..."
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 md:py-3 text-sm md:text-base border-2 border-gray-200 rounded-lg md:rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all"
@@ -573,7 +570,7 @@ const PostAd = () => {
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="animate-spin text-blue-600" size={32} />
-                <span className="ml-2 text-gray-600">Loading products...</span>
+                <span className="ml-2 text-gray-600">Loading categories...</span>
               </div>
             ) : products.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
@@ -602,7 +599,7 @@ const PostAd = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">No products found</p>
+                <p className="text-gray-600 mb-4">No categories found</p>
                 <Button onClick={() => setProductSearch('')}>Clear Search</Button>
               </div>
             )}
@@ -618,13 +615,13 @@ const PostAd = () => {
                 className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-semibold mb-3 md:mb-4 group"
               >
                 <ArrowLeft size={16} className="md:w-[18px] md:h-[18px] group-hover:-translate-x-1 transition-transform" />
-                <span className="text-xs md:text-sm">Back to Products</span>
+                <span className="text-xs md:text-sm">Back to Categories</span>
               </button>
               <h2 className="text-lg md:text-3xl font-black text-gray-900 mb-1 md:mb-2">
-                Select Category
+                Select Sub Category
               </h2>
               <p className="text-xs md:text-base text-gray-600">
-                Choose category for <span className="font-bold text-blue-600">{selectedProduct?.name}</span>
+                Choose sub category for <span className="font-bold text-blue-600">{selectedProduct?.name}</span>
               </p>
             </div>
 
@@ -660,7 +657,7 @@ const PostAd = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">No categories found for this product</p>
+                <p className="text-gray-600 mb-4">No sub categories found for this product</p>
                 <Button onClick={() => setCurrentStep(1)}>Back to Products</Button>
               </div>
             )}
@@ -676,7 +673,7 @@ const PostAd = () => {
                 className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-semibold mb-3 md:mb-4 group"
               >
                 <ArrowLeft size={16} className="md:w-[18px] md:h-[18px] group-hover:-translate-x-1 transition-transform" />
-                <span className="text-xs md:text-sm">Back to Categories</span>
+                <span className="text-xs md:text-sm">Back to Sub Categories</span>
               </button>
               <h2 className="text-lg md:text-3xl font-black text-gray-900 mb-1 md:mb-2">Product Details</h2>
               <p className="text-xs md:text-base text-gray-600">
@@ -759,7 +756,7 @@ const PostAd = () => {
                     }));
                   }}
                 />
-                
+
                 {/* Service Radius */}
                 <div className="mt-4">
                   <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-2">
@@ -979,12 +976,12 @@ const PostAd = () => {
               <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Crown className="w-8 h-8 text-white" />
               </div>
-              
+
               <h3 className="text-xl font-bold text-gray-900 mb-2">No Post Ads Remaining</h3>
               <p className="text-gray-600 mb-6">
                 You've used all your free post ads. Upgrade to a subscription plan to post more rentals and reach more customers.
               </p>
-              
+
               <div className="space-y-3">
                 <Button
                   onClick={() => {
@@ -996,7 +993,7 @@ const PostAd = () => {
                   <Crown className="w-5 h-5 mr-2" />
                   View Subscription Plans
                 </Button>
-                
+
                 <Button
                   onClick={() => setShowSubscriptionModal(false)}
                   variant="outline"
