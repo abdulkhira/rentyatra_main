@@ -51,7 +51,7 @@ const Home = memo(() => {
       <Suspense fallback={<CategoryGridSkeleton />}>
         <CategoryGrid />
       </Suspense>
-      
+
       {/* RecentlyViewed - Load when near viewport */}
       <LazyLoadSection
         fallback={
@@ -72,7 +72,7 @@ const Home = memo(() => {
           <RecentlyViewed />
         </Suspense>
       </LazyLoadSection>
-      
+
       {/* FeaturedListings - Load last when scrolled to (below fold, heaviest) */}
       <LazyLoadSection
         fallback={
@@ -108,4 +108,3 @@ const Home = memo(() => {
 Home.displayName = 'Home';
 
 export default Home;
-

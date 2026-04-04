@@ -7,13 +7,13 @@ const AdBanner = () => {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Touch/swipe functionality
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const bannerRef = useRef(null);
-  
+
   // Auto-slide functionality
   const [isPaused, setIsPaused] = useState(false);
   const intervalRef = useRef(null);
@@ -23,13 +23,13 @@ const AdBanner = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Check cache first
       const cacheKey = 'banners_cache';
       const cachedData = localStorage.getItem(cacheKey);
       const cacheTime = localStorage.getItem(cacheKey + '_time');
       const now = Date.now();
-      
+
       // Use cache if it's less than 5 minutes old
       if (cachedData && cacheTime && (now - parseInt(cacheTime)) < 5 * 60 * 1000) {
         const cachedBanners = JSON.parse(cachedData);
@@ -37,16 +37,16 @@ const AdBanner = () => {
         setLoading(false);
         return;
       }
-      
+
       // Fetch banners from the public API
       const response = await apiService.getPublicBanners('', 5); // Reduced to 5 banners for faster loading
-      
+
       if (response.success && response.data.banners) {
         setBanners(response.data.banners);
         // Cache the banners
         localStorage.setItem(cacheKey, JSON.stringify(response.data.banners));
         localStorage.setItem(cacheKey + '_time', now.toString());
-        
+
         // Preload images for faster display with proper error handling
         response.data.banners.forEach((banner, index) => {
           if (banner.banner) {
@@ -82,12 +82,12 @@ const AdBanner = () => {
 
   useEffect(() => {
     fetchBanners();
-    
+
     // Refresh banners every 2 minutes to get updates from admin (less frequent for better performance)
     const refreshInterval = setInterval(() => {
       fetchBanners();
     }, 120000); // 2 minutes
-    
+
     return () => clearInterval(refreshInterval);
   }, []);
 
@@ -109,7 +109,7 @@ const AdBanner = () => {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    
+
     if (banners.length > 1 && !isPaused) {
       intervalRef.current = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % banners.length);
@@ -120,7 +120,7 @@ const AdBanner = () => {
   // Auto-rotate banner every 5 seconds (only if we have banners and not paused)
   useEffect(() => {
     startAutoSlide();
-    
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -135,7 +135,7 @@ const AdBanner = () => {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    
+
     // Restart auto-slide after a short delay
     setTimeout(() => {
       startAutoSlide();
@@ -161,7 +161,7 @@ const AdBanner = () => {
 
   const handleTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -176,7 +176,7 @@ const AdBanner = () => {
       setCurrentIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
       resetAutoSlide(); // Reset auto-slide timer
     }
-    
+
     setIsDragging(false);
   };
 
@@ -194,12 +194,12 @@ const AdBanner = () => {
 
   const handleMouseUp = () => {
     if (!isDragging) return;
-    
+
     if (!touchStart || !touchEnd) {
       setIsDragging(false);
       return;
     }
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -214,12 +214,12 @@ const AdBanner = () => {
       setCurrentIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
       resetAutoSlide(); // Reset auto-slide timer
     }
-    
+
     setIsDragging(false);
   };
 
 
-  
+
 
   return (
     <div className="relative">
@@ -235,11 +235,10 @@ const AdBanner = () => {
             </div>
           </div>
         ) : (
-          <div 
+          <div
             ref={bannerRef}
-            className={`relative w-full h-44 sm:h-56 md:h-64 lg:h-72 xl:h-96 bg-gray-100 select-none ${
-              isDragging ? 'cursor-grabbing' : 'cursor-grab'
-            }`}
+            className={`relative w-full h-44 sm:h-56 md:h-64 lg:h-72 xl:h-96 bg-gray-100 select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              }`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -268,15 +267,15 @@ const AdBanner = () => {
               }
 
               return (
+
                 <div
                   key={banner._id || index}
-                  className={`absolute inset-0 transition-opacity duration-1000 ${
-                    index === currentIndex ? 'opacity-100' : 'opacity-0'
-                  }`}
+                  className={`absolute inset-0 transition-opacity duration-1000 ${index === currentIndex ? 'opacity-100' : 'opacity-0'
+                    }`}
                 >
-                  <img 
-                    src={imageUrl} 
-                    alt={banner.title || `RentYatra Banner ${index + 1}`} 
+                  <img
+                    src={imageUrl}
+                    alt={banner.title || `RentYatra Banner ${index + 1}`}
                     className="w-full h-full rounded-3xl shadow-2xl"
                     style={{ objectFit: 'fill' }}
                     loading={index === 0 ? 'eager' : 'lazy'} // First image loads immediately, others lazy load
@@ -311,7 +310,7 @@ const AdBanner = () => {
             })}
           </div>
         )}
-        
+
         {/* Banner Indicators */}
         {!loading && banners.length > 1 && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
@@ -319,15 +318,14 @@ const AdBanner = () => {
               <button
                 key={index}
                 onClick={() => handleDotClick(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentIndex ? 'bg-white' : 'bg-white/50'
-                }`}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentIndex ? 'bg-white' : 'bg-white/50'
+                  }`}
               />
             ))}
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  Search, 
+import {
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Search,
   Filter,
   Calendar,
   User,
@@ -50,9 +50,9 @@ function RentalListingManagementView() {
 
   const filteredRequests = rentalRequests.filter(request => {
     const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (request.user?.name && request.user.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (request.location?.address && request.location.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (request.location?.city && request.location.city.toLowerCase().includes(searchTerm.toLowerCase()));
+      (request.user?.name && request.user.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (request.location?.address && request.location.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (request.location?.city && request.location.city.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -106,7 +106,7 @@ function RentalListingManagementView() {
           <h1 className="text-3xl font-bold text-slate-800">Rental Listing Management</h1>
           <p className="text-slate-600 mt-2">Manage rental listing requests from users</p>
         </div>
-        
+
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -218,7 +218,7 @@ function RentalListingManagementView() {
             )}
           </h2>
         </div>
-        
+
         <div className="divide-y divide-slate-200">
           {filteredRequests.map((request) => (
             <div key={request._id} className="p-6 hover:bg-slate-50 transition-colors">
@@ -254,9 +254,9 @@ function RentalListingManagementView() {
                       {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                     </span>
                   </div>
-                  
+
                   <p className="text-slate-600 mb-3 line-clamp-2">{request.description}</p>
-                  
+
                   <div className="flex flex-wrap gap-4 text-sm text-slate-500 mb-3">
                     <div className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
@@ -276,15 +276,15 @@ function RentalListingManagementView() {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-bold text-indigo-600">
                       ₹{request.price?.amount || 0}/{request.price?.period || 'day'}
                     </span>
-                    
+
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2 ml-4">
                   <button
                     onClick={() => handleViewDetails(request)}
@@ -293,7 +293,7 @@ function RentalListingManagementView() {
                     <Eye className="h-4 w-4" />
                     View Details
                   </button>
-                  
+
                   {request.status === 'pending' && (
                     <div className="flex gap-2">
                       <button
@@ -334,7 +334,7 @@ function RentalListingManagementView() {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-8">
               {/* User Information Section */}
               <div className="bg-slate-50 rounded-lg p-6">
@@ -343,7 +343,7 @@ function RentalListingManagementView() {
                   User Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+                  <div>
                     <label className="text-sm font-medium text-slate-500">Full Name</label>
                     <p className="text-lg font-semibold text-slate-800">{selectedRequest.user?.name || 'Not provided'}</p>
                   </div>
@@ -361,9 +361,9 @@ function RentalListingManagementView() {
                       {selectedRequest.contactInfo?.email || selectedRequest.user?.email || 'Not provided'}
                     </p>
                   </div>
-                  </div>
                 </div>
-                
+              </div>
+
               {/* Post Information Section */}
               <div className="bg-blue-50 rounded-lg p-6">
                 <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -403,7 +403,7 @@ function RentalListingManagementView() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Location & Service Area Section */}
               <div className="bg-green-50 rounded-lg p-6">
                 <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -498,19 +498,18 @@ function RentalListingManagementView() {
                   <div>
                     <label className="text-sm font-medium text-slate-500">Item Condition</label>
                     <div className="mt-2">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        selectedRequest.condition === 'excellent' ? 'bg-green-100 text-green-800' :
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${selectedRequest.condition === 'excellent' ? 'bg-green-100 text-green-800' :
                         selectedRequest.condition === 'good' ? 'bg-blue-100 text-blue-800' :
-                        selectedRequest.condition === 'fair' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                          selectedRequest.condition === 'fair' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                        }`}>
                         {selectedRequest.condition?.charAt(0).toUpperCase() + selectedRequest.condition?.slice(1) || 'Good'}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
 
               {/* Availability Section */}
               <div className="bg-teal-50 rounded-lg p-6">
@@ -522,7 +521,7 @@ function RentalListingManagementView() {
                   <div className="bg-white rounded-lg p-4 border border-teal-200">
                     <label className="text-sm font-medium text-slate-500">Available From</label>
                     <p className="text-lg font-semibold text-slate-800">
-                      {selectedRequest.availability?.startDate ? 
+                      {selectedRequest.availability?.startDate ?
                         new Date(selectedRequest.availability.startDate).toLocaleDateString('en-IN', {
                           year: 'numeric',
                           month: 'long',
@@ -533,9 +532,8 @@ function RentalListingManagementView() {
                   <div className="bg-white rounded-lg p-4 border border-teal-200">
                     <label className="text-sm font-medium text-slate-500">Currently Available</label>
                     <div className="mt-2">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        selectedRequest.availability?.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${selectedRequest.availability?.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
                         {selectedRequest.availability?.isAvailable ? 'Yes' : 'No'}
                       </span>
                     </div>
@@ -546,7 +544,7 @@ function RentalListingManagementView() {
               {/* Media Section */}
               <div className="bg-purple-50 rounded-lg p-6">
                 <h3 className="text-xl font-bold text-slate-800 mb-4">Media Content</h3>
-                
+
                 {/* Images */}
                 {selectedRequest.images && selectedRequest.images.length > 0 && (
                   <div className="mb-6">
@@ -608,7 +606,7 @@ function RentalListingManagementView() {
                     {selectedRequest.reviewedBy && (
                       <div className="mt-2 text-sm text-slate-600">
                         <p><strong>Reviewed by:</strong> {selectedRequest.reviewedBy?.name || 'Admin'}</p>
-                        <p><strong>Reviewed on:</strong> {selectedRequest.reviewedAt ? 
+                        <p><strong>Reviewed on:</strong> {selectedRequest.reviewedAt ?
                           new Date(selectedRequest.reviewedAt).toLocaleDateString('en-IN') : 'N/A'}</p>
                         {selectedRequest.rejectionReason && (
                           <p><strong>Rejection Reason:</strong> {selectedRequest.rejectionReason}</p>
@@ -616,31 +614,31 @@ function RentalListingManagementView() {
                       </div>
                     )}
                   </div>
-                  
-              {selectedRequest.status === 'pending' && (
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
+
+                  {selectedRequest.status === 'pending' && (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
                           handleStatusChange(selectedRequest._id, 'approved');
-                        setShowModal(false);
-                      }}
+                          setShowModal(false);
+                        }}
                         className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                    >
+                      >
                         <CheckCircle className="h-5 w-5" />
-                      Approve Request
-                    </button>
-                    <button
-                      onClick={() => {
+                        Approve Request
+                      </button>
+                      <button
+                        onClick={() => {
                           handleStatusChange(selectedRequest._id, 'rejected');
-                        setShowModal(false);
-                      }}
+                          setShowModal(false);
+                        }}
                         className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-                    >
+                      >
                         <XCircle className="h-5 w-5" />
-                      Reject Request
-                    </button>
-                </div>
-              )}
+                        Reject Request
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

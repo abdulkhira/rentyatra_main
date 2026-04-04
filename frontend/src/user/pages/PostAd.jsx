@@ -48,7 +48,7 @@ const PostAd = () => {
   const [images, setImages] = useState([]);
   const [video, setVideo] = useState(null);
   const [error, setError] = useState('');
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  // const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Handle location selection from SellerLocationPicker
   const handleLocationSelect = (location) => {
@@ -242,23 +242,23 @@ const PostAd = () => {
   };
 
   // Check if user has remaining post ads
-  const checkPostAdsAvailability = () => {
-    if (!userSubscription || userSubscription.status !== 'active') {
-      return 0; // No subscription
-    }
+  // const checkPostAdsAvailability = () => {
+  //   if (!userSubscription || userSubscription.status !== 'active') {
+  //     return 0; // No subscription
+  //   }
 
-    const plan = subscriptionPlans.find(p => p.id === userSubscription.planId);
-    if (plan) {
-      const currentListings = userSubscription.currentListings || 0;
-      const maxListings = plan.maxListings === -1 ? Infinity : plan.maxListings;
-      return Math.max(0, maxListings - currentListings);
-    } else {
-      // Fallback for custom plans (like new_user_default)
-      const currentListings = userSubscription.currentListings || 0;
-      const maxListings = userSubscription.maxListings || 0;
-      return Math.max(0, maxListings - currentListings);
-    }
-  };
+  //   const plan = subscriptionPlans.find(p => p.id === userSubscription.planId);
+  //   if (plan) {
+  //     const currentListings = userSubscription.currentListings || 0;
+  //     const maxListings = plan.maxListings === -1 ? Infinity : plan.maxListings;
+  //     return Math.max(0, maxListings - currentListings);
+  //   } else {
+  //     // Fallback for custom plans (like new_user_default)
+  //     const currentListings = userSubscription.currentListings || 0;
+  //     const maxListings = userSubscription.maxListings || 0;
+  //     return Math.max(0, maxListings - currentListings);
+  //   }
+  // };
 
 
   const handleSubmit = async (e) => {
@@ -266,11 +266,11 @@ const PostAd = () => {
     setError('');
 
     // Check if user has remaining post ads
-    const remainingPostAds = checkPostAdsAvailability();
-    if (remainingPostAds <= 0) {
-      setShowSubscriptionModal(true);
-      return;
-    }
+    // const remainingPostAds = checkPostAdsAvailability();
+    // if (remainingPostAds <= 0) {
+    //   setShowSubscriptionModal(false);
+    //   return;
+    // }
 
     console.log('Form submission started');
     console.log('Form data:', formData);
@@ -463,10 +463,10 @@ const PostAd = () => {
 
       if (response.success) {
         // Refresh subscription data to update counters
-        if (user?.id || user?._id) {
-          const userId = user.id || user._id;
-          await refreshUserSubscription(userId);
-        }
+        // if (user?.id || user?._id) {
+        //   const userId = user.id || user._id;
+        //   await refreshUserSubscription(userId);
+        // }
 
         // Show success message
         setError(''); // Clear any previous errors
@@ -969,7 +969,7 @@ const PostAd = () => {
       </div>
 
       {/* Subscription Required Modal */}
-      {showSubscriptionModal && (
+      {/* {showSubscriptionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="text-center">
@@ -1005,7 +1005,7 @@ const PostAd = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

@@ -45,7 +45,7 @@ const Navbar = () => {
               >
                 <MapPin size={18} className="text-gray-700 flex-shrink-0" />
                 <span className="text-xs font-medium text-gray-900 truncate max-w-[120px]">
-                  {location || 'New Palasia, Indore'}
+                  {location || 'Select Your Location'}
                 </span>
                 <ChevronDown size={16} className="text-gray-700 flex-shrink-0" />
               </button>
@@ -56,11 +56,11 @@ const Navbar = () => {
               )}
             </div>
           </div>
-          
+
           {/* Bottom Row - Search Bar with Icons */}
           <div className="pb-3 px-0.5">
             <div className="flex items-center gap-2">
-              <SearchBar 
+              <SearchBar
                 placeholder={`Search "${categoryNames[currentCategoryIndex]}"`}
                 className="flex-1"
                 showSuggestions={true}
@@ -82,8 +82,8 @@ const Navbar = () => {
                 {/* Favorites Dropdown */}
                 {showFavoritesDropdown && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-40" 
+                    <div
+                      className="fixed inset-0 z-40"
                       onClick={() => setShowFavoritesDropdown(false)}
                     ></div>
                     <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-xl shadow-2xl z-50 max-h-96 overflow-hidden border border-gray-200">
@@ -93,7 +93,7 @@ const Navbar = () => {
                           My Favorites ({getFavoritesCount()})
                         </h3>
                       </div>
-                      
+
                       <div className="max-h-80 overflow-y-auto">
                         {getFavoritesCount() === 0 ? (
                           <div className="p-8 text-center">
@@ -180,7 +180,7 @@ const Navbar = () => {
             >
               <MapPin size={18} className="text-gray-700 flex-shrink-0" />
               <span className="text-sm font-medium text-gray-900 truncate max-w-[200px]" title={location || 'New Palasia, Indore'}>
-                {location || 'New Palasia, Indore'}
+                {location || "Select Your Location"}
               </span>
               <ChevronDown size={16} className="text-gray-700 flex-shrink-0" />
             </button>
@@ -192,7 +192,7 @@ const Navbar = () => {
           </div>
 
           {/* Search Bar */}
-          <SearchBar 
+          <SearchBar
             placeholder={`Search "${categoryNames[currentCategoryIndex]}"`}
             className="flex-1 max-w-2xl"
             showSuggestions={true}
@@ -207,7 +207,7 @@ const Navbar = () => {
             >
               Plans
             </Link> */}
-            
+
             {/* Heart Icon */}
             <div className="relative flex-shrink-0">
               <button
@@ -226,8 +226,8 @@ const Navbar = () => {
               {/* Favorites Dropdown - Desktop */}
               {showFavoritesDropdown && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
+                  <div
+                    className="fixed inset-0 z-40"
                     onClick={() => setShowFavoritesDropdown(false)}
                   ></div>
                   <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-xl shadow-2xl z-50 max-h-96 overflow-hidden border border-gray-200">
@@ -237,7 +237,7 @@ const Navbar = () => {
                         My Favorites ({getFavoritesCount()})
                       </h3>
                     </div>
-                    
+
                     <div className="max-h-80 overflow-y-auto">
                       {getFavoritesCount() === 0 ? (
                         <div className="p-8 text-center">
@@ -309,9 +309,9 @@ const Navbar = () => {
             {/* Login/User Button */}
             {isAuthenticated ? (
               <>
-                <Button 
-                  icon={Plus} 
-                  onClick={() => navigate('/post-ad')} 
+                <Button
+                  icon={Plus}
+                  onClick={() => navigate('/post-ad')}
                   className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold shadow-md px-4 py-1.5 text-sm"
                 >
                   RENT OUT
@@ -376,7 +376,7 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <Button 
+              <Button
                 onClick={() => navigate('/login')}
                 className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold shadow-md px-4 py-1.5 text-sm"
               >
