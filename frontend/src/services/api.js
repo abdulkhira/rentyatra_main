@@ -95,7 +95,7 @@ class ApiService {
   async fetchWithTimeout(url, options, timeoutMs = this.timeout) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    
+
     try {
       const response = await fetch(url, {
         ...options,
@@ -125,7 +125,7 @@ class ApiService {
     const token = localStorage.getItem('token');
     console.log('🔑 Token from localStorage:', token);
     console.log('🔑 Token from instance:', this.token);
-    
+
     if (token) {
       headers.Authorization = `Bearer ${token}`;
       console.log('🔑 Authorization header set:', headers.Authorization);
@@ -157,7 +157,7 @@ class ApiService {
     const adminToken = localStorage.getItem('adminToken');
     console.log('🔐 Admin token from localStorage:', adminToken ? 'Found' : 'Not found');
     console.log('🔐 Admin token value:', adminToken);
-    
+
     if (adminToken) {
       headers.Authorization = `Bearer ${adminToken}`;
       console.log('🔐 Admin headers with token:', headers);
@@ -202,7 +202,7 @@ class ApiService {
   // Generic request method
   async request(endpoint, options = {}, retryOn401 = true) {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     // Determine if endpoint requires authentication
     const normalizedEndpoint = endpoint.split('?')[0];
     const publicAuthEndpoints = [
@@ -225,7 +225,7 @@ class ApiService {
       endpoint.includes('/admin/signup');
 
     const requiresAuth = !isPublicEndpoint;
-    
+
     // Get token check before making request
     if (requiresAuth) {
       const token = localStorage.getItem('token');
@@ -249,10 +249,10 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      
+
       console.log('📡 Response status:', response.status);
       console.log('📡 Response headers:', response.headers);
-      
+
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         let errorData;
@@ -265,13 +265,13 @@ class ApiService {
         } catch (jsonError) {
           console.warn('Could not parse error response as JSON');
         }
-        
+
         if (response.status === 401 && requiresAuth && retryOn401) {
           console.warn('⚠️ 401 Unauthorized - Attempting to refresh token...');
-          
+
           // Try to refresh token and retry the request
           let refreshToken = localStorage.getItem('refreshToken');
-          
+
           // If refresh token is missing, try to get from mobile app storage
           if (!refreshToken) {
             console.log('🔄 Refresh token missing from localStorage, trying mobile app storage...');
@@ -309,7 +309,7 @@ class ApiService {
                 };
 
                 const retryResponse = await fetch(url, retryConfig);
-                
+
                 if (!retryResponse.ok) {
                   let retryErrorMessage = `HTTP ${retryResponse.status}: ${retryResponse.statusText}`;
                   try {
@@ -370,7 +370,7 @@ class ApiService {
           url: url,
           preview: responseText.substring(0, 200)
         });
-        
+
         // Check if it's an HTML error page (usually means route not found or server down)
         if (responseText.includes('<!doctype html>') || responseText.includes('<html>')) {
           throw new Error(`Server returned HTML instead of JSON. This usually means:
@@ -383,7 +383,7 @@ Please check:
 - API endpoint: ${endpoint}
 - Network tab for actual request/response`);
         }
-        
+
         throw new Error(`Server returned non-JSON response (${contentType || 'unknown type'}). Please check if backend is running and API endpoint is correct.`);
       }
 
@@ -392,19 +392,19 @@ Please check:
       return data;
     } catch (error) {
       console.error('❌ API Request Error:', error);
-      
+
       // Provide more specific error messages
       if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
         const networkError = new Error('Network error: Unable to connect to server. Please check your internet connection and ensure the backend server is running.');
         networkError.originalError = error;
         throw networkError;
       }
-      
+
       // If error already has a message, preserve it
       if (error.message && !error.message.includes('Network error')) {
         throw error;
       }
-      
+
       throw error;
     }
   }
@@ -429,14 +429,14 @@ Please check:
       return data;
     } catch (error) {
       console.error('File Upload Error:', error);
-      
+
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error - Please check your internet connection');
       }
-      
+
       throw error;
     }
   }
@@ -469,7 +469,7 @@ Please check:
       method: 'POST',
       body: JSON.stringify({ phone, otp }),
     });
-    
+
     // CRITICAL: Print backend response to verify tokens
     console.log('📥 API LOGIN RESPONSE RECEIVED:', {
       success: response.success,
@@ -482,7 +482,7 @@ Please check:
       refreshTokenExpiresAt: response.data?.refreshTokenExpiresAt,
       fullResponse: response
     });
-    
+
     return response;
   }
 
@@ -690,14 +690,14 @@ Please check:
       return data;
     } catch (error) {
       console.error('Admin Profile Image Upload Error:', error);
-      
+
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error - Please check your internet connection');
       }
-      
+
       throw error;
     }
   }
@@ -836,7 +836,7 @@ Please check:
   // Product APIs
   async addProduct(productData) {
     const formData = new FormData();
-    
+
     // Add form fields
     Object.keys(productData).forEach(key => {
       if (key === 'images') {
@@ -863,11 +863,11 @@ Please check:
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      
+
       const response = await this.fetchWithTimeout(url, config, 120000); // 2 minutes for file uploads
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
-      
+
       const data = await response.json();
       console.log('Response data:', data);
 
@@ -883,14 +883,14 @@ Please check:
         message: error.message,
         stack: error.stack
       });
-      
+
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error - Please check your internet connection');
       }
-      
+
       throw error;
     }
   }
@@ -900,7 +900,7 @@ Please check:
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (status) params.append('status', status);
     if (search) params.append('search', search);
 
@@ -947,7 +947,7 @@ Please check:
 
   async updateProduct(productId, productData) {
     const formData = new FormData();
-    
+
     // Add form fields
     Object.keys(productData).forEach(key => {
       if (key === 'images') {
@@ -974,10 +974,10 @@ Please check:
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      
+
       const response = await this.fetchWithTimeout(url, config, 120000); // 2 minutes for file uploads
       console.log('Update response status:', response.status);
-      
+
       const data = await response.json();
       console.log('Update response data:', data);
 
@@ -988,14 +988,14 @@ Please check:
       return data;
     } catch (error) {
       console.error('Update Product Error:', error);
-      
+
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Update timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error - Please check your internet connection');
       }
-      
+
       throw error;
     }
   }
@@ -1069,7 +1069,7 @@ Please check:
   // Category APIs
   async addCategory(categoryData) {
     const formData = new FormData();
-    
+
     // Add form fields
     Object.keys(categoryData).forEach(key => {
       if (key === 'images') {
@@ -1096,11 +1096,11 @@ Please check:
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      
+
       const response = await fetch(url, config);
       console.log('Add category response status:', response.status);
       console.log('Add category response headers:', response.headers);
-      
+
       let data;
       try {
         data = await response.json();
@@ -1135,7 +1135,7 @@ Please check:
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (status) params.append('status', status);
     if (search) params.append('search', search);
     if (productId) params.append('productId', productId);
@@ -1183,7 +1183,7 @@ Please check:
 
   async updateCategory(categoryId, categoryData) {
     const formData = new FormData();
-    
+
     // Add form fields
     Object.keys(categoryData).forEach(key => {
       if (key === 'images') {
@@ -1210,10 +1210,10 @@ Please check:
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      
+
       const response = await fetch(url, config);
       console.log('Update category response status:', response.status);
-      
+
       const data = await response.json();
       console.log('Update category response data:', data);
 
@@ -1300,7 +1300,7 @@ Please check:
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (search) params.append('search', search);
 
     const url = `${this.baseURL}/products?${params.toString()}`;
@@ -1368,7 +1368,7 @@ Please check:
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         // Handle database unavailable errors gracefully
@@ -1381,7 +1381,7 @@ Please check:
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       console.log('✅ Featured products response:', data);
       return data;
@@ -1410,7 +1410,7 @@ Please check:
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (search) params.append('search', search);
 
     const url = `${this.baseURL}/categories?${params.toString()}`;
@@ -1422,7 +1422,7 @@ Please check:
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         // Handle database unavailable errors gracefully
@@ -1435,7 +1435,7 @@ Please check:
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
@@ -1511,7 +1511,7 @@ Please check:
   // Banner APIs
   async addBanner(bannerData) {
     const formData = new FormData();
-    
+
     // Add form fields
     Object.keys(bannerData).forEach(key => {
       if (key === 'image') {
@@ -1536,11 +1536,11 @@ Please check:
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      
+
       const response = await this.fetchWithTimeout(url, config, 120000); // 2 minutes for file uploads
       console.log('Add banner response status:', response.status);
       console.log('Add banner response headers:', response.headers);
-      
+
       const data = await response.json();
       console.log('Add banner response data:', data);
 
@@ -1556,14 +1556,14 @@ Please check:
         message: error.message,
         stack: error.stack
       });
-      
+
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error - Please check your internet connection');
       }
-      
+
       throw error;
     }
   }
@@ -1617,7 +1617,7 @@ Please check:
 
   async updateBanner(bannerId, bannerData) {
     const formData = new FormData();
-    
+
     // Add form fields
     Object.keys(bannerData).forEach(key => {
       if (key === 'image') {
@@ -1642,10 +1642,10 @@ Please check:
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      
+
       const response = await this.fetchWithTimeout(url, config, 120000); // 2 minutes for file uploads
       console.log('Update banner response status:', response.status);
-      
+
       const data = await response.json();
       console.log('Update banner response data:', data);
 
@@ -1656,14 +1656,14 @@ Please check:
       return data;
     } catch (error) {
       console.error('Update Banner Error:', error);
-      
+
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Update timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error - Please check your internet connection');
       }
-      
+
       throw error;
     }
   }
@@ -1745,7 +1745,7 @@ Please check:
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (status) params.append('status', status);
     if (search) params.append('search', search);
     if (category) params.append('category', category);
@@ -1886,7 +1886,7 @@ Please check:
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (status) params.append('status', status);
 
     const url = `${this.baseURL}/admin/rental-requests/user/${userId}?${params.toString()}`;
@@ -1915,7 +1915,7 @@ Please check:
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (search) params.append('search', search);
     if (category) params.append('category', category);
     if (city) params.append('city', city);
@@ -2055,11 +2055,11 @@ Please check:
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      
+
       const response = await this.fetchWithTimeout(url, config, 120000); // 2 minutes for file uploads
       console.log('Create rental listing response status:', response.status);
       console.log('Create rental listing response headers:', response.headers);
-      
+
       const data = await response.json();
       console.log('Create rental listing response data:', data);
 
@@ -2075,14 +2075,14 @@ Please check:
         message: error.message,
         stack: error.stack
       });
-      
+
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error - Please check your internet connection');
       }
-      
+
       throw error;
     }
   }
@@ -2091,12 +2091,12 @@ Please check:
   async getUserRentalListings(page = 1, limit = 10, status = '') {
     // Refresh token from localStorage before making request
     this.refreshToken();
-    
+
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     });
-    
+
     if (status) params.append('status', status);
 
     const url = `${this.baseURL}/rental-requests/my-requests?${params.toString()}`;
@@ -2378,7 +2378,7 @@ Please check:
         page: page.toString(),
         limit: limit.toString(),
       });
-      
+
       if (search) params.append('search', search);
 
       return await this.request(`/favorites/items?${params.toString()}`);
@@ -2519,9 +2519,9 @@ Please check:
 
     try {
       const response = await fetch(url, config);
-      
+
       console.log('📡 Admin Response status:', response.status);
-      
+
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         try {
@@ -2530,7 +2530,7 @@ Please check:
         } catch (jsonError) {
           console.warn('Could not parse error response as JSON');
         }
-        
+
         // Check if it's an authentication error
         if (response.status === 401 || response.status === 403) {
           console.warn('🔐 Authentication failed, admin token may be invalid or expired');
@@ -2542,7 +2542,7 @@ Please check:
             requiresAuth: true
           };
         }
-        
+
         throw new Error(errorMessage);
       }
 
@@ -2598,7 +2598,7 @@ Please check:
         params.append(key, filters[key]);
       }
     });
-    
+
     return this.adminRequest(`/tickets?${params.toString()}`);
   }
 

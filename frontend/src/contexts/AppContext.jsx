@@ -51,22 +51,14 @@ export const AppProvider = ({ children }) => {
 
     // Set location string (city, state) - only if different
     if (user.address.city || user.address.state) {
-      // User request: Show live location with latitude longitude and full live address
-      const parts = [
-        user.address.street,
-        user.address.city,
-        user.address.state,
-        user.address.pincode
-      ].filter(Boolean);
+      // const parts = [
+      //   user.address.city,
+      //   user.address.state,
+      // ].filter(Boolean);
+      const parts = [user.address.city, user.address.state]
 
-      let locationString = parts.join(', ');
-
-      // Append coordinates if available
-      if (user.address.latitude && user.address.longitude) {
-        const lat = Number(user.address.latitude).toFixed(6);
-        const lng = Number(user.address.longitude).toFixed(6);
-        locationString += ` (Lat: ${lat}, Lng: ${lng})`;
-      }
+      const locationString = parts.join(', ');
+      // locationString += ` (Lat: ${lat}, Lng: ${lng})`
 
       if (locationString && locationString !== location) {
         setLocation(locationString);
@@ -186,17 +178,6 @@ export const AppProvider = ({ children }) => {
       // Ensure no duplicates
       const cleanedFavorites = [...new Set(updatedFavorites)];
       localStorage.setItem('favorites', JSON.stringify(cleanedFavorites));
-
-      // DISABLED: API calls for favorites (routes don't exist)
-      // try {
-      //   import('../services/api').then(apiService => {
-      //     apiService.default.toggleFavorite(itemId, 'rental-request').catch(() => {
-      //       // Silently handle API failures - local storage is working
-      //     });
-      //   });
-      // } catch (error) {
-      //   // Silently handle API not available - local storage is working
-      // }
 
       return cleanedFavorites;
     });

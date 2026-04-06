@@ -67,6 +67,44 @@ const popularCities = [
   { id: 60, name: 'Alappuzha', state: 'Kerala' },
 ];
 
+const indianStates = [
+  'Maharashtra', 'Delhi', 'Karnataka', 'Telangana', 'Tamil Nadu', 'West Bengal',
+  'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'Madhya Pradesh', 'Andhra Pradesh',
+  'Bihar', 'Haryana', 'Punjab', 'Jammu and Kashmir', 'Jharkhand', 'Assam',
+  'Kerala', 'Odisha', 'Chhattisgarh', 'Himachal Pradesh', 'Uttarakhand',
+  'Goa', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Sikkim',
+  'Tripura', 'Arunachal Pradesh', 'Ladakh', 'Puducherry', 'Chandigarh',
+  'Dadra and Nagar Haveli', 'Daman and Diu', 'Lakshadweep', 'Andaman and Nicobar Islands'
+];
+
+// Extract city and state from a full address string
+const extractCityState = (address) => {
+  const parts = address.split(',').map(part => part.trim());
+  let city = '';
+  let state = '';
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    // Skip pincode
+    if (/^\d{6}$/.test(part)) continue;
+    // Skip country
+    if (part === 'India') continue;
+
+    if (indianStates.includes(part)) {
+      state = part;
+    } else if (!city && i > 0) {
+      city = part;
+    }
+  }
+
+  if (city && state) return `${city}, ${state}`;
+  if (city) return city;
+  if (state) return state;
+  // Fallback: return first two meaningful parts
+  const meaningful = parts.filter(p => !/^\d{6}$/.test(p) && p !== 'India');
+  return meaningful.slice(0, 2).join(', ');
+};
+
 const LocationSearch = ({ onClose }) => {
   const { location, setLocation, userCoordinates, setUserCoordinates } = useApp();
   const [isOpen, setIsOpen] = useState(false);
@@ -83,29 +121,21 @@ const LocationSearch = ({ onClose }) => {
   // Load nearby suggestions when modal opens
   useEffect(() => {
     if (isOpen && userCoordinates) {
-      console.log('Modal opened with user coordinates:', userCoordinates);
       loadNearbySuggestions();
-    } else if (isOpen && !userCoordinates) {
-      console.log('Modal opened but no user coordinates available');
     }
   }, [isOpen, userCoordinates]);
 
   // Load nearby suggestions
   const loadNearbySuggestions = async () => {
-    if (!userCoordinates) {
-      console.log('No user coordinates available for nearby suggestions');
-      return;
-    }
+    if (!userCoordinates) return;
 
-    console.log('Loading nearby suggestions for coordinates:', userCoordinates);
     setIsLoadingNearby(true);
     try {
       const suggestions = await googleMapsService.getNearbyLocationSuggestions(
         userCoordinates.lat,
         userCoordinates.lng,
-        15 // 15km radius
+        15
       );
-      console.log('Nearby suggestions loaded:', suggestions);
       setNearbySuggestions(suggestions);
     } catch (error) {
       console.error('Error loading nearby suggestions:', error);
@@ -134,14 +164,12 @@ const LocationSearch = ({ onClose }) => {
       setFilteredCities(popularCities.slice(0, 8));
       setShowSuggestions(false);
     } else {
-      // First try static cities filter
       const staticFiltered = popularCities.filter(
         (city) =>
           city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           city.state.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-      // If no static results, try Google Maps API
       if (staticFiltered.length === 0 && searchTerm.trim().length > 2) {
         loadGoogleMapsSuggestions(searchTerm);
       } else {
@@ -155,12 +183,9 @@ const LocationSearch = ({ onClose }) => {
   // Load Google Maps suggestions
   const loadGoogleMapsSuggestions = async (searchTerm) => {
     try {
-      console.log('Loading Google Maps suggestions for:', searchTerm);
       const suggestions = await googleMapsService.getLocationSuggestions(searchTerm);
-      console.log('Google Maps suggestions received:', suggestions);
 
       if (suggestions.length > 0) {
-        // Convert Google Maps suggestions to city format
         const citySuggestions = suggestions.map(suggestion => ({
           id: suggestion.placeId || suggestion.id,
           name: suggestion.mainText || suggestion.city,
@@ -212,11 +237,13 @@ const LocationSearch = ({ onClose }) => {
   };
 
   const handleCitySelect = (city) => {
-    console.log('City selected:', city);
-
     // If it's a Google Maps suggestion with coordinates
     if (city.coordinates) {
-      setLocation(city.address || city.name);
+      // Extract clean city/state from address instead of using full address
+      const cleanLocation = city.name && city.state
+        ? `${city.name}, ${city.state}`
+        : extractCityState(city.address || city.name);
+      setLocation(cleanLocation);
       setUserCoordinates({ lat: city.coordinates.lat, lng: city.coordinates.lng });
     } else {
       setLocation(city.name);
@@ -230,8 +257,11 @@ const LocationSearch = ({ onClose }) => {
   };
 
   const handleNearbySelect = (suggestion) => {
-    console.log('Nearby suggestion selected:', suggestion);
-    setLocation(suggestion.address);
+    // Show only the main text (area/city name) instead of full address
+    const cleanLocation = suggestion.mainText && suggestion.secondaryText
+      ? `${suggestion.mainText}, ${suggestion.secondaryText}`
+      : extractCityState(suggestion.address || suggestion.mainText);
+    setLocation(cleanLocation);
     setUserCoordinates({ lat: suggestion.lat, lng: suggestion.lng });
     setSearchTerm('');
     setShowSuggestions(false);
@@ -256,84 +286,28 @@ const LocationSearch = ({ onClose }) => {
     setIsDetecting(true);
 
     try {
-      // Use Google Maps service to get coordinates
       const locationData = await googleMapsService.getCurrentLocation();
-
-      console.log('Current location data:', locationData);
-
-      // Extract coordinates
       const { lat, lng } = locationData;
 
-      // Get address from coordinates using reverse geocoding
-      let address = '';
-      try {
-        address = await googleMapsService.reverseGeocode(lat, lng);
-        console.log('Reverse geocoded address:', address);
-      } catch (addressError) {
-        console.warn('Could not get address:', addressError);
-        address = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      // getCurrentLocation() already does reverse geocoding internally
+      // Use locationData.address but check it is not raw coordinates
+      const rawAddress = locationData.address || "";
+      const isCoordinateString = /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(rawAddress.trim());
+
+      let locationDisplay = "";
+      if (rawAddress && !isCoordinateString) {
+        locationDisplay = extractCityState(rawAddress);
       }
 
-      // Parse the address to extract area, city, state, pincode
-      const addressParts = address.split(',').map(part => part.trim());
-
-      // Try to extract different components
-      let area = '';
-      let city = '';
-      let state = '';
-      let pincode = '';
-
-      // Look for pincode (6-digit number)
-      const pincodeMatch = address.match(/\b\d{6}\b/);
-      if (pincodeMatch) {
-        pincode = pincodeMatch[0];
+      // Fallback if extraction fails or address was raw coordinates
+      if (!locationDisplay) {
+        locationDisplay = "Current Location";
       }
 
-      // Extract area (usually first part)
-      if (addressParts.length > 0) {
-        area = addressParts[0];
-      }
+      console.log('Location display (city/state only):', locationDisplay);
 
-      // Extract city and state from remaining parts
-      for (let i = 1; i < addressParts.length; i++) {
-        const part = addressParts[i];
-
-        // Skip pincode if found
-        if (part === pincode) continue;
-
-        // Check if it's a state (common Indian states)
-        const indianStates = [
-          'Maharashtra', 'Delhi', 'Karnataka', 'Telangana', 'Tamil Nadu', 'West Bengal',
-          'Gujarat', 'Rajasthan', 'Uttar Pradesh', 'Madhya Pradesh', 'Andhra Pradesh',
-          'Bihar', 'Haryana', 'Punjab', 'Jammu and Kashmir', 'Jharkhand', 'Assam',
-          'Kerala', 'Odisha', 'Chhattisgarh', 'Himachal Pradesh', 'Uttarakhand',
-          'Goa', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Sikkim',
-          'Tripura', 'Arunachal Pradesh', 'Ladakh', 'Puducherry', 'Chandigarh',
-          'Dadra and Nagar Haveli', 'Daman and Diu', 'Lakshadweep', 'Andaman and Nicobar Islands'
-        ];
-
-        if (indianStates.includes(part)) {
-          state = part;
-        } else if (!city) {
-          city = part;
-        }
-      }
-
-      // Format the location display with full address and coordinates as requested
-      // User request: Show live location with latitude longitude and full live address
-      const formattedLat = lat.toFixed(6);
-      const formattedLng = lng.toFixed(6);
-
-      // Use the full address from Google Maps directly combined with coordinates
-      let locationDisplay = `${address} (Lat: ${formattedLat}, Lng: ${formattedLng})`;
-
-      console.log('Final location display with coordinates:', locationDisplay);
-
-      // Set the detailed location
       setLocation(locationDisplay);
-
-      // Also set user coordinates for service radius filtering
-      setUserCoordinates({ lat, lng });
+      setUserCoordinates({ lat, lng }); // coordinates stored separately for filtering
 
       setIsDetecting(false);
       setIsOpen(false);
@@ -341,20 +315,15 @@ const LocationSearch = ({ onClose }) => {
 
     } catch (error) {
       console.error('Error getting current location:', error);
-
-      // Show user-friendly error message
       const errorMessage = error.message || 'Unable to detect your location';
 
-      // Don't show alert for timeout - just silently fail and let user select manually
       if (!errorMessage.includes('timed out')) {
-        // Only show alert for permission denied or unavailable
         setTimeout(() => {
           alert(errorMessage + '. Please select a location manually from the list below.');
         }, 100);
       }
 
       setIsDetecting(false);
-      // Keep dropdown open so user can select manually
     }
   };
 
@@ -385,8 +354,7 @@ const LocationSearch = ({ onClose }) => {
                   <button
                     key={city.id}
                     onClick={() => handleCitySelect(city)}
-                    className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition text-left group ${index === selectedSuggestionIndex ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                      }`}
+                    className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition text-left group ${index === selectedSuggestionIndex ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
                   >
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center group-hover:scale-110 transition">
                       <MapPin size={14} className="text-blue-600" />
@@ -527,8 +495,7 @@ const LocationSearch = ({ onClose }) => {
                     <button
                       key={city.id}
                       onClick={() => handleCitySelect(city)}
-                      className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition text-left group ${index === selectedSuggestionIndex ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                        }`}
+                      className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition text-left group ${index === selectedSuggestionIndex ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
                     >
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center group-hover:scale-110 transition">
                         <MapPin size={14} className="text-blue-600" />
@@ -568,7 +535,7 @@ const LocationSearch = ({ onClose }) => {
                 Nearby Locations
               </div>
               <div className="max-h-40 overflow-y-auto">
-                {nearbySuggestions.map((suggestion, index) => (
+                {nearbySuggestions.map((suggestion) => (
                   <button
                     key={suggestion.id}
                     onClick={() => handleNearbySelect(suggestion)}
@@ -664,5 +631,3 @@ const LocationSearch = ({ onClose }) => {
 };
 
 export default LocationSearch;
-
-

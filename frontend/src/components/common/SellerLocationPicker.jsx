@@ -3,7 +3,7 @@ import { MapPin, Navigation, Loader2 } from 'lucide-react';
 import googleMapsService from '../../services/googleMapsService';
 import ErrorBoundary from './ErrorBoundary';
 
-const SellerLocationPicker = ({ 
+const SellerLocationPicker = ({
   onLocationSelect,
   initialLocation = null,
   radiusKm = 7,
@@ -23,12 +23,12 @@ const SellerLocationPicker = ({
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [customRadius, setCustomRadius] = useState(serviceRadius);
   const [locationSuccess, setLocationSuccess] = useState('');
-  
+
   // Sync customRadius with serviceRadius prop
   useEffect(() => {
     console.log('SellerLocationPicker: Syncing customRadius with serviceRadius:', serviceRadius);
     setCustomRadius(serviceRadius);
-    
+
     // Update map circle if map is already initialized
     if (mapInitialized && mapInstanceRef.current && mapInstanceRef.current.mapInstance && selectedLocation) {
       console.log('SellerLocationPicker: Updating existing map with new radius:', serviceRadius);
@@ -39,20 +39,20 @@ const SellerLocationPicker = ({
       }
     }
   }, [serviceRadius, mapInitialized, selectedLocation]);
-  
+
   // Handle location input change
   const handleLocationInputChange = async (value) => {
     setLocationInput(value);
-    
+
     if (value.trim().length > 2) {
       try {
         setIsLoadingSuggestions(true);
         setShowSuggestions(true);
-        
+
         console.log('Getting suggestions for:', value);
         const results = await googleMapsService.getLocationSuggestions(value);
         console.log('Suggestions received:', results);
-        
+
         // Fallback test suggestions if no results
         if (results.length === 0 && value.toLowerCase().includes('kalani')) {
           const testSuggestions = [
@@ -69,7 +69,7 @@ const SellerLocationPicker = ({
         } else {
           setSuggestions(results);
         }
-        
+
         // Don't automatically select first result - let user choose
       } catch (error) {
         console.warn('Error getting location suggestions:', error);
@@ -89,12 +89,12 @@ const SellerLocationPicker = ({
     console.log('Debug - handleRadiusChange called with:', newRadius);
     console.log('Debug - parsed radius:', radius);
     setCustomRadius(radius);
-    
+
     // Notify parent component
     if (onRadiusChange) {
       onRadiusChange(radius);
     }
-    
+
     // Update map circle if initialized
     if (mapInitialized && mapInstanceRef.current && mapInstanceRef.current.mapInstance && selectedLocation) {
       console.log('Updating radius to:', radius, 'km');
@@ -111,7 +111,7 @@ const SellerLocationPicker = ({
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
-    
+
     updateTimeoutRef.current = setTimeout(() => {
       if (mapInitialized && mapInstanceRef.current) {
         console.log('Debounced map update to:', coordinates);
@@ -123,27 +123,27 @@ const SellerLocationPicker = ({
   // Handle suggestion selection
   const handleSuggestionSelect = (suggestion) => {
     console.log('Suggestion selected:', suggestion);
-    
+
     const coordinates = { lat: suggestion.lat, lng: suggestion.lng };
-    
+
     // Validate coordinates
     if (!isValidCoordinates(coordinates)) {
       console.warn('Invalid coordinates from suggestion:', coordinates);
       return;
     }
-    
+
     console.log('Valid coordinates, updating location:', coordinates);
-    
+
     // Update input field with selected address
     setLocationInput(googleMapsService.formatAddress(suggestion.address));
-    
+
     // Update selected location state
     setSelectedLocation(coordinates);
-    
+
     // Close suggestions dropdown
     setSuggestions([]);
     setShowSuggestions(false);
-    
+
     // Update map if initialized - this should move the map to the new location
     if (mapInitialized && mapInstanceRef.current && mapInstanceRef.current.mapInstance) {
       console.log('Updating map location to:', coordinates);
@@ -151,24 +151,24 @@ const SellerLocationPicker = ({
       if (mapInstance && mapInstance.map) {
         // Update map center
         mapInstance.map.setCenter(coordinates);
-        
+
         // Update marker position
         if (mapInstance.marker) {
           mapInstance.marker.setPosition(coordinates);
         }
-        
+
         // Update circle center and radius
         if (mapInstance.circle) {
           mapInstance.circle.setCenter(coordinates);
           mapInstance.circle.setRadius(customRadius * 1000);
         }
-        
+
         console.log('Map updated successfully to:', coordinates);
       }
     } else {
       console.log('Map not initialized yet, coordinates will be used when map loads');
     }
-    
+
     // Notify parent component
     if (onLocationSelect) {
       console.log('=== SELLER LOCATION PICKER - SUGGESTION SELECTED ===');
@@ -190,13 +190,13 @@ const SellerLocationPicker = ({
 
   // Validate coordinates
   const isValidCoordinates = (coords) => {
-    return coords && 
-           typeof coords.lat === 'number' && 
-           typeof coords.lng === 'number' && 
-           !isNaN(coords.lat) && 
-           !isNaN(coords.lng) &&
-           isFinite(coords.lat) && 
-           isFinite(coords.lng);
+    return coords &&
+      typeof coords.lat === 'number' &&
+      typeof coords.lng === 'number' &&
+      !isNaN(coords.lat) &&
+      !isNaN(coords.lng) &&
+      isFinite(coords.lat) &&
+      isFinite(coords.lng);
   };
 
   const mapInstanceRef = useRef(null);
@@ -224,10 +224,10 @@ const SellerLocationPicker = ({
       try {
         console.log('Initializing Google Maps service...');
         await googleMapsService.initialize();
-        
+
         // Wait a bit more to ensure Google Maps is fully loaded
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         console.log('Google Maps service initialized successfully');
         console.log('Google Maps available:', !!window.google?.maps);
         setGoogleMapsReady(true);
@@ -236,7 +236,7 @@ const SellerLocationPicker = ({
         setError(`Failed to initialize maps service: ${error.message}`);
       }
     };
-    
+
     initMaps();
   }, []);
 
@@ -245,31 +245,38 @@ const SellerLocationPicker = ({
     try {
       setIsGettingLocation(true);
       setError('');
-      
+
       console.log('=== GETTING CURRENT LOCATION ===');
       console.log('Starting current location detection...');
-      
+
       const location = await googleMapsService.getCurrentLocation();
       console.log('Raw location data received:', location);
-      
+
       // Validate coordinates
       if (!isValidCoordinates(location)) {
         throw new Error('Invalid coordinates received');
       }
-      
+
       console.log('Valid coordinates:', { lat: location.lat, lng: location.lng });
       setSelectedLocation({ lat: location.lat, lng: location.lng });
-      
+
       // Get address from coordinates
       let address = '';
       try {
         console.log('Starting reverse geocoding...');
         const rawAddress = await googleMapsService.reverseGeocode(location.lat, location.lng);
         console.log('Raw address from reverse geocoding:', rawAddress);
-        
-        address = googleMapsService.formatAddress(rawAddress);
+
+        // address = googleMapsService.formatAddress(rawAddress);
+        // address = `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
+        // ✅ directly extract address (no dependency on formatAddress)
+        if (rawAddress && rawAddress.formatted_address) {
+          address = rawAddress.formatted_address;
+        } else {
+          throw new Error('No formatted address found');
+        }
         console.log('Formatted address:', address);
-        
+
         setLocationInput(address);
         console.log('Location input set to:', address);
         setLocationSuccess(`Location detected: ${address}`);
@@ -281,7 +288,7 @@ const SellerLocationPicker = ({
         setLocationInput(address);
         console.log('Using coordinates as fallback address:', address);
       }
-      
+
       // Update map if initialized
       if (mapInitialized && mapInstanceRef.current && mapInstanceRef.current.mapInstance) {
         console.log('Updating map with new location...');
@@ -289,41 +296,41 @@ const SellerLocationPicker = ({
         if (mapInstance && mapInstance.map) {
           // Update map center
           mapInstance.map.setCenter({ lat: location.lat, lng: location.lng });
-          
+
           // Update marker position
           if (mapInstance.marker) {
             mapInstance.marker.setPosition({ lat: location.lat, lng: location.lng });
           }
-          
+
           // Update circle center and radius
           if (mapInstance.circle) {
             mapInstance.circle.setCenter({ lat: location.lat, lng: location.lng });
             mapInstance.circle.setRadius(customRadius * 1000);
           }
-          
+
           console.log('Map updated successfully to:', { lat: location.lat, lng: location.lng });
         }
       }
-      
+
       // Notify parent component
       if (onLocationSelect) {
         console.log('=== SELLER LOCATION PICKER - CURRENT LOCATION ===');
         console.log('Debug - Current location address:', address);
         console.log('Debug - Current customRadius state:', customRadius);
         console.log('Debug - Coordinates:', { lat: location.lat, lng: location.lng });
-        
-        const locationData = { 
-          lat: location.lat, 
+
+        const locationData = {
+          lat: location.lat,
           lng: location.lng,
           radius: customRadius,
           address: address
         };
-        
+
         console.log('Calling onLocationSelect with:', locationData);
         onLocationSelect(locationData);
         console.log('=== END SELLER LOCATION PICKER - CURRENT LOCATION ===');
       }
-      
+
     } catch (error) {
       console.error('Error getting current location:', error);
       setError(error.message);
@@ -340,62 +347,62 @@ const SellerLocationPicker = ({
         try {
           setIsLoading(true);
           console.log('Starting map initialization...');
-          
+
           // Wait for Google Maps API to be fully loaded
           let attempts = 0;
           const maxAttempts = 50; // 5 seconds max wait
-          
+
           while ((!window.google || !window.google.maps) && attempts < maxAttempts) {
             console.log(`Waiting for Google Maps API... attempt ${attempts + 1}`);
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
           }
-          
+
           if (!window.google || !window.google.maps) {
             throw new Error('Google Maps API not loaded after waiting');
           }
-          
+
           console.log('Google Maps API is ready!');
-          
+
           // Default location (Dewas, India) if no initial location
           const defaultLocation = initialLocation || { lat: 22.9676, lng: 76.0508 };
-          
+
           // Validate default location
           if (!isValidCoordinates(defaultLocation)) {
             throw new Error('Invalid default location coordinates');
           }
-          
+
           console.log('Using default location:', defaultLocation);
-          
+
           // Wait for wrapper element to be available
           const wrapperElement = mapWrapperRef.current;
           if (!wrapperElement) {
             throw new Error('Map wrapper element not found');
           }
-          
+
           // Clear any existing content
           wrapperElement.innerHTML = '';
-          
+
           // Create container element directly in the wrapper
           const container = document.createElement('div');
           container.id = `map-container-${Date.now()}`;
           container.style.width = '100%';
           container.style.height = '100%';
           container.style.position = 'relative';
-          
+
           // Insert container into wrapper
           wrapperElement.appendChild(container);
-          
+
           // Store reference
           mapInstanceRef.current = { container, wrapperElement };
 
           console.log('Creating draggable map...');
           console.log('Container element:', container);
           console.log('Container dimensions:', container.offsetWidth, 'x', container.offsetHeight);
-          
+
           const mapInstance = googleMapsService.createDraggableMap(
-            container, 
-            defaultLocation, 
+            container,
+            defaultLocation,
             serviceRadius, // Use serviceRadius prop instead of customRadius state
             (newLocation) => {
               console.log('=== MAP INITIALIZATION CALLBACK ===');
@@ -412,13 +419,13 @@ const SellerLocationPicker = ({
               console.log('=== END MAP INITIALIZATION CALLBACK ===');
             }
           );
-          
+
           console.log('Map instance created:', mapInstance);
           mapInstanceRef.current.mapInstance = mapInstance;
           setMapInitialized(true);
           setSelectedLocation(defaultLocation);
           console.log('Map initialized successfully');
-          
+
         } catch (error) {
           console.error('Error initializing draggable map:', error);
           setError(`Failed to initialize map: ${error.message}`);
@@ -427,7 +434,7 @@ const SellerLocationPicker = ({
           setIsLoading(false);
         }
       };
-      
+
       // Add delay to ensure DOM is ready
       setTimeout(() => initMap(), 100);
     }
@@ -440,7 +447,7 @@ const SellerLocationPicker = ({
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
-      
+
       if (mapInstanceRef.current) {
         try {
           if (mapInstanceRef.current.mapInstance) {
@@ -487,14 +494,14 @@ const SellerLocationPicker = ({
               )}
             </button>
           </div>
-          
+
           {/* Error/Success Messages */}
           {error && (
             <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
-          
+
           {isGettingLocation && (
             <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-600 flex items-center">
@@ -503,13 +510,13 @@ const SellerLocationPicker = ({
               </p>
             </div>
           )}
-          
+
           {locationSuccess && (
             <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-600">{locationSuccess}</p>
             </div>
           )}
-          
+
           {/* Suggestions Dropdown */}
           {showSuggestions && (
             <div ref={suggestionsRef} className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -571,9 +578,9 @@ const SellerLocationPicker = ({
               </div>
             </div>
           )}
-          
+
           {/* Map container - will be populated by useEffect */}
-          <div 
+          <div
             ref={mapWrapperRef}
             className="w-full h-full"
           />

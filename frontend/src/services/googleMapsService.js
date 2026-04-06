@@ -1,7 +1,7 @@
 // Google Maps Service for RentYatra
 // Handles current location, radius zones, and location suggestions
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyDv1KQNT7JM2YxhD0aV4YENv6s-WE9et30';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyCJzZXm0iak3Gis3faivPPADIPEqD-fgKQ';
 
 // Global flag to prevent multiple API loads
 let isGoogleMapsLoading = false;
@@ -27,7 +27,7 @@ class GoogleMapsService {
 
     try {
       console.log('Initializing Google Maps services...');
-      
+
       // Load Google Maps JavaScript API only once
       if (!window.google || !window.google.maps) {
         console.log('Google Maps API not loaded, loading now...');
@@ -39,7 +39,7 @@ class GoogleMapsService {
       // Initialize services (using new APIs)
       console.log('Creating Geocoder service...');
       this.geocoder = new window.google.maps.Geocoder();
-      
+
       // Note: AutocompleteService and PlacesService are deprecated
       // We'll use alternative approaches for suggestions
 
@@ -54,7 +54,7 @@ class GoogleMapsService {
   // Load Google Maps API dynamically (only once)
   loadGoogleMapsAPI() {
     console.log('loadGoogleMapsAPI called');
-    
+
     // If already loading, return the existing promise
     if (isGoogleMapsLoading && googleMapsLoadPromise) {
       console.log('Google Maps already loading, returning existing promise');
@@ -76,7 +76,7 @@ class GoogleMapsService {
 
     console.log('Google Maps API key found:', GOOGLE_MAPS_API_KEY.substring(0, 10) + '...');
     isGoogleMapsLoading = true;
-    
+
     googleMapsLoadPromise = new Promise((resolve, reject) => {
       // Check if script already exists
       const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`);
@@ -88,7 +88,7 @@ class GoogleMapsService {
       // Create unique callback function
       const callbackName = `initGoogleMapsCallback_${Date.now()}`;
       console.log('Creating callback:', callbackName);
-      
+
       window[callbackName] = () => {
         console.log('Google Maps API loaded successfully');
         isGoogleMapsLoading = false;
@@ -124,7 +124,7 @@ class GoogleMapsService {
       }
 
       console.log('Requesting current location from browser...');
-      
+
       // Try high accuracy first, then fallback to low accuracy if timeout
       const tryGeolocation = (options, attemptNumber = 1) => {
         navigator.geolocation.getCurrentPosition(
@@ -132,7 +132,7 @@ class GoogleMapsService {
             try {
               const { latitude, longitude } = position.coords;
               console.log(`Browser geolocation successful (attempt ${attemptNumber}):`, { latitude, longitude });
-              
+
               // Validate coordinates are reasonable (not 0,0 or invalid)
               if (latitude === 0 && longitude === 0) {
                 if (attemptNumber === 1 && options.enableHighAccuracy) {
@@ -148,7 +148,7 @@ class GoogleMapsService {
                 reject(new Error('Invalid coordinates received'));
                 return;
               }
-              
+
               // Try to get address from coordinates
               let address = '';
               try {
@@ -158,7 +158,7 @@ class GoogleMapsService {
                 console.warn('Could not get address:', addressError);
                 address = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
               }
-              
+
               const location = {
                 lat: latitude,
                 lng: longitude,
@@ -178,7 +178,7 @@ class GoogleMapsService {
           },
           (error) => {
             console.error(`Geolocation error (attempt ${attemptNumber}):`, error);
-            
+
             // If timeout and high accuracy, retry with low accuracy
             if (error.code === error.TIMEOUT && attemptNumber === 1 && options.enableHighAccuracy) {
               console.log('High accuracy timeout, retrying with low accuracy (faster, less precise)...');
@@ -189,7 +189,7 @@ class GoogleMapsService {
               }, 2);
               return;
             }
-            
+
             let errorMessage = 'Failed to get current location';
             switch (error.code) {
               case error.PERMISSION_DENIED:
@@ -222,65 +222,65 @@ class GoogleMapsService {
     try {
       console.log('Starting reverse geocoding for coordinates:', { lat, lng });
       await this.initialize();
-      
+
       if (!this.geocoder) {
         throw new Error('Geocoder not initialized');
       }
-      
+
       return new Promise((resolve, reject) => {
         console.log('Calling Google Geocoder API...');
-        this.geocoder.geocode({ 
+        this.geocoder.geocode({
           location: { lat, lng }
         }, (results, status) => {
           console.log('Geocoder response status:', status);
           console.log('Geocoder results count:', results ? results.length : 0);
-          
+
           if (status === 'OK' && results && results.length > 0) {
             console.log('Reverse geocoding results:', results);
-            
+
             // Find the best result that doesn't contain plus codes and has proper locality
             let bestResult = null;
-            
+
             for (let result of results) {
               const address = result.formatted_address;
               console.log('Checking address:', address);
-              
+
               // Skip results that contain plus codes (like X2WJ+6X)
               if (address.match(/[A-Z0-9]{2,}\+[A-Z0-9]{2,}/)) {
                 console.log('Skipping address with plus code:', address);
                 continue;
               }
-              
+
               // Check address components to find locality/village
               const components = result.address_components || [];
               console.log('Address components:', components);
-              
+
               // Look for specific locality information (prioritize more specific)
-              const hasSpecificLocality = components.some(comp => 
+              const hasSpecificLocality = components.some(comp =>
                 comp.types.includes('sublocality_level_2') ||
                 comp.types.includes('sublocality_level_1') ||
                 comp.types.includes('sublocality') ||
-                comp.types.includes('locality') || 
+                comp.types.includes('locality') ||
                 comp.types.includes('administrative_area_level_3')
               );
-              
+
               if (hasSpecificLocality) {
                 console.log('Found address with specific locality:', address);
                 bestResult = result;
                 break;
               }
             }
-            
+
             // If no good result found, try to find one with administrative_area_level_2 (city/district)
             if (!bestResult) {
               for (let result of results) {
                 const address = result.formatted_address;
                 if (!address.match(/[A-Z0-9]{2,}\+[A-Z0-9]{2,}/)) {
                   const components = result.address_components || [];
-                  const hasCity = components.some(comp => 
+                  const hasCity = components.some(comp =>
                     comp.types.includes('administrative_area_level_2')
                   );
-                  
+
                   if (hasCity) {
                     console.log('Found address with city:', address);
                     bestResult = result;
@@ -289,7 +289,7 @@ class GoogleMapsService {
                 }
               }
             }
-            
+
             if (bestResult) {
               const formattedAddress = this.formatAddressWithComponents(bestResult);
               console.log('Final formatted address:', formattedAddress);
@@ -323,10 +323,10 @@ class GoogleMapsService {
     if (!result || !result.address_components) {
       return this.formatAddress(result?.formatted_address || '');
     }
-    
+
     const components = result.address_components;
     console.log('Formatting address with components:', components);
-    
+
     // Extract different parts with more specific locality detection
     let sublocality = '';
     let sublocalityLevel1 = '';
@@ -336,11 +336,11 @@ class GoogleMapsService {
     let state = '';
     let country = '';
     let postalCode = '';
-    
+
     components.forEach(comp => {
       const types = comp.types;
       const longName = comp.long_name;
-      
+
       // Prioritize more specific locality information
       if (types.includes('sublocality_level_2')) {
         sublocalityLevel2 = longName;
@@ -360,36 +360,36 @@ class GoogleMapsService {
         postalCode = longName;
       }
     });
-    
+
     // Build address prioritizing most specific locality first
     const addressParts = [];
-    
+
     // Use the most specific locality available
     const specificLocality = sublocalityLevel2 || sublocalityLevel1 || sublocality || locality;
-    
+
     if (specificLocality) {
       addressParts.push(specificLocality);
     }
-    
+
     if (city && city !== specificLocality) {
       addressParts.push(city);
     }
-    
+
     if (state) {
       addressParts.push(state);
     }
-    
+
     // Add pincode if available
     if (postalCode) {
       addressParts.push(postalCode);
     }
-    
+
     // Don't add country for Indian addresses to keep it clean
-    
+
     const formattedAddress = addressParts.join(', ');
     console.log('Formatted address from components:', formattedAddress);
     console.log('Address parts:', { sublocalityLevel2, sublocalityLevel1, sublocality, locality, city, state });
-    
+
     return formattedAddress || this.formatAddress(result.formatted_address);
   }
 
@@ -397,15 +397,15 @@ class GoogleMapsService {
   async getDetailedAddressComponents(lat, lng) {
     try {
       await this.initialize();
-      
+
       return new Promise((resolve, reject) => {
-        this.geocoder.geocode({ 
+        this.geocoder.geocode({
           location: { lat, lng }
         }, (results, status) => {
           if (status === 'OK' && results && results.length > 0) {
             const result = results[0];
             const addressComponents = result.address_components || [];
-            
+
             // Extract detailed address components
             const detailedAddress = {
               street_number: '',
@@ -459,10 +459,10 @@ class GoogleMapsService {
   // Format address to remove plus codes and get proper location names
   formatAddress(address) {
     if (!address) return '';
-    
+
     // Remove plus codes (like X2WJ+6X)
     let formattedAddress = address.replace(/[A-Z0-9]{2,}\+[A-Z0-9]{2,}/g, '').trim();
-    
+
     // Remove unnecessary words like "Division", "India" for cleaner addresses
     formattedAddress = formattedAddress
       .replace(/\bDivision\b/gi, '') // Remove "Division"
@@ -470,23 +470,23 @@ class GoogleMapsService {
       .replace(/\bState\b/gi, '') // Remove "State"
       .replace(/\bDistrict\b/gi, '') // Remove "District"
       .trim();
-    
+
     // Clean up extra commas and spaces
     formattedAddress = formattedAddress.replace(/,\s*,/g, ',').replace(/,\s*$/, '').trim();
-    
+
     // If address becomes empty after cleaning, return original
     if (!formattedAddress) {
       return address;
     }
-    
+
     // Try to extract meaningful parts
     const parts = formattedAddress.split(',').map(part => part.trim()).filter(part => part.length > 0);
-    
+
     // If we have good parts, join them properly
     if (parts.length > 0) {
       return parts.join(', ');
     }
-    
+
     return formattedAddress;
   }
 
@@ -494,7 +494,7 @@ class GoogleMapsService {
   async forwardGeocode(address) {
     try {
       await this.initialize();
-      
+
       return new Promise((resolve, reject) => {
         this.geocoder.geocode({ address }, (results, status) => {
           if (status === 'OK' && results[0]) {
@@ -519,28 +519,28 @@ class GoogleMapsService {
   async getNearbyLocationSuggestions(userLat, userLng, radiusKm = 10) {
     try {
       await this.initialize();
-      
+
       console.log('Getting nearby locations for:', { userLat, userLng, radiusKm });
-      
+
       // Check if Places API is available
       if (!window.google || !window.google.maps || !window.google.maps.places) {
         console.warn('Google Places API not available');
         return [];
       }
-      
+
       // Use Places API to find nearby places
       return new Promise((resolve, reject) => {
         const service = new google.maps.places.PlacesService(document.createElement('div'));
-        
+
         const request = {
           location: new google.maps.LatLng(userLat, userLng),
           radius: radiusKm * 1000, // Convert km to meters
           type: ['locality', 'sublocality', 'neighborhood']
         };
-        
+
         service.nearbySearch(request, (results, status) => {
           console.log('Nearby search response:', { status, resultsCount: results?.length });
-          
+
           if (status === 'OK' && results) {
             const nearbySuggestions = results.slice(0, 8).map((place, index) => ({
               id: `nearby_${place.place_id}`,
@@ -559,7 +559,7 @@ class GoogleMapsService {
               isNearby: true,
               distance: this.calculateDistance(userLat, userLng, place.geometry.location.lat(), place.geometry.location.lng())
             }));
-            
+
             console.log('Nearby suggestions generated:', nearbySuggestions);
             resolve(nearbySuggestions);
           } else {
@@ -579,10 +579,10 @@ class GoogleMapsService {
     const R = 6371; // Earth's radius in kilometers
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
 
@@ -590,9 +590,9 @@ class GoogleMapsService {
   async getLocationSuggestions(input, options = {}) {
     try {
       await this.initialize();
-      
+
       console.log('getLocationSuggestions called with:', input);
-      
+
       if (!input || input.trim().length < 3) {
         console.log('Input too short, returning empty array');
         return [];
@@ -601,13 +601,13 @@ class GoogleMapsService {
       // Use Geocoding API for suggestions instead of deprecated AutocompleteService
       return new Promise((resolve, reject) => {
         console.log('Calling geocoder.geocode with:', { address: input, componentRestrictions: { country: 'IN' } });
-        
-        this.geocoder.geocode({ 
+
+        this.geocoder.geocode({
           address: input,
           componentRestrictions: { country: 'IN' } // Restrict to India
         }, (results, status) => {
           console.log('Geocoder response:', { status, resultsCount: results?.length });
-          
+
           if (status === 'OK' && results) {
             // Filter out results with plus codes and prioritize proper addresses
             const filteredResults = results.filter(result => {
@@ -615,10 +615,10 @@ class GoogleMapsService {
               // Skip results that contain plus codes (like X2WJ+6X)
               return !address.match(/[A-Z0-9]{2,}\+[A-Z0-9]{2,}/);
             });
-            
+
             // If no good results after filtering, use original results
             const finalResults = filteredResults.length > 0 ? filteredResults : results;
-            
+
             const suggestions = finalResults.slice(0, 5).map((result, index) => ({
               id: `geocode_${index}`,
               address: result.formatted_address,
@@ -652,7 +652,7 @@ class GoogleMapsService {
   async getPlaceDetails(placeId) {
     try {
       await this.initialize();
-      
+
       return new Promise((resolve, reject) => {
         this.geocoder.geocode({ placeId }, (results, status) => {
           if (status === 'OK' && results[0]) {
@@ -686,7 +686,7 @@ class GoogleMapsService {
       } else {
         mapElement = containerIdOrElement;
       }
-      
+
       // Check if container element exists
       if (!mapElement) {
         throw new Error(`Map container not found`);
@@ -727,7 +727,7 @@ class GoogleMapsService {
               <div style="width: 8px; height: 8px; background-color: white; border-radius: 50%;"></div>
             </div>
           `;
-          
+
           this.marker = new window.google.maps.marker.AdvancedMarkerElement({
             position: center,
             map: this.map,
@@ -801,35 +801,35 @@ class GoogleMapsService {
   // Update map center and radius
   updateMapLocation(center, radiusKm = 7) {
     console.log('updateMapLocation called with:', { center, radiusKm });
-    
+
     // Validate coordinates
-    if (!center || typeof center.lat !== 'number' || typeof center.lng !== 'number' || 
-        isNaN(center.lat) || isNaN(center.lng) || !isFinite(center.lat) || !isFinite(center.lng)) {
+    if (!center || typeof center.lat !== 'number' || typeof center.lng !== 'number' ||
+      isNaN(center.lat) || isNaN(center.lng) || !isFinite(center.lat) || !isFinite(center.lng)) {
       console.error('Invalid coordinates provided to updateMapLocation:', center);
       return;
     }
-    
+
     console.log('Coordinates validated, checking map components...');
     console.log('Map exists:', !!this.map);
     console.log('Marker exists:', !!this.marker);
     console.log('Circle exists:', !!this.circle);
-    
+
     if (this.map && this.marker && this.circle) {
       console.log('Updating map components...');
-      
+
       // Update map center
       this.map.setCenter(center);
       console.log('Map center updated to:', center);
-      
+
       // Update marker position
       this.marker.setPosition(center);
       console.log('Marker position updated to:', center);
-      
+
       // Update circle center and radius
       this.circle.setCenter(center);
       this.circle.setRadius(radiusKm * 1000);
       console.log('Circle updated - center:', center, 'radius:', radiusKm * 1000, 'meters');
-      
+
       console.log('Map update completed successfully');
     } else {
       console.warn('Map components not available:', {
@@ -844,13 +844,13 @@ class GoogleMapsService {
   createDraggableMap(containerIdOrElement, initialCenter, radiusKm = 7, onLocationChange) {
     try {
       console.log('createDraggableMap called with:', { containerIdOrElement, initialCenter, radiusKm });
-      
+
       // Validate initial center coordinates
-      if (!initialCenter || typeof initialCenter.lat !== 'number' || typeof initialCenter.lng !== 'number' || 
-          isNaN(initialCenter.lat) || isNaN(initialCenter.lng) || !isFinite(initialCenter.lat) || !isFinite(initialCenter.lng)) {
+      if (!initialCenter || typeof initialCenter.lat !== 'number' || typeof initialCenter.lng !== 'number' ||
+        isNaN(initialCenter.lat) || isNaN(initialCenter.lng) || !isFinite(initialCenter.lat) || !isFinite(initialCenter.lng)) {
         throw new Error('Invalid initial center coordinates provided to createDraggableMap');
       }
-      
+
       // Handle both string ID and DOM element
       let mapElement;
       if (typeof containerIdOrElement === 'string') {
@@ -860,7 +860,7 @@ class GoogleMapsService {
         mapElement = containerIdOrElement;
         console.log('Using provided DOM element:', mapElement);
       }
-      
+
       if (!mapElement) {
         throw new Error(`Map container not found`);
       }
@@ -919,7 +919,7 @@ class GoogleMapsService {
       this.marker.addListener('dragend', (event) => {
         const newPosition = event.latLng;
         this.circle.setCenter(newPosition);
-        
+
         if (onLocationChange) {
           onLocationChange({
             lat: newPosition.lat(),
@@ -945,11 +945,11 @@ class GoogleMapsService {
       const R = 6371; // Earth's radius in kilometers
       const dLat = this.toRadians(point2.lat - point1.lat);
       const dLon = this.toRadians(point2.lng - point1.lng);
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(this.toRadians(point1.lat)) * Math.cos(this.toRadians(point2.lat)) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(this.toRadians(point1.lat)) * Math.cos(this.toRadians(point2.lat)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c; // Distance in kilometers
     } catch (error) {
       console.error('Distance calculation error:', error);
@@ -959,7 +959,7 @@ class GoogleMapsService {
 
   // Convert degrees to radians
   toRadians(degrees) {
-    return degrees * (Math.PI/180);
+    return degrees * (Math.PI / 180);
   }
 
   // Check if a location is within radius
@@ -974,7 +974,7 @@ class GoogleMapsService {
       // Generate random offset within range (~500m)
       const latOffset = (Math.random() - 0.5) * offsetRange;
       const lngOffset = (Math.random() - 0.5) * offsetRange;
-      
+
       return {
         lat: lat + latOffset,
         lng: lng + lngOffset,
@@ -997,13 +997,13 @@ class GoogleMapsService {
       } else {
         mapElement = containerIdOrElement;
       }
-      
+
       if (!mapElement) {
         throw new Error(`Map container not found`);
       }
 
       // Apply privacy offset for buyer view
-      const displayLocation = privacyOffset 
+      const displayLocation = privacyOffset
         ? this.addPrivacyOffset(sellerLocation.lat, sellerLocation.lng)
         : sellerLocation;
 
@@ -1064,7 +1064,7 @@ class GoogleMapsService {
   async getNearbyPlaces(center, radiusKm = 7, type = 'establishment') {
     try {
       await this.initialize();
-      
+
       return new Promise((resolve, reject) => {
         const request = {
           location: center,

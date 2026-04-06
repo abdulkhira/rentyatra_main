@@ -51,7 +51,7 @@ const PostAd = () => {
   // const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Handle location selection from SellerLocationPicker
-  const handleLocationSelect = (location) => {
+  const handleLocationSelect = async (location) => {
     console.log('=== LOCATION SELECTED ===');
     console.log('Location selected with radius:', location);
     console.log('Debug - location.radius:', location.radius);
@@ -60,18 +60,33 @@ const PostAd = () => {
     console.log('Debug - location.city:', location.city);
     console.log('Debug - Current formData.serviceRadius:', formData.serviceRadius);
     setCoordinates(location);
+
+    // Reverse geocode to get address name
+    let addressName = `${location.lat}, ${location.lng}`; // fallback
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${location.lat}&lon=${location.lng}&format=json`
+      );
+      const data = await res.json();
+      addressName = data.display_name || addressName;
+      console.warn('===============>', addressName);
+
+    } catch (err) {
+      console.error('Reverse geocoding failed:', err);
+    }
+
     setFormData(prev => ({
       ...prev,
       coordinates: location,
       serviceRadius: location.radius || 7, // Use the radius from location or default to 7
-      location: location.address || 'Location selected' // Use actual address instead of hardcoded text
+      location: addressName // Use actual address instead of hardcoded text
+      // location: location.address || `${location.lat}, ${location.lng}` // Use actual address instead of hardcoded text
     }));
     console.log('Debug - Updated formData.serviceRadius to:', location.radius || 7);
-    console.log('Debug - Updated formData.location to:', location.address || 'Location selected');
+    console.log('Debug - Updated formData.location to:', location.address || `${location.lat}, ${location.lng}`);
     console.log('=== END LOCATION SELECTED ===');
   };
 
-  // Fetch products on component mount
   useEffect(() => {
     fetchProducts();
   }, []);
