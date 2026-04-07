@@ -9,7 +9,7 @@ const rentalRequestSchema = new mongoose.Schema({
     minlength: [5, 'Title must be at least 5 characters long'],
     maxlength: [100, 'Title cannot exceed 100 characters']
   },
-  
+
   description: {
     type: String,
     required: [true, 'Description is required'],
@@ -17,7 +17,7 @@ const rentalRequestSchema = new mongoose.Schema({
     minlength: [20, 'Description must be at least 20 characters long'],
     maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
-  
+
   // Location Information
   location: {
     // Full address from location input field
@@ -74,7 +74,7 @@ const rentalRequestSchema = new mongoose.Schema({
       default: 'residential'
     }
   },
-  
+
   // Pricing Information
   price: {
     // Price per day (primary pricing)
@@ -102,20 +102,20 @@ const rentalRequestSchema = new mongoose.Schema({
       default: 'daily'
     }
   },
-  
+
   // Product and Category
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
     required: [true, 'Product is required']
   },
-  
+
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
     required: [true, 'Category is required']
   },
-  
+
   // Item condition
   condition: {
     type: String,
@@ -123,12 +123,12 @@ const rentalRequestSchema = new mongoose.Schema({
     enum: ['excellent', 'good', 'fair', 'poor'],
     default: 'good'
   },
-  
+
   features: [{
     type: String,
     trim: true
   }],
-  
+
   // Images
   images: {
     type: [{
@@ -152,7 +152,7 @@ const rentalRequestSchema = new mongoose.Schema({
     // Ensure array exists even when no images are provided to avoid undefined access
     default: []
   },
-  
+
   // Video
   video: {
     url: {
@@ -168,14 +168,14 @@ const rentalRequestSchema = new mongoose.Schema({
       default: null
     }
   },
-  
+
   // User Information
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'User is required']
   },
-  
+
   // Contact Information
   contactInfo: {
     phone: {
@@ -185,7 +185,7 @@ const rentalRequestSchema = new mongoose.Schema({
     },
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: [false, 'Email is optional'],
       trim: true,
       lowercase: true
     },
@@ -194,48 +194,48 @@ const rentalRequestSchema = new mongoose.Schema({
       trim: true
     }
   },
-  
+
   // Request Status
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected', 'expired'],
     default: 'pending'
   },
-  
+
   // Boost Information
   isBoosted: {
     type: Boolean,
     default: false
   },
-  
+
   boostedAt: {
     type: Date,
     default: null
   },
-  
+
   boostCount: {
     type: Number,
     default: 0
   },
-  
+
   // Admin Information
   reviewedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
     default: null
   },
-  
+
   reviewedAt: {
     type: Date,
     default: null
   },
-  
+
   rejectionReason: {
     type: String,
     trim: true,
     maxlength: [500, 'Rejection reason cannot exceed 500 characters']
   },
-  
+
   // Availability
   availability: {
     startDate: {
@@ -247,29 +247,29 @@ const rentalRequestSchema = new mongoose.Schema({
       default: true
     }
   },
-  
+
   // Additional Information
   isUrgent: {
     type: Boolean,
     default: false
   },
-  
+
   tags: [{
     type: String,
     trim: true
   }],
-  
+
   // View and Interaction Counts
   viewCount: {
     type: Number,
     default: 0
   },
-  
+
   inquiryCount: {
     type: Number,
     default: 0
   },
-  
+
   // Review Statistics
   averageRating: {
     type: Number,
@@ -277,13 +277,13 @@ const rentalRequestSchema = new mongoose.Schema({
     min: 0,
     max: 5
   },
-  
+
   totalReviews: {
     type: Number,
     default: 0,
     min: 0
   },
-  
+
   ratingDistribution: {
     5: { type: Number, default: 0 },
     4: { type: Number, default: 0 },
@@ -312,31 +312,31 @@ rentalRequestSchema.index({ createdAt: -1 });
 rentalRequestSchema.index({ 'availability.startDate': 1 });
 
 // Virtual for primary image
-rentalRequestSchema.virtual('primaryImage').get(function() {
+rentalRequestSchema.virtual('primaryImage').get(function () {
   const imageArray = Array.isArray(this.images) ? this.images : [];
   const primaryImg = imageArray.find(img => img && img.isPrimary);
   return primaryImg || imageArray[0] || null;
 });
 
 // Virtual for formatted price
-rentalRequestSchema.virtual('formattedPrice').get(function() {
+rentalRequestSchema.virtual('formattedPrice').get(function () {
   const currencySymbol = this.price.currency === 'INR' ? '₹' : this.price.currency;
   return `${currencySymbol}${this.price.pricePerDay || this.price.amount}/${this.price.period}`;
 });
 
 // Virtual for formatted price per day
-rentalRequestSchema.virtual('formattedPricePerDay').get(function() {
+rentalRequestSchema.virtual('formattedPricePerDay').get(function () {
   const currencySymbol = this.price.currency === 'INR' ? '₹' : this.price.currency;
   return `${currencySymbol}${this.price.pricePerDay || this.price.amount}/day`;
 });
 
 // Virtual for full address
-rentalRequestSchema.virtual('fullAddress').get(function() {
+rentalRequestSchema.virtual('fullAddress').get(function () {
   return `${this.location.address}, ${this.location.city}, ${this.location.state} - ${this.location.pincode}`;
 });
 
 // Virtual for service area information
-rentalRequestSchema.virtual('serviceAreaInfo').get(function() {
+rentalRequestSchema.virtual('serviceAreaInfo').get(function () {
   return {
     radius: this.location.serviceRadius,
     unit: 'km',
@@ -349,7 +349,7 @@ rentalRequestSchema.virtual('serviceAreaInfo').get(function() {
 });
 
 // Pre-save middleware to set primary image
-rentalRequestSchema.pre('save', function(next) {
+rentalRequestSchema.pre('save', function (next) {
   if (this.images && Array.isArray(this.images) && this.images.length > 0) {
     // If no primary image is set, make the first one primary
     const hasPrimary = this.images.some(img => img && img.isPrimary);
@@ -361,41 +361,41 @@ rentalRequestSchema.pre('save', function(next) {
 });
 
 // Method to update status
-rentalRequestSchema.methods.updateStatus = function(newStatus, adminId, rejectionReason = null) {
+rentalRequestSchema.methods.updateStatus = function (newStatus, adminId, rejectionReason = null) {
   this.status = newStatus;
   this.reviewedBy = adminId;
   this.reviewedAt = new Date();
-  
+
   if (newStatus === 'rejected' && rejectionReason) {
     this.rejectionReason = rejectionReason;
   }
-  
+
   return this.save();
 };
 
 // Method to increment view count
-rentalRequestSchema.methods.incrementViewCount = function() {
+rentalRequestSchema.methods.incrementViewCount = function () {
   this.viewCount += 1;
   return this.save();
 };
 
 // Method to increment inquiry count
-rentalRequestSchema.methods.incrementInquiryCount = function() {
+rentalRequestSchema.methods.incrementInquiryCount = function () {
   this.inquiryCount += 1;
   return this.save();
 };
 
 // Static method to search rental requests
-rentalRequestSchema.statics.searchRequests = function(query, filters = {}) {
+rentalRequestSchema.statics.searchRequests = function (query, filters = {}) {
   const searchQuery = {
     status: 'pending',
     ...filters
   };
-  
+
   if (query) {
     searchQuery.$text = { $search: query };
   }
-  
+
   return this.find(searchQuery)
     .populate('user', 'name email phone')
     .populate('category', 'name')
@@ -404,7 +404,7 @@ rentalRequestSchema.statics.searchRequests = function(query, filters = {}) {
 };
 
 // Static method to get rental request statistics
-rentalRequestSchema.statics.getRequestStats = function() {
+rentalRequestSchema.statics.getRequestStats = function () {
   return this.aggregate([
     {
       $group: {
@@ -421,7 +421,7 @@ rentalRequestSchema.statics.getRequestStats = function() {
 };
 
 // Static method to get requests by category
-rentalRequestSchema.statics.getRequestsByCategory = function() {
+rentalRequestSchema.statics.getRequestsByCategory = function () {
   return this.aggregate([
     {
       $group: {
@@ -458,12 +458,12 @@ rentalRequestSchema.statics.getRequestsByCategory = function() {
 
 // Static method to find nearby rental requests
 // Filters products where user is within each product's individual serviceRadius
-rentalRequestSchema.statics.findNearbyRequests = function(userLat, userLng, maxDistanceKm = 50, filters = {}) {
+rentalRequestSchema.statics.findNearbyRequests = function (userLat, userLng, maxDistanceKm = 50, filters = {}) {
   const searchQuery = {
     status: 'approved',
     ...filters
   };
-  
+
   // Use $expr to calculate distance and compare with each product's serviceRadius
   // Distance formula: Haversine formula
   return this.find(searchQuery).where({

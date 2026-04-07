@@ -69,7 +69,7 @@ const PostAd = () => {
       );
       const data = await res.json();
       addressName = data.display_name || addressName;
-      console.warn('===============>', addressName);
+      console.warn('=====>', addressName);
 
     } catch (err) {
       console.error('Reverse geocoding failed:', err);
@@ -316,10 +316,10 @@ const PostAd = () => {
       setError('Please enter your phone number');
       return;
     }
-    if (!formData.email) {
-      setError('Please enter your email address');
-      return;
-    }
+    // if (!formData.email) {
+    //   setError('Please enter your email address');
+    //   return;
+    // }
 
     if (!formData.pricePerDay) {
       setError('Please specify rental price per day');
@@ -340,10 +340,13 @@ const PostAd = () => {
     }
 
     // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
-      return;
+    // Validate email only if provided (since it's optional)
+    if (formData.email && formData.email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
     }
 
     // Validate field lengths
@@ -412,7 +415,9 @@ const PostAd = () => {
       formDataToSend.append('pincode', '000000'); // You can add pincode input field later
 
       formDataToSend.append('phone', formData.phone);
-      formDataToSend.append('email', formData.email);
+      if (formData.email) {
+        formDataToSend.append('email', formData.email);
+      }
       formDataToSend.append('features', JSON.stringify(['Good condition', 'Well maintained'])); // Default features
       formDataToSend.append('tags', JSON.stringify([selectedProduct.name, selectedCategory.name])); // Default tags
 
@@ -783,7 +788,7 @@ const PostAd = () => {
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
-                            min="1"
+                            min="0"
                             max="50"
                             value={formData.serviceRadius || 7}
                             onChange={(e) => {
@@ -835,7 +840,7 @@ const PostAd = () => {
                 {/* Email */}
                 <div>
                   <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-2">
-                    Email Address *
+                    Email Address <span className="text-[10px] md:text-xs font-normal text-gray-500">(Optional)</span>
                   </label>
                   <input
                     type="email"
@@ -844,7 +849,6 @@ const PostAd = () => {
                     onChange={handleChange}
                     placeholder="your@email.com"
                     className="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base border-2 border-gray-200 rounded-lg md:rounded-xl focus:ring-2 md:focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all"
-                    required
                   />
                 </div>
               </div>
