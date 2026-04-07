@@ -42,7 +42,7 @@ const PostAd = () => {
     serviceRadius: 7, // Default service radius
     condition: 'good',
     phone: '',
-    email: '',
+    // email: '',
   });
 
   const [images, setImages] = useState([]);
@@ -204,27 +204,28 @@ const PostAd = () => {
       setError('');
     }
 
-    // Create lightweight preview URLs instead of heavy Base64 strings
-    const newImages = files.map(file => ({
-      file: file,
-      preview: URL.createObjectURL(file)
-    }));
-
-    setImages(prev => [...prev, ...newImages]);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImages((prev) => {
+          const newImages = [...prev, reader.result];
+          // Clear error if we now have enough images
+          if (newImages.length >= 4) {
+            setError('');
+          }
+          return newImages;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const removeImage = (index) => {
-    setImages(prev => {
-      const newImages = [...prev];
-      // Good practice: free up browser memory when removing an image
-      URL.revokeObjectURL(newImages[index].preview);
-      newImages.splice(index, 1);
-
-      if (newImages.length < 4) {
-        setError('Please upload at least 4 images');
-      }
-      return newImages;
-    });
+    const newImages = images.filter((_, i) => i !== index);
+    setImages(newImages);
+    if (newImages.length < 4) {
+      setError('Please upload at least 4 images');
+    }
   };
 
   const handleVideoUpload = (e) => {
@@ -235,19 +236,19 @@ const PostAd = () => {
         return;
       }
 
+      // Clear any previous errors
       setError('');
 
-      // Clear previous video memory if it exists
-      if (video && video.preview) {
-        URL.revokeObjectURL(video.preview);
-      }
-
-      setVideo({
-        file: file,
-        preview: URL.createObjectURL(file), // Lightweight preview
-        name: file.name,
-        size: (file.size / (1024 * 1024)).toFixed(2)
-      });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setVideo({
+          file: file,
+          preview: reader.result,
+          name: file.name,
+          size: (file.size / (1024 * 1024)).toFixed(2)
+        });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -339,14 +340,11 @@ const PostAd = () => {
     }
 
     // Validate email
-    // Validate email only if provided (since it's optional)
-    if (formData.email && formData.email.trim() !== '') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        setError('Please enter a valid email address');
-        return;
-      }
-    }
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // if (!emailRegex.test(formData.email)) {
+    //   setError('Please enter a valid email address');
+    //   return;
+    // }
 
     // Validate field lengths
     if (formData.title.length < 5) {
@@ -414,9 +412,7 @@ const PostAd = () => {
       formDataToSend.append('pincode', '000000'); // You can add pincode input field later
 
       formDataToSend.append('phone', formData.phone);
-      if (formData.email) {
-        formDataToSend.append('email', formData.email);
-      }
+      // formDataToSend.append('email', formData.email);
       formDataToSend.append('features', JSON.stringify(['Good condition', 'Well maintained'])); // Default features
       formDataToSend.append('tags', JSON.stringify([selectedProduct.name, selectedCategory.name])); // Default tags
 
@@ -445,7 +441,7 @@ const PostAd = () => {
           const response = await fetch(images[i]);
           const blob = await response.blob();
           const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
-          formDataToSend.append('images', img.file);
+          formDataToSend.append('images', file);
         } catch (error) {
           console.error('Error processing image:', error);
           throw new Error('Failed to process images');
@@ -471,7 +467,7 @@ const PostAd = () => {
           size: videoFile.size
         });
 
-        formDataToSend.append('video', video.file);
+        formDataToSend.append('video', videoFile);
       } catch (error) {
         console.error('Error processing video:', error);
         throw new Error('Failed to process video');
@@ -839,12 +835,12 @@ const PostAd = () => {
                 {/* Email */}
                 <div>
                   <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5 md:mb-2">
-                    Email Address <span className="text-[10px] md:text-xs font-normal text-gray-500">(Optional)</span>
+                    Email Address *
                   </label>
                   <input
                     type="email"
                     name="email"
-                    value={formData.email}
+                    value={formData.email || 'none'}
                     onChange={handleChange}
                     placeholder="your@email.com"
                     className="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base border-2 border-gray-200 rounded-lg md:rounded-xl focus:ring-2 md:focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all"
