@@ -204,28 +204,27 @@ const PostAd = () => {
       setError('');
     }
 
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImages((prev) => {
-          const newImages = [...prev, reader.result];
-          // Clear error if we now have enough images
-          if (newImages.length >= 4) {
-            setError('');
-          }
-          return newImages;
-        });
-      };
-      reader.readAsDataURL(file);
-    });
+    // Create lightweight preview URLs instead of heavy Base64 strings
+    const newImages = files.map(file => ({
+      file: file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    setImages(prev => [...prev, ...newImages]);
   };
 
   const removeImage = (index) => {
-    const newImages = images.filter((_, i) => i !== index);
-    setImages(newImages);
-    if (newImages.length < 4) {
-      setError('Please upload at least 4 images');
-    }
+    setImages(prev => {
+      const newImages = [...prev];
+      // Good practice: free up browser memory when removing an image
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+
+      if (newImages.length < 4) {
+        setError('Please upload at least 4 images');
+      }
+      return newImages;
+    });
   };
 
   const handleVideoUpload = (e) => {
@@ -236,19 +235,19 @@ const PostAd = () => {
         return;
       }
 
-      // Clear any previous errors
       setError('');
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setVideo({
-          file: file,
-          preview: reader.result,
-          name: file.name,
-          size: (file.size / (1024 * 1024)).toFixed(2)
-        });
-      };
-      reader.readAsDataURL(file);
+      // Clear previous video memory if it exists
+      if (video && video.preview) {
+        URL.revokeObjectURL(video.preview);
+      }
+
+      setVideo({
+        file: file,
+        preview: URL.createObjectURL(file), // Lightweight preview
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2)
+      });
     }
   };
 
@@ -446,7 +445,7 @@ const PostAd = () => {
           const response = await fetch(images[i]);
           const blob = await response.blob();
           const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
-          formDataToSend.append('images', file);
+          formDataToSend.append('images', img.file);
         } catch (error) {
           console.error('Error processing image:', error);
           throw new Error('Failed to process images');
@@ -472,7 +471,7 @@ const PostAd = () => {
           size: videoFile.size
         });
 
-        formDataToSend.append('video', videoFile);
+        formDataToSend.append('video', video.file);
       } catch (error) {
         console.error('Error processing video:', error);
         throw new Error('Failed to process video');
