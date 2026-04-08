@@ -526,16 +526,6 @@ const PostAd = () => {
       // Add video directly from the stored File object
       if (video && video.file) {
         formDataToSend.append('video', video.file);
-        alert(`${formData.title}`)
-        alert(`${formData.description}`)
-        alert(`${formData.pricePerDay}`)
-        alert(`${formData.location}`)
-        alert(`${formData.serviceRadius}`)
-        alert(`${formData.condition}`)
-        alert(`${formData.phone}`)
-        alert(`${formData.email}`)
-        alert(`${formData.images}`)
-        alert(`${formData.video}`)
       }
 
       // Submit to backend
