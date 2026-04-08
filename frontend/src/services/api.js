@@ -2045,8 +2045,7 @@ Please check:
     const config = {
       method: 'POST',
       headers: this.getFileUploadHeaders(),
-      body: JSON.stringify(formData),
-      // body: formData,
+      body: formData,
     };
 
     try {
@@ -2071,7 +2070,7 @@ Please check:
 
       return data;
     } catch (error) {
-      alert(error)
+      alert(` check it first ${error}`)
       console.error('Create Rental Listing Error Details:', {
         error: error,
         message: error.message,
