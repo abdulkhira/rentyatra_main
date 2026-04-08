@@ -1,6 +1,8 @@
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
+const os = require('os');
+const fs = require('fs');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -231,7 +233,17 @@ const uploadRentalListingVideo = multer({
 
 // Upload instance for rental requests (images and videos)
 const uploadRentalRequest = multer({
-  storage: multer.memoryStorage(), // Use memory storage for combined upload
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      // Safely use the server's temporary hard drive space
+      cb(null, os.tmpdir());
+    },
+    filename: (req, file, cb) => {
+      // Create a clean filename without spaces or weird characters
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+      cb(null, `${Date.now()}-${safeName}`);
+    }
+  }), // Use memory storage for combined upload
   limits: {
     fileSize: 200 * 1024 * 1024, // 200MB total limit (increased for videos)
     files: 11, // 10 images + 1 video
@@ -260,7 +272,17 @@ const uploadRentalRequest = multer({
 
 // Combined multer for rental listings (handles both images and video)
 const uploadRentalListing = multer({
-  storage: multer.memoryStorage(), // Use memory storage for combined upload
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      // Safely use the server's temporary hard drive space
+      cb(null, os.tmpdir());
+    },
+    filename: (req, file, cb) => {
+      // Create a clean filename without spaces or weird characters
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+      cb(null, `${Date.now()}-${safeName}`);
+    }
+  }), // Use memory storage for combined upload
   limits: {
     fileSize: 200 * 1024 * 1024, // 200MB total limit (increased for videos)
     files: 11, // 10 images + 1 video

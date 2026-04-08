@@ -1019,7 +1019,8 @@ const PostAd = () => {
                     console.log('Video:', video);
                     console.log('Selected product:', selectedProduct);
                     console.log('Selected category:', selectedCategory);
-                    // Let the form handle the submission
+                    alert(`${formData}`)
+                    // Let the form handle the submission 
                   }}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
