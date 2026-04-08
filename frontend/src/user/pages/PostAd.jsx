@@ -498,28 +498,6 @@ const PostAd = () => {
       // }
 
       // Add video
-      try {
-        console.log('Processing video:', {
-          name: video.name,
-          type: video.file.type,
-          size: video.file.size,
-          preview: video.preview
-        });
-
-        const videoResponse = await fetch(video.preview);
-        const videoBlob = await videoResponse.blob();
-        const videoFile = new File([videoBlob], video.name, { type: video.file.type });
-
-        console.log('Video file created:', {
-          name: videoFile.name,
-          type: videoFile.type,
-          size: videoFile.size
-        });
-
-      } catch (error) {
-        console.error('Error processing video:', error);
-        throw new Error('Failed to process video');
-      }
 
       // Add images directly from the stored File objects
       for (let i = 0; i < images.length; i++) {
