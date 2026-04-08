@@ -10,7 +10,7 @@ class ApiService {
     this.token = localStorage.getItem('token');
     this.refreshTokenValue = localStorage.getItem('refreshToken');
     this.adminToken = localStorage.getItem('adminToken');
-    this.timeout = 60000; // 60 seconds timeout for file uploads
+    this.timeout = 90000; // 90 seconds timeout for file uploads
     this.isDev = import.meta.env.DEV;
   }
 

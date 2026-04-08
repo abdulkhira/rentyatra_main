@@ -18,7 +18,7 @@ This guide explains how the RentYatra web frontend integrates with the Flutter m
            │ (window.flutter_inappwebview)
            ▼
 ┌─────────────────────────┐
-│  Flutter WebView App     │
+│  Flutter WebView App    │
 │  (webview_master_app)   │
 └─────────────────────────┘
 ```

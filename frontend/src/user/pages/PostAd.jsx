@@ -452,11 +452,6 @@ const PostAd = () => {
           throw new Error('Failed to process images');
         }
       }
-      // Add images directly from the stored File objects
-      for (let i = 0; i < images.length; i++) {
-        // We directly append the native File object! No Base64 decoding needed.
-        formDataToSend.append('images', images[i].file);
-      }
 
       // Add video
       try {
@@ -481,6 +476,13 @@ const PostAd = () => {
         console.error('Error processing video:', error);
         throw new Error('Failed to process video');
       }
+
+      // Add images directly from the stored File objects
+      for (let i = 0; i < images.length; i++) {
+        // We directly append the native File object! No Base64 decoding needed.
+        formDataToSend.append('images', images[i].file);
+      }
+
       // Add video directly from the stored File object
       if (video && video.file) {
         formDataToSend.append('video', video.file);
