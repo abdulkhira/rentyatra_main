@@ -9,6 +9,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import SellerLocationPicker from '../../components/common/SellerLocationPicker';
 import apiService from '../../services/api';
+import imageCompression from 'browser-image-compression';
 
 const PostAd = () => {
   const { addItem } = useApp();
@@ -193,31 +194,70 @@ const PostAd = () => {
     });
   };
 
-
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
+    const options = {
+      maxSizeMB: 1, // Compress each to max 1MB
+      maxWidthOrHeight: 1920,
+      useWebWorker: true
+    };
 
-    // Check if adding these files would exceed the minimum requirement
-    if (images.length + files.length < 4) {
-      setError('Please upload at least 4 images');
-    } else {
-      setError('');
-    }
+    try {
+      for (const file of files) {
+        const compressedFile = await imageCompression(file, options);
 
-    // Instead of Base64, store the actual File and a lightweight preview URL
-    const newImageObjects = files.map(file => ({
-      file: file,
-      preview: URL.createObjectURL(file)
-    }));
-
-    setImages(prev => {
-      const updatedImages = [...prev, ...newImageObjects];
-      if (updatedImages.length >= 4) {
-        setError('');
+        setImages(prev => [...prev, {
+          file: compressedFile,
+          preview: URL.createObjectURL(compressedFile)
+        }]);
       }
-      return updatedImages;
-    });
+    } catch (error) {
+      console.error("Compression error:", error);
+    }
   };
+
+  // const handleImageUpload = async (e) => {
+  //   const files = Array.from(e.target.files);
+  //   const options = {
+  //     maxSizeMB: 1, // Compress each to max 1MB
+  //     maxWidthOrHeight: 1920,
+  //     useWebWorker: true
+  //   };
+
+  //   try {
+  //     for (const file of files) {
+  //       const compressedFile = await imageCompression(file, options);
+
+  //       setImages(prev => [...prev, {
+  //         file: compressedFile,
+  //         preview: URL.createObjectURL(compressedFile)
+  //       }]);
+  //     }
+  //   } catch (error) {
+  //     console.error("==========> Compression error:", error);
+  //   }
+
+  //   // Check if adding these files would exceed the minimum requirement
+  //   if (images.length + files.length < 4) {
+  //     setError('Please upload at least 4 images');
+  //   } else {
+  //     setError('');
+  //   }
+
+  //   // Instead of Base64, store the actual File and a lightweight preview URL
+  //   const newImageObjects = files.map(file => ({
+  //     file: file,
+  //     preview: URL.createObjectURL(file)
+  //   }));
+
+  //   setImages(prev => {
+  //     const updatedImages = [...prev, ...newImageObjects];
+  //     if (updatedImages.length >= 4) {
+  //       setError('');
+  //     }
+  //     return updatedImages;
+  //   });
+  // };
 
   const removeImage = (index) => {
     setImages(prev => {
