@@ -49,138 +49,145 @@ const app = express();
 const server = http.createServer(app);
 
 // CORS Configuration
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     // Allow requests with no origin (like mobile apps, PWAs, WebView, or curl requests)
+//     // Web apps (PWAs) often send requests with null origin when loaded from file:// or as installed app
+//     // Also handle string "null" which some WebViews send
+//     if (!origin || origin === 'null' || origin === 'undefined') {
+//       // Reduced logging - only log in development
+//       if (process.env.NODE_ENV === 'development') {
+//         console.log('🌐 CORS: Allowing request with no/null origin (mobile app/PWA/WebView context)');
+//       }
+//       return callback(null, true);
+//     }
+
+//     // Check for WebView-specific origins before checking allowed list
+//     if (origin.startsWith('file://') ||
+//       origin.includes('android-app://') ||
+//       origin.includes('webview') ||
+//       origin.includes('WebView') ||
+//       origin.includes('wv')) {
+//       if (process.env.NODE_ENV === 'development') {
+//         console.log('🌐 CORS: Allowing WebView/APK origin:', origin);
+//       }
+//       return callback(null, true);
+//     }
+
+//     // Allow Razorpay API origins (for webhooks and callbacks)
+//     if (origin.includes('razorpay.com') || origin.includes('api.razorpay.com')) {
+//       // Keep Razorpay logs as they're important for payment debugging
+//       console.log('🌐 CORS: Allowing Razorpay API origin:', origin);
+//       return callback(null, true);
+//     }
+
+//     // Allow Vercel preview/deployment URLs (for preview deployments and screenshot service)
+//     if (origin.includes('vercel.app') || origin.includes('vercel.com')) {
+//       if (process.env.NODE_ENV === 'development') {
+//         console.log('🌐 CORS: Allowing Vercel origin:', origin);
+//       }
+//       return callback(null, true);
+//     }
+
+//     // In production, be more lenient if CORS_ORIGINS not set
+//     const isProduction = process.env.NODE_ENV === 'production';
+
+//     const allowedOrigins = [
+//       // Local development
+//       'http://localhost:8080',
+//       'http://localhost:5000',
+//       'http://localhost:5173',
+//       'http://localhost:3000',
+//       'http://127.0.0.1:8080',
+//       'http://127.0.0.1:5173',
+//       'http://127.0.0.1:3000',
+
+//       // Production domains
+//       'https://www.rentyatra.com',
+//       'https://rentyatra.com',
+
+//       // Razorpay API origins (for webhooks and callbacks)
+//       'https://api.razorpay.com',
+//       'https://checkout.razorpay.com',
+//       'https://*.razorpay.com',
+
+//       // Vercel preview/deployment URLs (for preview deployments)
+//       'https://*.vercel.app',
+//       'https://*.vercel.com',
+
+//       // Environment variables
+//       process.env.FRONTEND_URL,
+//       process.env.CORS_ORIGIN,
+
+//       // Allow multiple origins from comma-separated env variable
+//       ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(url => url.trim()) : [])
+//     ].filter(Boolean); // Remove undefined values
+
+//     // Check if origin matches any allowed origin
+//     let isAllowed = allowedOrigins.some(allowedOrigin => {
+//       // Exact match
+//       if (allowedOrigin === origin) return true;
+//       // Wildcard matching
+//       if (allowedOrigin.includes('*')) {
+//         const regex = new RegExp('^' + allowedOrigin.replace(/\*/g, '.*') + '$');
+//         return regex.test(origin);
+//       }
+//       return false;
+//     });
+
+//     // In production without strict CORS config, allow all but log warning
+//     if (!isAllowed && isProduction && !process.env.CORS_ORIGINS) {
+//       console.log('⚠️  CORS: Allowing origin in production (CORS_ORIGINS not set):', origin);
+//       console.log('⚠️  Recommendation: Set CORS_ORIGINS in environment variables for better security');
+//       isAllowed = true;
+//     }
+
+//     if (isAllowed) {
+//       callback(null, true);
+//     } else {
+//       console.error('❌ CORS blocked origin:', origin);
+//       console.log('✅ Allowed origins:', allowedOrigins);
+//       console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
+//       console.log('📝 CORS_ORIGINS:', process.env.CORS_ORIGINS || 'NOT SET');
+
+//       // Check if it's a WebView/APK origin (file://, null, or app-specific origins)
+//       const isWebViewOrigin = !origin ||
+//         origin === 'null' ||
+//         origin.startsWith('file://') ||
+//         origin.includes('android-app://') ||
+//         origin.includes('webview') ||
+//         origin.includes('WebView');
+
+//       // Always allow WebView/APK origins (they have no origin or special origins)
+//       if (isWebViewOrigin) {
+//         console.log('🌐 CORS: Allowing WebView/APK origin:', origin || 'null');
+//         callback(null, true);
+//         return;
+//       }
+
+//       // In development, be strict
+//       if (!isProduction) {
+//         callback(new Error('Not allowed by CORS'));
+//       } else {
+//         // Even in production, if explicitly blocked, log but don't crash
+//         console.warn('⚠️  CORS: Blocking origin but continuing in production mode');
+//         callback(null, true); // Allow to prevent app crash
+//       }
+//     }
+//   },
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with', 'X-Requested-With'],
+//   exposedHeaders: ['Content-Type', 'Authorization'],
+//   optionsSuccessStatus: 200,
+//   preflightContinue: false // Always handle preflight requests (don't pass to next middleware)
+// };
+
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, PWAs, WebView, or curl requests)
-    // Web apps (PWAs) often send requests with null origin when loaded from file:// or as installed app
-    // Also handle string "null" which some WebViews send
-    if (!origin || origin === 'null' || origin === 'undefined') {
-      // Reduced logging - only log in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🌐 CORS: Allowing request with no/null origin (mobile app/PWA/WebView context)');
-      }
-      return callback(null, true);
-    }
-
-    // Check for WebView-specific origins before checking allowed list
-    if (origin.startsWith('file://') ||
-      origin.includes('android-app://') ||
-      origin.includes('webview') ||
-      origin.includes('WebView') ||
-      origin.includes('wv')) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🌐 CORS: Allowing WebView/APK origin:', origin);
-      }
-      return callback(null, true);
-    }
-
-    // Allow Razorpay API origins (for webhooks and callbacks)
-    if (origin.includes('razorpay.com') || origin.includes('api.razorpay.com')) {
-      // Keep Razorpay logs as they're important for payment debugging
-      console.log('🌐 CORS: Allowing Razorpay API origin:', origin);
-      return callback(null, true);
-    }
-
-    // Allow Vercel preview/deployment URLs (for preview deployments and screenshot service)
-    if (origin.includes('vercel.app') || origin.includes('vercel.com')) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🌐 CORS: Allowing Vercel origin:', origin);
-      }
-      return callback(null, true);
-    }
-
-    // In production, be more lenient if CORS_ORIGINS not set
-    const isProduction = process.env.NODE_ENV === 'production';
-
-    const allowedOrigins = [
-      // Local development
-      'http://localhost:8080',
-      'http://localhost:5000',
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://127.0.0.1:8080',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:3000',
-
-      // Production domains
-      'https://www.rentyatra.com',
-      'https://rentyatra.com',
-
-      // Razorpay API origins (for webhooks and callbacks)
-      'https://api.razorpay.com',
-      'https://checkout.razorpay.com',
-      'https://*.razorpay.com',
-
-      // Vercel preview/deployment URLs (for preview deployments)
-      'https://*.vercel.app',
-      'https://*.vercel.com',
-
-      // Environment variables
-      process.env.FRONTEND_URL,
-      process.env.CORS_ORIGIN,
-
-      // Allow multiple origins from comma-separated env variable
-      ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(url => url.trim()) : [])
-    ].filter(Boolean); // Remove undefined values
-
-    // Check if origin matches any allowed origin
-    let isAllowed = allowedOrigins.some(allowedOrigin => {
-      // Exact match
-      if (allowedOrigin === origin) return true;
-      // Wildcard matching
-      if (allowedOrigin.includes('*')) {
-        const regex = new RegExp('^' + allowedOrigin.replace(/\*/g, '.*') + '$');
-        return regex.test(origin);
-      }
-      return false;
-    });
-
-    // In production without strict CORS config, allow all but log warning
-    if (!isAllowed && isProduction && !process.env.CORS_ORIGINS) {
-      console.log('⚠️  CORS: Allowing origin in production (CORS_ORIGINS not set):', origin);
-      console.log('⚠️  Recommendation: Set CORS_ORIGINS in environment variables for better security');
-      isAllowed = true;
-    }
-
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.error('❌ CORS blocked origin:', origin);
-      console.log('✅ Allowed origins:', allowedOrigins);
-      console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
-      console.log('📝 CORS_ORIGINS:', process.env.CORS_ORIGINS || 'NOT SET');
-
-      // Check if it's a WebView/APK origin (file://, null, or app-specific origins)
-      const isWebViewOrigin = !origin ||
-        origin === 'null' ||
-        origin.startsWith('file://') ||
-        origin.includes('android-app://') ||
-        origin.includes('webview') ||
-        origin.includes('WebView');
-
-      // Always allow WebView/APK origins (they have no origin or special origins)
-      if (isWebViewOrigin) {
-        console.log('🌐 CORS: Allowing WebView/APK origin:', origin || 'null');
-        callback(null, true);
-        return;
-      }
-
-      // In development, be strict
-      if (!isProduction) {
-        callback(new Error('Not allowed by CORS'));
-      } else {
-        // Even in production, if explicitly blocked, log but don't crash
-        console.warn('⚠️  CORS: Blocking origin but continuing in production mode');
-        callback(null, true); // Allow to prevent app crash
-      }
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with', 'X-Requested-With'],
-  exposedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200,
-  preflightContinue: false // Always handle preflight requests (don't pass to next middleware)
+  origin: ['https://rentyatra.com'], // exact domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 };
 
 // Middleware
