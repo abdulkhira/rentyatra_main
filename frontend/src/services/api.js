@@ -2071,6 +2071,7 @@ Please check:
 
       return data;
     } catch (error) {
+      alert(error)
       console.error('Create Rental Listing Error Details:', {
         error: error,
         message: error.message,
