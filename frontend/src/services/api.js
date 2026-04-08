@@ -2056,7 +2056,7 @@ Please check:
         console.log(key, value);
       }
 
-      const response = await this.fetchWithTimeout(url, config, 120000); // 2 minutes for file uploads
+      const response = await this.fetchWithTimeout(url, config); // 2 minutes for file uploads
       console.log('Create rental listing response status:', response.status);
       console.log('Create rental listing response headers:', response.headers);
 
