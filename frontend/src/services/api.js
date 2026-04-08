@@ -2076,10 +2076,16 @@ Please check:
         stack: error.stack
       });
 
+      alert(`
+        error: ${error}\n
+        msg: ${error.message}\n
+        stack: ${error.stack}\n`)
+
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        alert(`error: ${error}`)
         throw new Error('Network error - Please check your internet connection');
       }
 
