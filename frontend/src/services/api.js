@@ -2045,7 +2045,8 @@ Please check:
     const config = {
       method: 'POST',
       headers: this.getFileUploadHeaders(),
-      body: formData,
+      body: JSON.stringify(formData),
+      // body: formData,
     };
 
     try {
