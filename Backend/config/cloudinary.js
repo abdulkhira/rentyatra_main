@@ -224,7 +224,7 @@ const uploadRentalListingVideo = multer({
   storage: rentalListingVideoStorage,
   fileFilter: videoFileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit for video
+    fileSize: 100 * 1024 * 1024, // 100MB limit for video
     files: 1 // Only 1 video
   }
 });
@@ -243,7 +243,7 @@ const uploadRentalRequest = multer({
       mimetype: file.mimetype,
       originalname: file.originalname
     });
-    
+
     if (file.fieldname === 'images' && file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else if (file.fieldname === 'video' && file.mimetype.startsWith('video/')) {
@@ -272,7 +272,7 @@ const uploadRentalListing = multer({
       mimetype: file.mimetype,
       originalname: file.originalname
     });
-    
+
     if (file.fieldname === 'images' && file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else if (file.fieldname === 'video' && file.mimetype.startsWith('video/')) {
