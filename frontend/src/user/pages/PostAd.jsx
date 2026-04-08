@@ -557,6 +557,9 @@ const PostAd = () => {
         }
       }
     } catch (error) {
+
+      alert(`Error Name: ${error.name}\nMessage: ${error.message}\nCode: ${error.code}\nResponse Status: ${error.response?.status}`);
+
       console.error('Error submitting rental listing:', error);
       console.error('Error details:', {
         message: error.message,
