@@ -217,8 +217,8 @@ const uploadRentalListingImages = multer({
   storage: rentalListingImageStorage,
   fileFilter: imageFileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit per image
-    files: 10 // Maximum 10 images
+    fileSize: 15 * 1024 * 1024, // 10MB limit per image
+    files: 15 // Maximum 10 images
   }
 });
 

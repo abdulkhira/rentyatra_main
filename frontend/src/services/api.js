@@ -2041,6 +2041,7 @@ Please check:
 
   // Create rental listing (for users)
   async createRentalListing(formData) {
+    alert(`form data ${formData}\n`)
     const url = `${this.baseURL}/rental-requests`;
     const config = {
       method: 'POST',

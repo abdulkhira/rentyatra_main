@@ -195,7 +195,9 @@ const corsOptions = {
 app.set('trust proxy', 1);
 // app.use(cors(corsOptions));
 app.use(cors({
-  origin: true,
+  origin: ['https://rentyatra.com', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type'],
   credentials: true
 }));
 app.options('*', cors(corsOptions));
