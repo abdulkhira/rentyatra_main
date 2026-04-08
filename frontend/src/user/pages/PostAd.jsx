@@ -197,7 +197,7 @@ const PostAd = () => {
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     const options = {
-      maxSizeMB: 1, // Compress each to max 1MB
+      maxSizeMB: 0.5, // Compress each to max 1MB
       maxWidthOrHeight: 1920,
       useWebWorker: true
     };
@@ -284,9 +284,9 @@ const PostAd = () => {
       setError('');
 
       // Clean up previous video memory if it exists
-      if (video?.preview) {
-        URL.revokeObjectURL(video.preview);
-      }
+      // if (video?.preview) {
+      //   URL.revokeObjectURL(video.preview);
+      // }
 
       // Store the native file and a lightweight preview
       setVideo({
@@ -325,6 +325,10 @@ const PostAd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
 
     // Check if user has remaining post ads
     // const remainingPostAds = checkPostAdsAvailability();
@@ -482,16 +486,16 @@ const PostAd = () => {
       }
 
       // Add images (convert base64 to files)
-      for (let i = 0; i < images.length; i++) {
-        try {
-          const response = await fetch(images[i]);
-          const blob = await response.blob();
-          const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
-        } catch (error) {
-          console.error('Error processing image:', error);
-          throw new Error('Failed to process images');
-        }
-      }
+      // for (let i = 0; i < images.length; i++) {
+      //   try {
+      //     const response = await fetch(images[i]);
+      //     const blob = await response.blob();
+      //     const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
+      //   } catch (error) {
+      //     console.error('Error processing image:', error);
+      //     throw new Error('Failed to process images');
+      //   }
+      // }
 
       // Add video
       try {
@@ -557,6 +561,10 @@ const PostAd = () => {
         }
       }
     } catch (error) {
+
+      if (error) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
 
       alert(`Error Name: ${error.name}\nMessage: ${error.message}\nCode: ${error.code}\nResponse Status: ${error.response?.status}`);
 
