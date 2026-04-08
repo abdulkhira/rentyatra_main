@@ -193,7 +193,12 @@ const corsOptions = {
 // Middleware
 // Trust proxy for production deployments behind reverse proxies
 app.set('trust proxy', 1);
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+app.options('*', cors(corsOptions));
 // Increase body size limits to handle large file uploads (images + videos)
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
