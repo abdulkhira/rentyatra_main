@@ -1011,16 +1011,16 @@ const PostAd = () => {
                 <Button
                   type="submit"
                   disabled={loading}
-                  onClick={(e) => {
-                    console.log('Submit button clicked!');
-                    console.log('Loading state:', loading);
-                    console.log('Form data:', formData);
-                    console.log('Images:', images.length);
-                    console.log('Video:', video);
-                    console.log('Selected product:', selectedProduct);
-                    console.log('Selected category:', selectedCategory);
-                    // Let the form handle the submission 
-                  }}
+                  // onClick={(e) => {
+                  //   console.log('Submit button clicked!');
+                  //   console.log('Loading state:', loading);
+                  //   console.log('Form data:', formData);
+                  //   console.log('Images:', images.length);
+                  //   console.log('Video:', video);
+                  //   console.log('Selected product:', selectedProduct);
+                  //   console.log('Selected category:', selectedCategory);
+                  //   // Let the form handle the submission 
+                  // }}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
