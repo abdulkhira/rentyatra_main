@@ -554,7 +554,7 @@ const PostAd = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
-      alert(`Error Name: ${error.name}\nMessage: ${error.message}\nCode: ${error.code}\nResponse Status: ${error.response?.status}`);
+      // alert(`Error Name: ${error.name}\nMessage: ${error.message}\nCode: ${error.code}\nResponse Status: ${error.response?.status}`);
 
       console.error('Error submitting rental listing:', error);
       console.error('Error details:', {
