@@ -194,6 +194,27 @@ const PostAd = () => {
     });
   };
 
+  const uploadToCloudinary = async (file, resourceType = "image") => {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", "ml_default");
+
+    const url = `https://api.cloudinary.com/v1_1/dt2gdp5eq/${resourceType}/upload`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      body: data,
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.error?.message || "Upload failed");
+    }
+
+    return result.secure_url;
+  };
+
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     const options = {
@@ -428,6 +449,20 @@ const PostAd = () => {
       setLoading(true);
       setError('');
 
+      // Upload images to Cloudinary
+      const imageUrls = [];
+
+      for (let img of images) {
+        const url = await uploadToCloudinary(img.file, "image");
+        imageUrls.push(url);
+      }
+
+      // Upload video to Cloudinary
+      let videoUrl = "";
+      if (video?.file) {
+        videoUrl = await uploadToCloudinary(video.file, "video");
+      }
+
       // Create FormData for file uploads
       const formDataToSend = new FormData();
 
@@ -500,25 +535,28 @@ const PostAd = () => {
       // Add video
 
       // Add images directly from the stored File objects
-      for (let i = 0; i < images.length; i++) {
-        // We directly append the native File object! No Base64 decoding needed.
-        formDataToSend.append('images', images[i].file);
-      }
+      // for (let i = 0; i < images.length; i++) {
+      //   // We directly append the native File object! No Base64 decoding needed.
+      //   formDataToSend.append('images', images[i].file);
+      // }
 
       // Add video directly from the stored File object
-      if (video && video.file) {
-        formDataToSend.append('video', video.file);
-        // alert(`
-        //   Title: ${formData.title}\n
-        //   Des: ${formData.description}\n
-        //   Price: ${formData.pricePerDay}\n
-        //   Location: ${formData.location}\n
-        //   SerR: ${formData.serviceRadius}\n
-        //   Num: ${formData.phone}\n
-        //   Email: ${formData.email}\n
-        //   Img: ${formData.image}\n
-        //   Vid: ${formData.video}\n `)
-      }
+      // if (video && video.file) {
+      //   formDataToSend.append('video', video.file);
+      //   // alert(`
+      //   //   Title: ${formData.title}\n
+      //   //   Des: ${formData.description}\n
+      //   //   Price: ${formData.pricePerDay}\n
+      //   //   Location: ${formData.location}\n
+      //   //   SerR: ${formData.serviceRadius}\n
+      //   //   Num: ${formData.phone}\n
+      //   //   Email: ${formData.email}\n
+      //   //   Img: ${formData.image}\n
+      //   //   Vid: ${formData.video}\n `)
+      // }
+
+      formDataToSend.append("images", JSON.stringify(imageUrls));
+      formDataToSend.append("video", videoUrl);
 
       // Submit to backend
       const response = await apiService.createRentalListing(formDataToSend);
