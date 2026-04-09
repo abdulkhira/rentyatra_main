@@ -2056,7 +2056,7 @@ Please check:
         console.log(key, value);
       }
 
-      const response = await this.fetchWithTimeout(url, config, 90000); // 1.30 minutes for file uploads
+      const response = await this.fetchWithTimeout(url, config, 120000); // 2 minutes for file uploads
       console.log('Create rental listing response status:', response.status);
       console.log('Create rental listing response headers:', response.headers);
 
@@ -2075,6 +2075,7 @@ Please check:
         message: error.message,
         stack: error.stack
       });
+      alert(`Error Name: ${error.name}\nMessage: ${error.message}\nCode: ${error.code}\nResponse Status: ${error.response?.status}\nStack: ${error.stack}`);
 
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
