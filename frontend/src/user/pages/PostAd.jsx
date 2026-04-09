@@ -709,12 +709,7 @@ const PostAd = () => {
               </p>
             </div>
 
-            {error && (
-              <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
-                <p className="text-red-700 text-xs md:text-sm font-medium">{error}</p>
-              </div>
-            )}
-
+          
             <form onSubmit={(e) => {
               console.log('Form onSubmit triggered!');
               handleSubmit(e);
@@ -992,6 +987,12 @@ const PostAd = () => {
                 </Button>
               </div>
             </form>
+              {error && (
+              <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+                <p className="text-red-700 text-xs md:text-sm font-medium">{error}</p>
+              </div>
+            )}
+
           </Card>
         )}
       </div>
