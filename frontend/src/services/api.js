@@ -2044,7 +2044,7 @@ Please check:
     const url = `${this.baseURL}/rental-requests`;
     const config = {
       method: 'POST',
-      headers: this.getFileUploadHeaders(),
+      // headers: this.getFileUploadHeaders(),
       body: formData,
     };
 
