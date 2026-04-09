@@ -9,7 +9,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import SellerLocationPicker from '../../components/common/SellerLocationPicker';
 import apiService from '../../services/api';
-import { uploadToCloudinary } from './uploadToCloudinary';
+import { uploadToCloudinary } from '../../services/uploadToCloudinary';
 
 const PostAd = () => {
   const { addItem } = useApp();
