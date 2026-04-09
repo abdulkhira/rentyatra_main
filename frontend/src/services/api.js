@@ -434,7 +434,7 @@ Please check:
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('Network error - Please check your internet connection');
+        throw new Error('Network error - Please check your internet connection'+error);
       }
 
       throw error;
@@ -2080,7 +2080,7 @@ Please check:
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('Network error - Please check your internet connection');
+        throw new Error('Network error - Please check your internet connection' + error);
       }
 
       throw error;
