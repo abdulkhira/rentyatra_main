@@ -283,7 +283,7 @@ const PostAd = () => {
   // };
 
 
-  const handleSubmit2 = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
