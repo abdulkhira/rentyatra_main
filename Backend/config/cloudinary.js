@@ -1,8 +1,6 @@
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
-const os = require('os');
-const fs = require('fs');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -217,8 +215,8 @@ const uploadRentalListingImages = multer({
   storage: rentalListingImageStorage,
   fileFilter: imageFileFilter,
   limits: {
-    fileSize: 15 * 1024 * 1024, // 10MB limit per image
-    files: 15 // Maximum 10 images
+    fileSize: 10 * 1024 * 1024, // 10MB limit per image
+    files: 10 // Maximum 10 images
   }
 });
 
@@ -226,24 +224,14 @@ const uploadRentalListingVideo = multer({
   storage: rentalListingVideoStorage,
   fileFilter: videoFileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB limit for video
+    fileSize: 50 * 1024 * 1024, // 50MB limit for video
     files: 1 // Only 1 video
   }
 });
 
 // Upload instance for rental requests (images and videos)
 const uploadRentalRequest = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      // Safely use the server's temporary hard drive space
-      cb(null, os.tmpdir());
-    },
-    filename: (req, file, cb) => {
-      // Create a clean filename without spaces or weird characters
-      const safeName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
-      cb(null, `${Date.now()}-${safeName}`);
-    }
-  }), // Use memory storage for combined upload
+  storage: multer.memoryStorage(), // Use memory storage for combined upload
   limits: {
     fileSize: 200 * 1024 * 1024, // 200MB total limit (increased for videos)
     files: 11, // 10 images + 1 video
@@ -255,7 +243,7 @@ const uploadRentalRequest = multer({
       mimetype: file.mimetype,
       originalname: file.originalname
     });
-
+    
     if (file.fieldname === 'images' && file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else if (file.fieldname === 'video' && file.mimetype.startsWith('video/')) {
@@ -272,17 +260,7 @@ const uploadRentalRequest = multer({
 
 // Combined multer for rental listings (handles both images and video)
 const uploadRentalListing = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      // Safely use the server's temporary hard drive space
-      cb(null, os.tmpdir());
-    },
-    filename: (req, file, cb) => {
-      // Create a clean filename without spaces or weird characters
-      const safeName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
-      cb(null, `${Date.now()}-${safeName}`);
-    }
-  }), // Use memory storage for combined upload
+  storage: multer.memoryStorage(), // Use memory storage for combined upload
   limits: {
     fileSize: 200 * 1024 * 1024, // 200MB total limit (increased for videos)
     files: 11, // 10 images + 1 video
@@ -294,7 +272,7 @@ const uploadRentalListing = multer({
       mimetype: file.mimetype,
       originalname: file.originalname
     });
-
+    
     if (file.fieldname === 'images' && file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else if (file.fieldname === 'video' && file.mimetype.startsWith('video/')) {

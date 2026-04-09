@@ -10,7 +10,7 @@ class ApiService {
     this.token = localStorage.getItem('token');
     this.refreshTokenValue = localStorage.getItem('refreshToken');
     this.adminToken = localStorage.getItem('adminToken');
-    this.timeout = 90000; // 90 seconds timeout for file uploads
+    this.timeout = 60000; // 60 seconds timeout for file uploads
     this.isDev = import.meta.env.DEV;
   }
 
@@ -2075,7 +2075,6 @@ Please check:
         message: error.message,
         stack: error.stack
       });
-      alert(`Error Name: ${error.name}\nMessage: ${error.message}\nCode: ${error.code}\nResponse Status: ${error.response?.status}\nStack: ${error.stack}`);
 
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
@@ -2083,6 +2082,7 @@ Please check:
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Network error - Please check your internet connection');
       }
+
       throw error;
     }
   }

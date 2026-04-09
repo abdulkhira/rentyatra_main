@@ -9,7 +9,6 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import SellerLocationPicker from '../../components/common/SellerLocationPicker';
 import apiService from '../../services/api';
-import imageCompression from 'browser-image-compression';
 
 const PostAd = () => {
   const { addItem } = useApp();
@@ -215,70 +214,31 @@ const PostAd = () => {
     return result.secure_url;
   };
 
-  const handleImageUpload = async (e) => {
+
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    const options = {
-      maxSizeMB: 0.5, // Compress each to max 1MB
-      maxWidthOrHeight: 1920,
-      useWebWorker: true
-    };
 
-    try {
-      for (const file of files) {
-        const compressedFile = await imageCompression(file, options);
-
-        setImages(prev => [...prev, {
-          file: compressedFile,
-          preview: URL.createObjectURL(compressedFile)
-        }]);
-      }
-    } catch (error) {
-      console.error("Compression error:", error);
+    // Check if adding these files would exceed the minimum requirement
+    if (images.length + files.length < 4) {
+      setError('Please upload at least 4 images');
+    } else {
+      setError('');
     }
+
+    // Instead of Base64, store the actual File and a lightweight preview URL
+    const newImageObjects = files.map(file => ({
+      file: file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    setImages(prev => {
+      const updatedImages = [...prev, ...newImageObjects];
+      if (updatedImages.length >= 4) {
+        setError('');
+      }
+      return updatedImages;
+    });
   };
-
-  // const handleImageUpload = async (e) => {
-  //   const files = Array.from(e.target.files);
-  //   const options = {
-  //     maxSizeMB: 1, // Compress each to max 1MB
-  //     maxWidthOrHeight: 1920,
-  //     useWebWorker: true
-  //   };
-
-  //   try {
-  //     for (const file of files) {
-  //       const compressedFile = await imageCompression(file, options);
-
-  //       setImages(prev => [...prev, {
-  //         file: compressedFile,
-  //         preview: URL.createObjectURL(compressedFile)
-  //       }]);
-  //     }
-  //   } catch (error) {
-  //     console.error("==========> Compression error:", error);
-  //   }
-
-  //   // Check if adding these files would exceed the minimum requirement
-  //   if (images.length + files.length < 4) {
-  //     setError('Please upload at least 4 images');
-  //   } else {
-  //     setError('');
-  //   }
-
-  //   // Instead of Base64, store the actual File and a lightweight preview URL
-  //   const newImageObjects = files.map(file => ({
-  //     file: file,
-  //     preview: URL.createObjectURL(file)
-  //   }));
-
-  //   setImages(prev => {
-  //     const updatedImages = [...prev, ...newImageObjects];
-  //     if (updatedImages.length >= 4) {
-  //       setError('');
-  //     }
-  //     return updatedImages;
-  //   });
-  // };
 
   const removeImage = (index) => {
     setImages(prev => {
@@ -305,9 +265,9 @@ const PostAd = () => {
       setError('');
 
       // Clean up previous video memory if it exists
-      // if (video?.preview) {
-      //   URL.revokeObjectURL(video.preview);
-      // }
+      if (video?.preview) {
+        URL.revokeObjectURL(video.preview);
+      }
 
       // Store the native file and a lightweight preview
       setVideo({
@@ -346,10 +306,6 @@ const PostAd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
 
     // Check if user has remaining post ads
     // const remainingPostAds = checkPostAdsAvailability();
@@ -521,25 +477,45 @@ const PostAd = () => {
       }
 
       // Add images (convert base64 to files)
-      // for (let i = 0; i < images.length; i++) {
-      //   try {
-      //     const response = await fetch(images[i]);
-      //     const blob = await response.blob();
-      //     const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
-      //   } catch (error) {
-      //     console.error('Error processing image:', error);
-      //     throw new Error('Failed to process images');
-      //   }
-      // }
-
-      // Add video
-
+      for (let i = 0; i < images.length; i++) {
+        try {
+          const response = await fetch(images[i]);
+          const blob = await response.blob();
+          const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
+        } catch (error) {
+          console.error('Error processing image:', error);
+          throw new Error('Failed to process images');
+        }
+      }
       // Add images directly from the stored File objects
       // for (let i = 0; i < images.length; i++) {
       //   // We directly append the native File object! No Base64 decoding needed.
       //   formDataToSend.append('images', images[i].file);
       // }
 
+      // Add video
+      try {
+        console.log('Processing video:', {
+          name: video.name,
+          type: video.file.type,
+          size: video.file.size,
+          preview: video.preview
+        });
+
+        const videoResponse = await fetch(video.preview);
+        const videoBlob = await videoResponse.blob();
+        const videoFile = new File([videoBlob], video.name, { type: video.file.type });
+
+        console.log('Video file created:', {
+          name: videoFile.name,
+          type: videoFile.type,
+          size: videoFile.size
+        });
+
+      } catch (error) {
+        console.error('Error processing video:', error);
+        throw new Error('Failed to process video');
+      }
       // Add video directly from the stored File object
       // if (video && video.file) {
       //   formDataToSend.append('video', video.file);
@@ -587,13 +563,6 @@ const PostAd = () => {
         }
       }
     } catch (error) {
-
-      if (error) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-
-      alert(`Error Name: ${error.name}\nMessage: ${error.message}\nCode: ${error.code}\nResponse Status: ${error.response?.status}`);
-
       console.error('Error submitting rental listing:', error);
       console.error('Error details:', {
         message: error.message,
@@ -1045,16 +1014,16 @@ const PostAd = () => {
                 <Button
                   type="submit"
                   disabled={loading}
-                  // onClick={(e) => {
-                  //   console.log('Submit button clicked!');
-                  //   console.log('Loading state:', loading);
-                  //   console.log('Form data:', formData);
-                  //   console.log('Images:', images.length);
-                  //   console.log('Video:', video);
-                  //   console.log('Selected product:', selectedProduct);
-                  //   console.log('Selected category:', selectedCategory);
-                  //   // Let the form handle the submission 
-                  // }}
+                  onClick={(e) => {
+                    console.log('Submit button clicked!');
+                    console.log('Loading state:', loading);
+                    console.log('Form data:', formData);
+                    console.log('Images:', images.length);
+                    console.log('Video:', video);
+                    console.log('Selected product:', selectedProduct);
+                    console.log('Selected category:', selectedCategory);
+                    // Let the form handle the submission
+                  }}
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 py-3 md:py-4 text-base md:text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
