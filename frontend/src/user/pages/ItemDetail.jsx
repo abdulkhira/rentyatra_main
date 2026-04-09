@@ -301,7 +301,7 @@ const ItemDetail = () => {
                   />
                 ) : (
                   <img
-                    src={getMediaArray(currentItem)[selectedImage]?.src || currentItem.images[0]}
+                    src={getMediaArray(currentItem)[selectedImage]?.src || currentItem.images[0].url}
                     alt={currentItem.title}
                     className="w-full h-auto max-h-64 object-contain"
                   />

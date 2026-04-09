@@ -363,7 +363,7 @@ const Favorites = () => {
                   <div className="w-24 h-24 md:w-32 md:h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                     {item.images && item.images.length > 0 ? (
                       <img
-                        src={item.images[0]}
+                        src={item.images[0].url}
                         alt={item.title}
                         className="w-full h-full object-cover"
                       />

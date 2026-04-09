@@ -113,7 +113,7 @@ const Navbar = () => {
                                 }}
                               >
                                 <img
-                                  src={item.images[0]}
+                                  src={item.images[0].url}
                                   alt={item.title}
                                   className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                                 />
@@ -257,7 +257,7 @@ const Navbar = () => {
                               }}
                             >
                               <img
-                                src={item.images[0]}
+                                src={item.images[0].url}
                                 alt={item.title}
                                 className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                               />
