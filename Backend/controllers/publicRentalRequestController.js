@@ -425,100 +425,130 @@ const createRentalRequest = async (req, res) => {
     let videoUrl = null;
     let videoPublicId = null;
     
-    if (req.files) {
-      console.log('Processing uploaded files:', req.files);
+    // if (req.files) {
+    //   console.log('Processing uploaded files:', req.files);
       
-      // Handle images
-      if (req.files.images && req.files.images.length > 0) {
-        console.log('Processing', req.files.images.length, 'images');
+    //   // Handle images
+    //   if (req.files.images && req.files.images.length > 0) {
+    //     console.log('Processing', req.files.images.length, 'images');
         
-        for (const file of req.files.images) {
-          console.log('Processing image:', {
-            fieldname: file.fieldname,
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size
-          });
+    //     for (const file of req.files.images) {
+    //       console.log('Processing image:', {
+    //         fieldname: file.fieldname,
+    //         originalname: file.originalname,
+    //         mimetype: file.mimetype,
+    //         size: file.size
+    //       });
           
-          if (file.mimetype.startsWith('image/')) {
-            // Upload image to Cloudinary
-            try {
-              const uploadResult = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload_stream(
-                  {
-                    folder: 'rentyatra/rental-requests/images',
-                    resource_type: 'image',
-                    transformation: [
-                      { width: 1200, height: 800, crop: 'limit', quality: 'auto' }
-                    ],
-                    public_id: `rental_img_${req.user.userId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
-                  },
-                  (error, result) => {
-                    if (error) reject(error);
-                    else resolve(result);
-                  }
-                ).end(file.buffer);
-              });
+    //       if (file.mimetype.startsWith('image/')) {
+    //         // Upload image to Cloudinary
+    //         try {
+    //           const uploadResult = await new Promise((resolve, reject) => {
+    //             cloudinary.uploader.upload_stream(
+    //               {
+    //                 folder: 'rentyatra/rental-requests/images',
+    //                 resource_type: 'image',
+    //                 transformation: [
+    //                   { width: 1200, height: 800, crop: 'limit', quality: 'auto' }
+    //                 ],
+    //                 public_id: `rental_img_${req.user.userId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+    //               },
+    //               (error, result) => {
+    //                 if (error) reject(error);
+    //                 else resolve(result);
+    //               }
+    //             ).end(file.buffer);
+    //           });
             
-              images.push({
-                url: uploadResult.secure_url,
-                publicId: uploadResult.public_id,
-                isPrimary: images.length === 0, // First image is primary
-                uploadedAt: new Date()
-              });
+    //           images.push({
+    //             url: uploadResult.secure_url,
+    //             publicId: uploadResult.public_id,
+    //             isPrimary: images.length === 0, // First image is primary
+    //             uploadedAt: new Date()
+    //           });
               
-              console.log('Image uploaded successfully:', uploadResult.secure_url);
-            } catch (error) {
-              console.error('Error uploading image to Cloudinary:', error);
-              throw new Error('Failed to upload image');
-            }
-          }
-        }
-      }
+    //           console.log('Image uploaded successfully:', uploadResult.secure_url);
+    //         } catch (error) {
+    //           console.error('Error uploading image to Cloudinary:', error);
+    //           throw new Error('Failed to upload image');
+    //         }
+    //       }
+    //     }
+    //   }
       
-      // Handle video
-      if (req.files.video && req.files.video.length > 0) {
-        console.log('Processing', req.files.video.length, 'videos');
+    //   // Handle video
+    //   if (req.files.video && req.files.video.length > 0) {
+    //     console.log('Processing', req.files.video.length, 'videos');
         
-        for (const file of req.files.video) {
-          console.log('Processing video:', {
-            fieldname: file.fieldname,
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size
-          });
+    //     for (const file of req.files.video) {
+    //       console.log('Processing video:', {
+    //         fieldname: file.fieldname,
+    //         originalname: file.originalname,
+    //         mimetype: file.mimetype,
+    //         size: file.size
+    //       });
           
-          if (file.mimetype.startsWith('video/')) {
-            // Upload video to Cloudinary
-            try {
-              const uploadResult = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload_stream(
-                  {
-                    folder: 'rentyatra/rental-requests/videos',
-                    resource_type: 'video',
-                    transformation: [
-                      { width: 1280, height: 720, crop: 'limit', quality: 'auto' }
-                    ],
-                    public_id: `rental_video_${req.user.userId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
-                  },
-                  (error, result) => {
-                    if (error) reject(error);
-                    else resolve(result);
-                  }
-                ).end(file.buffer);
-              });
+    //       if (file.mimetype.startsWith('video/')) {
+    //         // Upload video to Cloudinary
+    //         try {
+    //           const uploadResult = await new Promise((resolve, reject) => {
+    //             cloudinary.uploader.upload_stream(
+    //               {
+    //                 folder: 'rentyatra/rental-requests/videos',
+    //                 resource_type: 'video',
+    //                 transformation: [
+    //                   { width: 1280, height: 720, crop: 'limit', quality: 'auto' }
+    //                 ],
+    //                 public_id: `rental_video_${req.user.userId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+    //               },
+    //               (error, result) => {
+    //                 if (error) reject(error);
+    //                 else resolve(result);
+    //               }
+    //             ).end(file.buffer);
+    //           });
               
-              videoUrl = uploadResult.secure_url;
-              videoPublicId = uploadResult.public_id;
+    //           videoUrl = uploadResult.secure_url;
+    //           videoPublicId = uploadResult.public_id;
               
-              console.log('Video uploaded successfully:', uploadResult.secure_url);
-            } catch (error) {
-              console.error('Error uploading video to Cloudinary:', error);
-              throw new Error('Failed to upload video');
-            }
-          }
-        }
+    //           console.log('Video uploaded successfully:', uploadResult.secure_url);
+    //         } catch (error) {
+    //           console.error('Error uploading video to Cloudinary:', error);
+    //           throw new Error('Failed to upload video');
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
+
+    let video = null;
+
+    // Images (array of URLs)
+    if (req.body.images) {
+      try {
+        const parsedImages = JSON.parse(req.body.images);
+
+        images = parsedImages.map((url, index) => ({
+          url,
+          publicId: null,
+          isPrimary: index === 0,
+          uploadedAt: new Date()
+        }));
+      } catch (e) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid images format'
+        });
       }
+    }
+
+    // Video (single URL)
+    if (req.body.video) {
+      video = {
+        url: req.body.video,
+        publicId: null,
+        uploadedAt: new Date()
+      };
     }
 
     // Parse features and tags if they are strings
@@ -594,12 +624,14 @@ const createRentalRequest = async (req, res) => {
       category: category,
       condition: condition || 'good',
       features: featuresArray || [],
-      images: images || [],
-      video: videoUrl ? {
-        url: videoUrl,
-        publicId: videoPublicId,
-        uploadedAt: new Date()
-      } : null,
+      // images: images || [],
+      // video: videoUrl ? {
+      //   url: videoUrl,
+      //   publicId: videoPublicId,
+      //   uploadedAt: new Date()
+      // } : null,
+      images: images,
+      video: video,
       user: req.user.userId,
       contactInfo: {
         phone: phone,

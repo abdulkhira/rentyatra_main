@@ -9,6 +9,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import SellerLocationPicker from '../../components/common/SellerLocationPicker';
 import apiService from '../../services/api';
+import { uploadToCloudinary } from './uploadToCloudinary';
 
 const PostAd = () => {
   const { addItem } = useApp();
@@ -282,7 +283,7 @@ const PostAd = () => {
   // };
 
 
-  const handleSubmit = async (e) => {
+  const handleSubmit2 = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -384,6 +385,22 @@ const PostAd = () => {
       setLoading(true);
       setError('');
 
+       // 🚀 STEP 1: Upload Images
+      const imageUrls = [];
+      for (let img of images) {
+        const url = await uploadToCloudinary(img.file, "image");
+        imageUrls.push(url);
+      }
+
+      // 🚀 STEP 2: Upload Video
+      let videoUrl = "";
+      if (video?.file) {
+        videoUrl = await uploadToCloudinary(video.file, "video");
+      }
+
+      console.log("Uploaded images:", imageUrls);
+      console.log("Uploaded video:", videoUrl);
+
       // Create FormData for file uploads
       const formDataToSend = new FormData();
 
@@ -441,50 +458,53 @@ const PostAd = () => {
         console.log(`${key}:`, value);
       }
 
-      // Add images (convert base64 to files)
-      for (let i = 0; i < images.length; i++) {
-        try {
-          const response = await fetch(images[i]);
-          const blob = await response.blob();
-          const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
-        } catch (error) {
-          console.error('Error processing image:', error);
-          throw new Error('Failed to process images: ' + error.message);
-        }
-      }
-      // Add images directly from the stored File objects
-      for (let i = 0; i < images.length; i++) {
-        // We directly append the native File object! No Base64 decoding needed.
-        formDataToSend.append('images', images[i].file);
-      }
+      // // Add images (convert base64 to files)
+      // for (let i = 0; i < images.length; i++) {
+      //   try {
+      //     const response = await fetch(images[i]);
+      //     const blob = await response.blob();
+      //     const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
+      //   } catch (error) {
+      //     console.error('Error processing image:', error);
+      //     throw new Error('Failed to process images: ' + error.message);
+      //   }
+      // }
+      // // Add images directly from the stored File objects
+      // for (let i = 0; i < images.length; i++) {
+      //   // We directly append the native File object! No Base64 decoding needed.
+      //   formDataToSend.append('images', images[i].file);
+      // }
 
-      // Add video
-      try {
-        console.log('Processing video:', {
-          name: video.name,
-          type: video.file.type,
-          size: video.file.size,
-          preview: video.preview
-        });
+      // // Add video
+      // try {
+      //   console.log('Processing video:', {
+      //     name: video.name,
+      //     type: video.file.type,
+      //     size: video.file.size,
+      //     preview: video.preview
+      //   });
 
-        const videoResponse = await fetch(video.preview);
-        const videoBlob = await videoResponse.blob();
-        const videoFile = new File([videoBlob], video.name, { type: video.file.type });
+      //   const videoResponse = await fetch(video.preview);
+      //   const videoBlob = await videoResponse.blob();
+      //   const videoFile = new File([videoBlob], video.name, { type: video.file.type });
 
-        console.log('Video file created:', {
-          name: videoFile.name,
-          type: videoFile.type,
-          size: videoFile.size
-        });
+      //   console.log('Video file created:', {
+      //     name: videoFile.name,
+      //     type: videoFile.type,
+      //     size: videoFile.size
+      //   });
 
-      } catch (error) {
-        console.error('Error processing video:', error);
-        throw new Error('Failed to process video: ' + error.message);
-      }
-      // Add video directly from the stored File object
-      if (video && video.file) {
-        formDataToSend.append('video', video.file);
-      }
+      // } catch (error) {
+      //   console.error('Error processing video:', error);
+      //   throw new Error('Failed to process video: ' + error.message);
+      // }
+      // // Add video directly from the stored File object
+      // if (video && video.file) {
+      //   formDataToSend.append('video', video.file);
+      // }
+
+      formDataToSend.append('images', JSON.stringify(imageUrls));
+      formDataToSend.append('video', videoUrl);
 
       // Submit to backend
       const response = await apiService.createRentalListing(formDataToSend);
