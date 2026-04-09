@@ -449,7 +449,7 @@ const PostAd = () => {
           const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
         } catch (error) {
           console.error('Error processing image:', error);
-          throw new Error('Failed to process images');
+          throw new Error('Failed to process images: ' + error.message);
         }
       }
       // Add images directly from the stored File objects
@@ -479,7 +479,7 @@ const PostAd = () => {
 
       } catch (error) {
         console.error('Error processing video:', error);
-        throw new Error('Failed to process video');
+        throw new Error('Failed to process video: ' + error.message);
       }
       // Add video directly from the stored File object
       if (video && video.file) {
