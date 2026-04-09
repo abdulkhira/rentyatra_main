@@ -459,7 +459,7 @@ const Listings = () => {
                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                           {item.images && item.images.length > 0 ? (
                             <img
-                              src={item.images[0].url}
+                              src={item.images[0]}
                               alt={item.title}
                               className="w-full h-full object-cover"
                             />

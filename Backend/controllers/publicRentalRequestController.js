@@ -624,14 +624,12 @@ const createRentalRequest = async (req, res) => {
       category: category,
       condition: condition || 'good',
       features: featuresArray || [],
-      // images: images || [],
-      // video: videoUrl ? {
-      //   url: videoUrl,
-      //   publicId: videoPublicId,
-      //   uploadedAt: new Date()
-      // } : null,
-      images: images,
-      video: video,
+      images: images || [],
+      video: video ? {
+        url: video,
+        publicId: videoPublicId,
+        uploadedAt: new Date()
+      } : null,
       user: req.user.userId,
       contactInfo: {
         phone: phone,
