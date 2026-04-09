@@ -10,7 +10,7 @@ class ApiService {
     this.token = localStorage.getItem('token');
     this.refreshTokenValue = localStorage.getItem('refreshToken');
     this.adminToken = localStorage.getItem('adminToken');
-    this.timeout = 90000; // 90 seconds timeout for file uploads
+    this.timeout = 60000; // 60 seconds timeout for file uploads
     this.isDev = import.meta.env.DEV;
   }
 
@@ -2041,7 +2041,6 @@ Please check:
 
   // Create rental listing (for users)
   async createRentalListing(formData) {
-    alert(`form data ${formData}\n`)
     const url = `${this.baseURL}/rental-requests`;
     const config = {
       method: 'POST',
@@ -2071,24 +2070,16 @@ Please check:
 
       return data;
     } catch (error) {
-      alert(` check it first ${error}`)
       console.error('Create Rental Listing Error Details:', {
         error: error,
         message: error.message,
         stack: error.stack
       });
-      alert(`Error Name: ${error.name}\nMessage: ${error.message}\nCode: ${error.code}\nResponse Status: ${error.response?.status}\nStack: ${error.stack}`);
-
-      alert(`
-        error: ${error}\n
-        msg: ${error.message}\n
-        stack: ${error.stack}\n`)
 
       // Provide more specific error messages
       if (error.message === 'Request Timeout') {
         throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
       } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        alert(`error: ${error}`)
         throw new Error('Network error - Please check your internet connection');
       }
 
