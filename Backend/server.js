@@ -61,26 +61,26 @@ const corsOptions = {
       }
       return callback(null, true);
     }
-    
+
     // Check for WebView-specific origins before checking allowed list
-    if (origin.startsWith('file://') || 
-        origin.includes('android-app://') ||
-        origin.includes('webview') ||
-        origin.includes('WebView') ||
-        origin.includes('wv')) {
+    if (origin.startsWith('file://') ||
+      origin.includes('android-app://') ||
+      origin.includes('webview') ||
+      origin.includes('WebView') ||
+      origin.includes('wv')) {
       if (process.env.NODE_ENV === 'development') {
         console.log('🌐 CORS: Allowing WebView/APK origin:', origin);
       }
       return callback(null, true);
     }
-    
+
     // Allow Razorpay API origins (for webhooks and callbacks)
     if (origin.includes('razorpay.com') || origin.includes('api.razorpay.com')) {
       // Keep Razorpay logs as they're important for payment debugging
       console.log('🌐 CORS: Allowing Razorpay API origin:', origin);
       return callback(null, true);
     }
-    
+
     // Allow Vercel preview/deployment URLs (for preview deployments and screenshot service)
     if (origin.includes('vercel.app') || origin.includes('vercel.com')) {
       if (process.env.NODE_ENV === 'development') {
@@ -88,10 +88,10 @@ const corsOptions = {
       }
       return callback(null, true);
     }
-    
+
     // In production, be more lenient if CORS_ORIGINS not set
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     const allowedOrigins = [
       // Local development
       'http://localhost:8080',
@@ -106,24 +106,24 @@ const corsOptions = {
       // Production domains
       'https://www.rentyatra.com',
       'https://rentyatra.com',
-      
+
       // Razorpay API origins (for webhooks and callbacks)
       'https://api.razorpay.com',
       'https://checkout.razorpay.com',
       'https://*.razorpay.com',
-      
+
       // Vercel preview/deployment URLs (for preview deployments)
       'https://*.vercel.app',
       'https://*.vercel.com',
-      
+
       // Environment variables
       process.env.FRONTEND_URL,
       process.env.CORS_ORIGIN,
-      
+
       // Allow multiple origins from comma-separated env variable
       ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(url => url.trim()) : [])
     ].filter(Boolean); // Remove undefined values
-    
+
     // Check if origin matches any allowed origin
     let isAllowed = allowedOrigins.some(allowedOrigin => {
       // Exact match
@@ -135,14 +135,14 @@ const corsOptions = {
       }
       return false;
     });
-    
+
     // In production without strict CORS config, allow all but log warning
     if (!isAllowed && isProduction && !process.env.CORS_ORIGINS) {
       console.log('⚠️  CORS: Allowing origin in production (CORS_ORIGINS not set):', origin);
       console.log('⚠️  Recommendation: Set CORS_ORIGINS in environment variables for better security');
       isAllowed = true;
     }
-    
+
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -150,22 +150,22 @@ const corsOptions = {
       console.log('✅ Allowed origins:', allowedOrigins);
       console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
       console.log('📝 CORS_ORIGINS:', process.env.CORS_ORIGINS || 'NOT SET');
-      
+
       // Check if it's a WebView/APK origin (file://, null, or app-specific origins)
-      const isWebViewOrigin = !origin || 
-                              origin === 'null' || 
-                              origin.startsWith('file://') ||
-                              origin.includes('android-app://') ||
-                              origin.includes('webview') ||
-                              origin.includes('WebView');
-      
+      const isWebViewOrigin = !origin ||
+        origin === 'null' ||
+        origin.startsWith('file://') ||
+        origin.includes('android-app://') ||
+        origin.includes('webview') ||
+        origin.includes('WebView');
+
       // Always allow WebView/APK origins (they have no origin or special origins)
       if (isWebViewOrigin) {
         console.log('🌐 CORS: Allowing WebView/APK origin:', origin || 'null');
         callback(null, true);
         return;
       }
-      
+
       // In development, be strict
       if (!isProduction) {
         callback(new Error('Not allowed by CORS'));
@@ -205,7 +205,7 @@ app.use((err, req, res, next) => {
       method: req.method,
       origin: req.headers.origin || 'null'
     });
-    
+
     // Ensure CORS headers are set
     const origin = req.headers.origin;
     if (origin) {
@@ -214,7 +214,7 @@ app.use((err, req, res, next) => {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-requested-with, X-Requested-With');
     }
-    
+
     return res.status(413).json({
       success: false,
       message: 'Payload too large. Maximum size is 50MB for request body.',
@@ -235,9 +235,9 @@ const io = socketIo(server, {
         console.log('🔌 Socket.io: No origin, allowing connection');
         return callback(null, true);
       }
-      
+
       const isProduction = process.env.NODE_ENV === 'production';
-      
+
       const allowedOrigins = [
         'http://localhost:8080',
         'http://localhost:5000',
@@ -253,7 +253,7 @@ const io = socketIo(server, {
         process.env.CORS_ORIGIN,
         ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(url => url.trim()) : [])
       ].filter(Boolean);
-      
+
       let isAllowed = allowedOrigins.some(allowedOrigin => {
         if (allowedOrigin === origin) return true;
         if (allowedOrigin.includes('*')) {
@@ -262,19 +262,19 @@ const io = socketIo(server, {
         }
         return false;
       });
-      
+
       if (!isAllowed && isProduction && !process.env.CORS_ORIGINS) {
         console.log('🔌 Socket.io: Auto-allowing in production mode:', origin);
         isAllowed = true;
       }
-      
+
       if (isAllowed) {
         console.log('✅ Socket.io: Origin allowed:', origin);
       } else {
         console.error('❌ Socket.io: Origin blocked:', origin);
-        console.log('Allowed origins:', allowedOrigins);  
+        console.log('Allowed origins:', allowedOrigins);
       }
-      
+
       callback(null, isAllowed);
     },
     methods: ["GET", "POST"],
@@ -303,7 +303,7 @@ io.on('connection', (socket) => {
   if (process.env.NODE_ENV === 'development') {
     console.log('✅ User connected:', socket.id);
   }
-  
+
   // Handle connection errors
   socket.on('error', (error) => {
     console.error('❌ Socket error:', error);
@@ -317,7 +317,7 @@ io.on('connection', (socket) => {
     if (process.env.NODE_ENV === 'development') {
       console.log(`User ${userId} joined their room`);
     }
-    
+
     // Cancel any pending offline status if user reconnected
     if (pendingOfflineTimers.has(userId)) {
       clearTimeout(pendingOfflineTimers.get(userId));
@@ -335,7 +335,7 @@ io.on('connection', (socket) => {
     if (process.env.NODE_ENV === 'development') {
       console.log(`User ${userId} is now online`);
     }
-    
+
     // Broadcast to all users that this user is online
     socket.broadcast.emit('user_online', { userId });
   });
@@ -344,7 +344,7 @@ io.on('connection', (socket) => {
   socket.on('user_offline', (data) => {
     const { userId } = data;
     console.log(`User ${userId} is now offline`);
-    
+
     // Broadcast to all users that this user is offline
     socket.broadcast.emit('user_offline', { userId });
   });
@@ -360,12 +360,12 @@ io.on('connection', (socket) => {
     try {
       const Message = require('./models/Message');
       const User = require('./models/User');
-      
+
       const { senderId, receiverId, content, productId } = data;
-      
+
       // Create conversation ID
       const conversationId = Message.generateConversationId(senderId, receiverId);
-      
+
       // Create message
       const message = new Message({
         sender: senderId,
@@ -374,9 +374,9 @@ io.on('connection', (socket) => {
         conversationId,
         product: productId || null
       });
-      
+
       await message.save();
-      
+
       // Populate sender info
       await message.populate('sender', 'name email profilePicture');
       await message.populate('receiver', 'name email profilePicture');
@@ -392,10 +392,10 @@ io.on('connection', (socket) => {
         console.error('⚠️ Notification failed but message was sent:', notificationError.message);
         // Don't throw - message should still be sent even if notification fails
       }
-      
+
       // Emit to conversation room
       io.to(`conversation_${conversationId}`).emit('new_message', message);
-      
+
       // Emit to receiver's personal room for notifications
       io.to(`user_${receiverId}`).emit('message_notification', {
         message,
@@ -404,7 +404,7 @@ io.on('connection', (socket) => {
           isRead: false
         })
       });
-      
+
     } catch (error) {
       console.error('Error sending message:', error);
       socket.emit('message_error', { error: 'Failed to send message' });
@@ -416,11 +416,11 @@ io.on('connection', (socket) => {
     try {
       const Message = require('./models/Message');
       const { messageId, userId } = data;
-      
+
       const message = await Message.findById(messageId);
       if (message && message.receiver.toString() === userId) {
         await message.markAsRead();
-        
+
         // Notify sender that message was read
         io.to(`user_${message.sender}`).emit('message_read', {
           messageId,
@@ -450,8 +450,8 @@ io.on('connection', (socket) => {
   // Handle test messages
   socket.on('test_message', (data) => {
     console.log('Test message received:', data);
-    socket.emit('test_response', { 
-      message: 'Test response received', 
+    socket.emit('test_response', {
+      message: 'Test response received',
       originalMessage: data.message,
       timestamp: new Date().toISOString()
     });
@@ -463,23 +463,23 @@ io.on('connection', (socket) => {
     if (process.env.NODE_ENV === 'development') {
       console.log('User disconnected:', socket.id, 'Reason:', reason);
     }
-    
+
     // Add a delay before marking user as offline to handle temporary disconnects
     // (like during payment redirects or page refreshes)
     if (socket.userId) {
       const userId = socket.userId;
-      
+
       // Cancel any existing pending offline timer for this user
       if (pendingOfflineTimers.has(userId)) {
         clearTimeout(pendingOfflineTimers.get(userId));
         pendingOfflineTimers.delete(userId);
       }
-      
+
       // Determine grace period based on disconnect reason
       // "transport close" is often temporary (page refresh, network hiccup, payment redirect)
       // Give it more time than explicit client disconnects
       let gracePeriod = 5000; // Default 5 seconds
-      
+
       if (reason === 'transport close') {
         gracePeriod = 10000; // 10 seconds for transport close (often temporary)
         // Reduced logging
@@ -497,7 +497,7 @@ io.on('connection', (socket) => {
           console.log(`Server disconnect for user ${userId} - using shorter grace period`);
         }
       }
-      
+
       // Only mark as offline after a delay to allow for quick reconnection
       // This prevents false offline status during payment flows
       const offlineTimer = setTimeout(() => {
@@ -518,7 +518,7 @@ io.on('connection', (socket) => {
           pendingOfflineTimers.delete(userId);
         }
       }, gracePeriod);
-      
+
       // Store the timer so we can cancel it if user reconnects
       pendingOfflineTimers.set(userId, offlineTimer);
     }
@@ -581,7 +581,7 @@ app.use((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
-  
+
   res.status(404).json({
     success: false,
     message: 'Route not found'
@@ -599,7 +599,7 @@ app.use((err, req, res, next) => {
       method: req.method,
       origin: req.headers.origin || 'null'
     });
-    
+
     // Ensure CORS headers are set
     const origin = req.headers.origin;
     if (origin) {
@@ -608,15 +608,15 @@ app.use((err, req, res, next) => {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-requested-with, X-Requested-With');
     }
-    
+
     let statusCode = 400;
     let message = err.message || 'File upload error';
-    
+
     if (err.code === 'LIMIT_FILE_SIZE') {
       statusCode = 413;
       message = 'File too large. Maximum file size is 200MB.';
     }
-    
+
     return res.status(statusCode).json({
       success: false,
       message: message,
@@ -624,7 +624,7 @@ app.use((err, req, res, next) => {
       code: err.code
     });
   }
-  
+
   // Handle payload too large errors (413) - ensure CORS headers are sent
   if (err.type === 'entity.too.large' || err.status === 413 || err.statusCode === 413 || err.message?.includes('too large') || err.message?.includes('limit')) {
     console.error('⚠️  Payload too large error:', {
@@ -635,7 +635,7 @@ app.use((err, req, res, next) => {
       method: req.method,
       origin: req.headers.origin || 'null'
     });
-    
+
     // Ensure CORS headers are set even for 413 errors
     const origin = req.headers.origin;
     if (origin) {
@@ -644,7 +644,7 @@ app.use((err, req, res, next) => {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-requested-with, X-Requested-With');
     }
-    
+
     return res.status(413).json({
       success: false,
       message: 'Payload too large. Maximum size is 50MB for request body.',
@@ -652,7 +652,7 @@ app.use((err, req, res, next) => {
       maxSize: '50MB'
     });
   }
-  
+
   // CORS errors - handle gracefully
   if (err.message && err.message.includes('CORS')) {
     const origin = req.headers.origin || 'null';
@@ -662,46 +662,46 @@ app.use((err, req, res, next) => {
       method: req.method,
       userAgent: req.headers['user-agent']
     });
-    
+
     // Check if it's a WebView/APK request - if so, allow it anyway
-    const isWebViewOrigin = !req.headers.origin || 
-                            req.headers.origin === 'null' || 
-                            req.headers.origin.startsWith('file://') ||
-                            req.headers.origin.includes('android-app://') ||
-                            req.headers.origin.includes('webview') ||
-                            req.headers.origin.includes('WebView');
-    
-    const isWebViewUserAgent = (req.headers['user-agent'] || '').includes('WebView') || 
-                               (req.headers['user-agent'] || '').includes('wv');
-    
+    const isWebViewOrigin = !req.headers.origin ||
+      req.headers.origin === 'null' ||
+      req.headers.origin.startsWith('file://') ||
+      req.headers.origin.includes('android-app://') ||
+      req.headers.origin.includes('webview') ||
+      req.headers.origin.includes('WebView');
+
+    const isWebViewUserAgent = (req.headers['user-agent'] || '').includes('WebView') ||
+      (req.headers['user-agent'] || '').includes('wv');
+
     // Check if it's a Razorpay API request (for webhooks/callbacks)
-    const isRazorpayOrigin = req.headers.origin && 
-                            (req.headers.origin.includes('razorpay.com') || 
-                             req.headers.origin.includes('api.razorpay.com'));
-    
+    const isRazorpayOrigin = req.headers.origin &&
+      (req.headers.origin.includes('razorpay.com') ||
+        req.headers.origin.includes('api.razorpay.com'));
+
     // Check if it's a Vercel service request (screenshot service, preview deployments)
-    const isVercelOrigin = req.headers.origin && 
-                          (req.headers.origin.includes('vercel.app') || 
-                           req.headers.origin.includes('vercel.com'));
+    const isVercelOrigin = req.headers.origin &&
+      (req.headers.origin.includes('vercel.app') ||
+        req.headers.origin.includes('vercel.com'));
     const isVercelUserAgent = (req.headers['user-agent'] || '').includes('vercel-screenshot') ||
-                              (req.headers['user-agent'] || '').includes('vercel');
-    
+      (req.headers['user-agent'] || '').includes('vercel');
+
     if (isWebViewOrigin || isWebViewUserAgent || isRazorpayOrigin || isVercelOrigin || isVercelUserAgent) {
       console.log('🌐 CORS: Detected WebView/APK/Razorpay/Vercel request - allowing despite CORS error');
       // Don't return error - let the request proceed
       // This shouldn't happen if CORS middleware is working, but as a fallback
       return next(); // Continue to next middleware
     }
-    
+
     return res.status(403).json({
       success: false,
       message: 'CORS policy: Request not allowed',
       error: 'CORS_ERROR'
     });
   }
-  
+
   console.error('❌ Error caught in middleware:', err.message);
-  
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal server error',
@@ -714,7 +714,7 @@ const startServer = async () => {
   try {
     console.log('🔄 Starting RentYatra Backend Server...');
     console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
-    
+
     // Log CORS configuration
     console.log('\n📋 CORS Configuration:');
     console.log('  - FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
@@ -722,14 +722,14 @@ const startServer = async () => {
     console.log('  - CORS_ORIGINS:', process.env.CORS_ORIGINS || 'NOT SET');
     console.log('  - Production mode: ' + (process.env.NODE_ENV === 'production' ? 'LENIENT (allows all if CORS_ORIGINS not set)' : 'STRICT'));
     console.log('');
-    
+
     // Connect to MongoDB Atlas first (with error handling)
     // Set up connection listener BEFORE calling connectDB to catch retry connections
     let packagesInitialized = false;
-    
+
     const initializePackagesWhenReady = async () => {
       if (packagesInitialized) return; // Already initialized
-      
+
       try {
         const { initializeDefaultPackages } = require('./controllers/adminBoostController');
         await initializeDefaultPackages();
@@ -740,12 +740,12 @@ const startServer = async () => {
         // Don't block - will retry on next connection
       }
     };
-    
+
     // Listen for connection events - initialize packages and plans when connection is ready
     mongoose.connection.once('connected', async () => {
       console.log('✅ MongoDB connection established - initializing packages and plans...');
       await initializePackagesWhenReady();
-      
+
       // Initialize default subscription plans
       try {
         const { initializeDefaultPlans } = require('./utils/initializeSubscriptionPlans');
@@ -755,15 +755,15 @@ const startServer = async () => {
         // Don't block - will retry on next connection
       }
     });
-    
+
     try {
       await connectDB();
-      
+
       // If connection succeeded immediately, initialize packages and plans
       if (mongoose.connection.readyState === 1) {
         console.log('✅ MongoDB connection already established - initializing packages and plans...');
         await initializePackagesWhenReady();
-        
+
         // Initialize default subscription plans
         try {
           const { initializeDefaultPlans } = require('./utils/initializeSubscriptionPlans');
@@ -774,21 +774,21 @@ const startServer = async () => {
       } else {
         console.log('⏳ MongoDB connection in progress - packages and plans will initialize when ready...');
       }
-      
+
     } catch (dbError) {
       console.error('❌ Initial database connection attempt failed:', dbError.message);
       console.log('⚠️ Server will continue - connection will retry in background');
       console.log('⚠️ Boost packages will initialize automatically when database connection succeeds');
       // Connection retry is handled in connectDB() - packages will initialize on 'connected' event
     }
-    
+
     const PORT = process.env.PORT || 5000;
     const HOST = process.env.HOST || '0.0.0.0';
-    
+
     // Try to start server with retry mechanism
     const startServerWithRetry = (port, host, retries = 3) => {
       const httpServer = server.listen(port, host, () => {
-      console.log(`
+        console.log(`
 🚀 RentYatra Backend Server Started Successfully!
 📡 Server running on: ${HOST}:${PORT}
 🌍 Environment: ${process.env.NODE_ENV || 'development'}
@@ -805,28 +805,28 @@ const startServer = async () => {
 🏠 Public Rental Request Endpoints: /api/rental-requests (GET, POST)
 ⭐ Review Endpoints: /api/reviews
       `);
-    });
-    
-    httpServer.on('error', (error) => {
-      if (error.code === 'EADDRINUSE') {
-        console.log(`❌ Port ${port} is already in use, trying port ${port + 1}...`);
-        if (retries > 0) {
-          setTimeout(() => {
-            startServerWithRetry(port + 1, host, retries - 1);
-          }, 1000);
+      });
+
+      httpServer.on('error', (error) => {
+        if (error.code === 'EADDRINUSE') {
+          console.log(`❌ Port ${port} is already in use, trying port ${port + 1}...`);
+          if (retries > 0) {
+            setTimeout(() => {
+              startServerWithRetry(port + 1, host, retries - 1);
+            }, 1000);
+          } else {
+            console.error(`❌ Could not find available port after ${retries} retries`);
+            process.exit(1);
+          }
         } else {
-          console.error(`❌ Could not find available port after ${retries} retries`);
+          console.error('❌ Server error:', error);
           process.exit(1);
         }
-      } else {
-        console.error('❌ Server error:', error);
-        process.exit(1);
-      }
-    });
-    
-    return httpServer;
+      });
+
+      return httpServer;
     };
-    
+
     const httpServer = startServerWithRetry(PORT, HOST);
 
     // Graceful shutdown

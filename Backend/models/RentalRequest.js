@@ -138,7 +138,8 @@ const rentalRequestSchema = new mongoose.Schema({
       },
       publicId: {
         type: String,
-        required: true
+        required: false,
+        default: null
       },
       isPrimary: {
         type: Boolean,
