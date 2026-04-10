@@ -23,10 +23,6 @@ router.get('/', getPublicRentalRequests);
 // @access  Private (User)
 router.post('/',
   protect,
-  uploadRentalRequest.fields([
-    { name: 'images', maxCount: 10 },
-    { name: 'video', maxCount: 1 }
-  ]),
   createRentalRequest
 );
 
