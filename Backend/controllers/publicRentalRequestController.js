@@ -448,7 +448,7 @@ const createRentalRequest = async (req, res) => {
       console.error("❌ Images JSON parse failed:", err);
     }
 
-    console.log("🔥 SAVING IMAGES:", images);
+    console.log("🔥 SAVING IMAGES :", images);
 
 
     // VIDEO
