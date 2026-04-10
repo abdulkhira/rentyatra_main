@@ -247,6 +247,7 @@ const io = socketIo(server, {
         'http://127.0.0.1:5173',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5000',
+        'http://192.168.31.57:8080',
         'https://www.rentyatra.com',
         'https://rentyatra.com',
         process.env.FRONTEND_URL,
