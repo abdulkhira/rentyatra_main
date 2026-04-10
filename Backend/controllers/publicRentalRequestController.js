@@ -555,10 +555,14 @@ const createRentalRequest = async (req, res) => {
 
     // 1. Process Images
     // let images = [];
-    if (req.body.images && Array.isArray(req.body.images)) {
-      // No JSON.parse needed! It's already an array of strings.
-      images = req.body.images.map((url, index) => ({
-        url: url,
+
+    if (req.body.images) {
+      const imageArray = Array.isArray(req.body.images)
+        ? req.body.images
+        : [req.body.images]; // convert single to array
+
+      images = imageArray.map((url, index) => ({
+        url,
         publicId: null,
         isPrimary: index === 0,
         uploadedAt: new Date()

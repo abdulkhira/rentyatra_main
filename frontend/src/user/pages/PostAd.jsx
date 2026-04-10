@@ -503,7 +503,10 @@ const PostAd = () => {
       //   formDataToSend.append('video', video.file);
       // }
 
-      formDataToSend.append('images', JSON.stringify(imageUrls));
+      // formDataToSend.append('images', JSON.stringify(imageUrls));
+      imageUrls.forEach((url) => {
+        formDataToSend.append('images', url);
+      });
       formDataToSend.append('video', videoUrl);
 
       // Submit to backend
