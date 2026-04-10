@@ -464,13 +464,13 @@ const PostAd = () => {
         isPrimary: index === 0
       }));
 
-      formData.append("images", JSON.stringify(imagesArray));
+      formDataToSend.append("images", JSON.stringify(imagesArray));
       const videoObj = {
         url: videoUrl,
         publicId: ""
       };
 
-      formData.append("video", JSON.stringify(videoObj));
+      formDataToSend.append("video", JSON.stringify(videoObj));
 
       // Submit to backend
       const response = await apiService.createRentalListing(formDataToSend);
