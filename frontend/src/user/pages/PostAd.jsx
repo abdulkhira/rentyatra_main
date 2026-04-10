@@ -506,10 +506,6 @@ const PostAd = () => {
       formDataToSend.append('images', JSON.stringify(imageUrls));
       formDataToSend.append('video', videoUrl);
 
-      console.log(`Images: ${imageUrls}`);
-      console.log(`Video: ${videoUrl}`);
-
-
       // Submit to backend
       const response = await apiService.createRentalListing(formDataToSend);
 
