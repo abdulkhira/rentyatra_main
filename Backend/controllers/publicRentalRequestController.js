@@ -421,97 +421,54 @@ const createRentalRequest = async (req, res) => {
     }
 
     // Process uploaded files (images and videos)
-    let images = [];
     let videoUrl = null;
     let videoPublicId = null;
 
+    /**
+     * ✅ FORCE SAFE PARSING
+     */
+
+    // IMAGES
+    let images = [];
+
+    try {
+      if (req.body.images) {
+        const parsed = JSON.parse(req.body.images);
+
+        if (Array.isArray(parsed)) {
+          images = parsed.map((img, index) => ({
+            url: img.url,
+            publicId: img.publicId || "",
+            isPrimary: index === 0,
+            uploadedAt: new Date()
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("❌ Images JSON parse failed:", err);
+    }
+
+    console.log("🔥 SAVING IMAGES:", images);
+
+
+    // VIDEO
     let video = null;
 
-
-    /**
-     * ✅ FIXED IMAGE PARSING
-     */
-    if (req.body.images) {
-      try {
-        let parsedImages;
-
-        // Case 1: JSON string (BEST CASE)
-        if (typeof req.body.images === "string") {
-          try {
-            parsedImages = JSON.parse(req.body.images);
-          } catch {
-            // fallback → single URL string
-            parsedImages = [req.body.images];
-          }
-        }
-
-        // Case 2: Already array
-        else if (Array.isArray(req.body.images)) {
-          parsedImages = req.body.images;
-        }
-
-        else {
-          parsedImages = [];
-        }
-
-        // Normalize to schema format
-        images = parsedImages.map((item, index) => {
-          if (typeof item === "string") {
-            return {
-              url: item,
-              publicId: "",
-              isPrimary: index === 0,
-              uploadedAt: new Date()
-            };
-          }
-
-          return {
-            url: item.url,
-            publicId: item.publicId || "",
-            isPrimary: item.isPrimary ?? index === 0,
-            uploadedAt: new Date()
-          };
-        });
-
-      } catch (err) {
-        console.error("❌ Image parsing error:", err);
-        images = [];
-      }
-    }
-
-    console.log("✅ FINAL IMAGES:", images);
-
-
-    /**
-     * ✅ FIXED VIDEO PARSING
-     */
-    if (req.body.video) {
-      try {
-        let parsedVideo;
-
-        if (typeof req.body.video === "string") {
-          try {
-            parsedVideo = JSON.parse(req.body.video);
-          } catch {
-            parsedVideo = { url: req.body.video };
-          }
-        } else {
-          parsedVideo = req.body.video;
-        }
+    try {
+      if (req.body.video) {
+        const parsed = JSON.parse(req.body.video);
 
         video = {
-          url: parsedVideo.url || parsedVideo,
-          publicId: parsedVideo.publicId || "",
+          url: parsed.url,
+          publicId: parsed.publicId || "",
           uploadedAt: new Date()
         };
-
-      } catch (err) {
-        console.error("❌ Video parsing error:", err);
-        video = null;
       }
+    } catch (err) {
+      console.error("❌ Video JSON parse failed:", err);
     }
 
-    console.log("✅ FINAL VIDEO:", video);
+    console.log("🔥 SAVING VIDEO:", video);
 
     // Parse features and tags if they are strings
     let featuresArray = [];
