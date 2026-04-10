@@ -452,12 +452,6 @@ const PostAd = () => {
         console.log('Debug - No serviceRadius found in formData, using default');
       }
 
-      for (let i = 0; i < images.length; i++) {
-        formDataToSend.append('images', images[i].file);
-      }
-
-      formDataToSend.append('video', video.file);
-
       // Debug: Log all form data being sent
       console.log('FormData being sent:');
       for (let [key, value] of formDataToSend.entries()) {
@@ -511,6 +505,10 @@ const PostAd = () => {
 
       formDataToSend.append('images', JSON.stringify(imageUrls));
       formDataToSend.append('video', videoUrl);
+
+      console.log(`Images: ${imageUrls}`);
+      console.log(`Video: ${videoUrl}`);
+
 
       // Submit to backend
       const response = await apiService.createRentalListing(formDataToSend);
