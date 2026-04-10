@@ -284,106 +284,12 @@ const PostAd = () => {
 
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    // Check if user has remaining post ads
-    // const remainingPostAds = checkPostAdsAvailability();
-    // if (remainingPostAds <= 0) {
-    //   setShowSubscriptionModal(false);
-    //   return;
-    // }
-
-    console.log('Form submission started');
-    console.log('Form data:', formData);
-    console.log('Images count:', images.length);
-    console.log('Video:', video);
-    console.log('Selected product:', selectedProduct);
-    console.log('Selected category:', selectedCategory);
-    console.log('Selected category ID:', selectedCategory?.id);
-    console.log('Selected category _id:', selectedCategory?._id);
-    console.log('Coordinates:', formData.coordinates);
-    console.log('Location field:', formData.location);
-    console.log('Service radius:', formData.serviceRadius);
-
-    // Check each required field individually for better error messages
-    if (!formData.title) {
-      setError('Please enter a title');
-      return;
-    }
-    if (!formData.description) {
-      setError('Please enter a description');
-      return;
-    }
-    if (!formData.location) {
-      setError('Please select your location');
-      return;
-    }
-    if (!formData.phone) {
-      setError('Please enter your phone number');
-      return;
-    }
-    // if (!formData.email) {
-    //   setError('Please enter your email address');
-    //   return;
-    // }
-
-    if (!formData.pricePerDay) {
-      setError('Please specify rental price per day');
-      return;
-    }
-
-    // Validate coordinates
-    if (!formData.coordinates || !formData.coordinates.lat || !formData.coordinates.lng) {
-      setError('Please select your location on the map');
-      return;
-    }
-
-    // Validate phone number
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      setError('Please enter a valid 10-digit phone number');
-      return;
-    }
-
-    // Validate email
-    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // if (!emailRegex.test(formData.email)) {
-    //   setError('Please enter a valid email address');
-    //   return;
-    // }
-
-    // Validate field lengths
-    if (formData.title.length < 5) {
-      setError('Title must be at least 5 characters long');
-      return;
-    }
-
-    if (formData.description.length < 20) {
-      setError('Description must be at least 20 characters long');
-      return;
-    }
-
-    if (images.length < 4) {
-      setError('Please upload at least 4 images');
-      return;
-    }
-
-    if (!video) {
-      setError('Please upload a video');
-      return;
-    }
-
-    if (!selectedProduct || !selectedCategory) {
-      setError('Please select a product and category');
-      return;
-    }
-
-    console.log('All validations passed, proceeding with submission');
-
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
   try {
-    // 1. Upload Assets
+    // 1. Upload Assets to Cloudinary
     const imageUrls = [];
     for (let img of images) {
       const url = await uploadToCloudinary(img.file, "image");
@@ -391,57 +297,41 @@ const PostAd = () => {
     }
     const videoUrl = video?.file ? await uploadToCloudinary(video.file, "video") : "";
 
-    // 2. Derive City/State
-    const locationParts = formData.location.split(',');
-    const city = coordinates?.city || locationParts[0]?.trim() || 'Not specified';
-    const state = coordinates?.state || locationParts[1]?.trim() || 'Not specified';
-
-    // 3. Prepare FormData
+    // 2. Prepare FormData (Matching your curl request keys)
     const formDataToSend = new FormData();
     
-    // Basic Fields
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
     formDataToSend.append('priceAmount', formData.pricePerDay);
     formDataToSend.append('pricePeriod', 'daily');
     formDataToSend.append('product', selectedProduct._id);
     formDataToSend.append('category', selectedCategory._id || selectedCategory.id);
-    formDataToSend.append('condition', formData.condition || 'good');
-    
-    // Location Data
-    formDataToSend.append('location', formData.location); // Full address string
-    formDataToSend.append('city', city);
-    formDataToSend.append('state', state);
-    formDataToSend.append('pincode', '000000');
+    formDataToSend.append('location', formData.location);
+    formDataToSend.append('city', coordinates?.city || 'Not specified');
+    formDataToSend.append('state', coordinates?.state || 'Not specified');
+    formDataToSend.append('pincode', formData.pincode || '361001');
+    formDataToSend.append('phone', formData.phone);
+    formDataToSend.append('email', formData.email || 'test@gmail.com');
     formDataToSend.append('serviceRadius', formData.serviceRadius || 7);
-    
-    // Coordinates (Stringified)
+
+    // Stringified Objects/Arrays
     formDataToSend.append('coordinates', JSON.stringify({
-      lat: coordinates.lat,
-      lng: coordinates.lng
+      lat: formData.coordinates.lat,
+      lng: formData.coordinates.lng
     }));
 
-    // Contact
-    formDataToSend.append('phone', formData.phone);
-    formDataToSend.append('email', formData.email);
-
-    // Assets (Stringified)
     const imagesArray = imageUrls.map((url, index) => ({
-      url,
+      url: url,
       publicId: "",
       isPrimary: index === 0
     }));
-    formDataToSend.append("images", JSON.stringify(imagesArray));
+    formDataToSend.append('images', JSON.stringify(imagesArray));
 
     if (videoUrl) {
-      formDataToSend.append("video", JSON.stringify({ url: videoUrl, publicId: "" }));
+      formDataToSend.append('video', JSON.stringify({ url: videoUrl, publicId: "" }));
     }
 
-    // Features & Tags
-    formDataToSend.append('features', JSON.stringify(['Good condition', 'Well maintained']));
-    formDataToSend.append('tags', JSON.stringify([selectedProduct.name, selectedCategory.name]));
-
-    // 4. Submit
+    // 3. Submit
     const response = await apiService.createRentalListing(formDataToSend);
 
     if (response.success) {
@@ -455,8 +345,7 @@ const PostAd = () => {
   } finally {
     setLoading(false);
   }
-
-  };
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-3 md:py-6 px-3 md:px-4 pb-24 md:pb-6">
