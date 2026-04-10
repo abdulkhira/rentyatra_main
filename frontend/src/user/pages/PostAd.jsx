@@ -476,50 +476,69 @@ const PostAd = () => {
       // const response = await apiService.createRentalListing(formDataToSend);
 
       // Replace the FormData logic with this:
-const payload = {
-  title: formData.title,
-  description: formData.description,
+const safePayload = {
+  // Strings: trim and default to empty string
+  title: (formData.title || "").trim(),
+  description: (formData.description || "").trim(),
+
   price: {
-    pricePerDay: parseFloat(formData.pricePerDay),
-    amount: parseFloat(formData.pricePerDay),
+    // Numbers: Parse and default to 0 or 1 (schema min is 1)
+    pricePerDay: parseFloat(formData.pricePerDay) || 0,
+    amount: parseFloat(formData.pricePerDay) || 0,
+    currency: 'INR',
     period: 'daily'
   },
-  product: selectedProduct._id,
-  category: selectedCategory.id,
+
+  // IDs: Ensure they exist or send null (Mongoose will catch null via validation)
+  product: selectedProduct?._id ?? null,
+  category: selectedCategory?._id ?? selectedCategory?.id ?? null,
+
   location: {
-    address: formData.location,
-    city: city,
-    state: state,
-    pincode: '000000',
+    address: formData.location ?? "Address not provided",
+    city: city ?? "Not specified",
+    state: state ?? "Not specified",
+    pincode: formData.pincode ?? "000000",
     coordinates: {
-      latitude: coordinates.lat,
-      longitude: coordinates.lng
+      // Default to 0,0 or a specific city center if null
+      latitude: coordinates?.lat ?? coordinates?.latitude ?? 22.9676,
+      longitude: coordinates?.lng ?? coordinates?.longitude ?? 76.0508
     },
-    serviceRadius: formData.serviceRadius || 7
+    serviceRadius: parseInt(formData.serviceRadius) || 7
   },
+
   contactInfo: {
-    phone: formData.phone,
-    email: formData.email
+    phone: formData.phone ?? "",
+    email: formData.email ?? ""
   },
-  images: imageUrls.map((url, index) => ({
-    url,
+
+  // Arrays: Ensure it's always an array, even if images is empty
+  images: (imageUrls || []).map((url, index) => ({
+    url: url ?? "",
     publicId: "",
-    isPrimary: index === 0
+    isPrimary: index === 0,
+    uploadedAt: new Date()
   })),
+
+  // Video: Default to a null-friendly object
   video: {
-    url: videoUrl,
-    publicId: ""
+    url: videoUrl || null,
+    publicId: "",
+    uploadedAt: videoUrl ? new Date() : null
   },
-  features: ['Good condition', 'Well maintained'],
-  tags: [selectedProduct.name, selectedCategory.name],
+
+  // Metadata: Defaults for required schema fields
+  features: Array.isArray(features) ? features : ['Good condition'],
+  tags: [selectedProduct?.name, selectedCategory?.name].filter(Boolean),
+  condition: formData.condition ?? 'good',
+  
   availability: {
-    startDate: new Date(),
+    startDate: formData.startDate ? new Date(formData.startDate) : new Date(),
     isAvailable: true
   }
 };
 
 // Send as a normal JSON object
-const response = await apiService.createRentalListing(payload);
+const response = await apiService.createRentalListing(safePayload);
 
       if (response.success) {
         // Refresh subscription data to update counters
