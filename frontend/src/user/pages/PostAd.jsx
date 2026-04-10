@@ -458,7 +458,7 @@ const PostAd = () => {
         console.log(`${key}:`, value);
       }
 
-      const imagesArray = uploadedImageUrls.map((url, index) => ({
+      const imagesArray = imageUrls.map((url, index) => ({
         url,
         publicId: "",
         isPrimary: index === 0
@@ -466,7 +466,7 @@ const PostAd = () => {
 
       formData.append("images", JSON.stringify(imagesArray));
       const videoObj = {
-        url: uploadedVideoUrl,
+        url: videoUrl,
         publicId: ""
       };
 
