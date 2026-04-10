@@ -21,8 +21,8 @@ router.get('/', getPublicRentalRequests);
 // @route   POST /api/rental-requests
 // @desc    Create rental request (for users)
 // @access  Private (User)
-router.post('/', 
-  protect, 
+router.post('/',
+  protect,
   uploadRentalRequest.fields([
     { name: 'images', maxCount: 10 },
     { name: 'video', maxCount: 1 }

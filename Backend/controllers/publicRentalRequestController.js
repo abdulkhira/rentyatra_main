@@ -529,7 +529,7 @@ const createRentalRequest = async (req, res) => {
         const parsedImages = JSON.parse(req.body.images);
 
         images = parsedImages.map((url, index) => ({
-          url: url,
+          url,
           publicId: null,
           isPrimary: index === 0,
           uploadedAt: new Date()
@@ -543,15 +543,7 @@ const createRentalRequest = async (req, res) => {
     }
 
     // Video (single URL)
-    // if (req.body.video) {
-    //   video = {
-    //     url: req.body.video,
-    //     publicId: null,
-    //     uploadedAt: new Date()
-    //   };
-    // }
-
-    if (req.body.video && req.body.video !== 'null' && req.body.video !== '') {
+    if (req.body.video) {
       video = {
         url: req.body.video,
         publicId: null,
@@ -603,9 +595,6 @@ const createRentalRequest = async (req, res) => {
       });
     }
 
-    console.log("Controller DEBUG BEFORE SAVE - Images:", images);
-    console.log("Controller DEBUG BEFORE SAVE - Video:", video);
-
     // Create rental request data
     const rentalRequestData = {
       title: title.trim(),
@@ -635,17 +624,12 @@ const createRentalRequest = async (req, res) => {
       category: category,
       condition: condition || 'good',
       features: featuresArray || [],
-      // images: images || [],
-      // video: video ? {
-      //   url: req.body.video,
-      //   publicId: videoPublicId,
-      //   uploadedAt: new Date()
-      // } : null,
-
-      // THIS IS THE FIX:
-      images: images,
-      video: video,
-
+      images: images || [],
+      video: video ? {
+        url: video,
+        publicId: videoPublicId,
+        uploadedAt: new Date()
+      } : null,
       user: req.user.userId,
       contactInfo: {
         phone: phone,
