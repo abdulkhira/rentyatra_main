@@ -416,19 +416,19 @@ const PostAd = () => {
       // formDataToSend.append('location', formData.location);
       // formDataToSend.append('address', formData.location);
 
-      // // Extract city and state from location string or use coordinates data
-      // let city = 'Not specified';
-      // let state = 'Not specified';
+      // Extract city and state from location string or use coordinates data
+      let city = 'Not specified';
+      let state = 'Not specified';
 
-      // if (coordinates && coordinates.city) {
-      //   // Use city from coordinates if available
-      //   city = coordinates.city;
-      // } else {
-      //   // Fallback to parsing from location string
-      //   const locationParts = formData.location.split(',');
-      //   city = locationParts[0]?.trim() || 'Not specified';
-      //   state = locationParts[1]?.trim() || 'Not specified';
-      // }
+      if (coordinates && coordinates.city) {
+        // Use city from coordinates if available
+        city = coordinates.city;
+      } else {
+        // Fallback to parsing from location string
+        const locationParts = formData.location.split(',');
+        city = locationParts[0]?.trim() || 'Not specified';
+        state = locationParts[1]?.trim() || 'Not specified';
+      }
 
       // formDataToSend.append('city', city);
       // formDataToSend.append('state', state);
