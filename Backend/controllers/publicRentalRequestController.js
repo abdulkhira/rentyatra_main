@@ -524,25 +524,49 @@ const createRentalRequest = async (req, res) => {
     let video = null;
 
     // Images (array of URLs)
-    if (req.body.images) {
-      try {
-        const parsedImages = JSON.parse(req.body.images);
+    // if (req.body.images) {
+    //   try {
+    //     const parsedImages = JSON.parse(req.body.images);
 
-        images = parsedImages.map((url, index) => ({
-          url,
-          publicId: null,
-          isPrimary: index === 0,
-          uploadedAt: new Date()
-        }));
-      } catch (e) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid images format'
-        });
-      }
-    }
+    //     images = parsedImages.map((url, index) => ({
+    //       url,
+    //       publicId: null,
+    //       isPrimary: index === 0,
+    //       uploadedAt: new Date()
+    //     }));
+    //   } catch (e) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: 'Invalid images format'
+    //     });
+    //   }
+    // }
 
     // Video (single URL)
+    // if (req.body.video) {
+    //   video = {
+    //     url: req.body.video,
+    //     publicId: null,
+    //     uploadedAt: new Date()
+    //   };
+    // }
+
+    // In your controller
+
+    // 1. Process Images
+    // let images = [];
+    if (req.body.images && Array.isArray(req.body.images)) {
+      // No JSON.parse needed! It's already an array of strings.
+      images = req.body.images.map((url, index) => ({
+        url: url,
+        publicId: null,
+        isPrimary: index === 0,
+        uploadedAt: new Date()
+      }));
+    }
+
+    // 2. Process Video
+    // let video = null;
     if (req.body.video) {
       video = {
         url: req.body.video,
