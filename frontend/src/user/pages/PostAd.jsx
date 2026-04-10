@@ -402,78 +402,124 @@ const PostAd = () => {
       console.log("Uploaded video:", videoUrl);
 
       // Create FormData for file uploads
-      const formDataToSend = new FormData();
+      // const formDataToSend = new FormData();
 
-      // Add text fields (matching backend API expectations)
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('priceAmount', parseFloat(formData.pricePerDay));
-      formDataToSend.append('pricePeriod', 'daily');
-      formDataToSend.append('product', selectedProduct._id);
-      formDataToSend.append('category', selectedCategory.id);
+      // // Add text fields (matching backend API expectations)
+      // formDataToSend.append('title', formData.title);
+      // formDataToSend.append('description', formData.description);
+      // formDataToSend.append('priceAmount', parseFloat(formData.pricePerDay));
+      // formDataToSend.append('pricePeriod', 'daily');
+      // formDataToSend.append('product', selectedProduct._id);
+      // formDataToSend.append('category', selectedCategory.id);
 
-      // Location data - send as nested structure as expected by backend
-      formDataToSend.append('location', formData.location);
-      formDataToSend.append('address', formData.location);
+      // // Location data - send as nested structure as expected by backend
+      // formDataToSend.append('location', formData.location);
+      // formDataToSend.append('address', formData.location);
 
-      // Extract city and state from location string or use coordinates data
-      let city = 'Not specified';
-      let state = 'Not specified';
+      // // Extract city and state from location string or use coordinates data
+      // let city = 'Not specified';
+      // let state = 'Not specified';
 
-      if (coordinates && coordinates.city) {
-        // Use city from coordinates if available
-        city = coordinates.city;
-      } else {
-        // Fallback to parsing from location string
-        const locationParts = formData.location.split(',');
-        city = locationParts[0]?.trim() || 'Not specified';
-        state = locationParts[1]?.trim() || 'Not specified';
-      }
+      // if (coordinates && coordinates.city) {
+      //   // Use city from coordinates if available
+      //   city = coordinates.city;
+      // } else {
+      //   // Fallback to parsing from location string
+      //   const locationParts = formData.location.split(',');
+      //   city = locationParts[0]?.trim() || 'Not specified';
+      //   state = locationParts[1]?.trim() || 'Not specified';
+      // }
 
-      formDataToSend.append('city', city);
-      formDataToSend.append('state', state);
-      formDataToSend.append('pincode', '000000'); // You can add pincode input field later
+      // formDataToSend.append('city', city);
+      // formDataToSend.append('state', state);
+      // formDataToSend.append('pincode', '000000'); // You can add pincode input field later
 
-      formDataToSend.append('phone', formData.phone);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('features', JSON.stringify(['Good condition', 'Well maintained'])); // Default features
-      formDataToSend.append('tags', JSON.stringify([selectedProduct.name, selectedCategory.name])); // Default tags
+      // formDataToSend.append('phone', formData.phone);
+      // formDataToSend.append('email', formData.email);
+      // formDataToSend.append('features', JSON.stringify(['Good condition', 'Well maintained'])); // Default features
+      // formDataToSend.append('tags', JSON.stringify([selectedProduct.name, selectedCategory.name])); // Default tags
 
-      if (coordinates) {
-        formDataToSend.append('coordinates', JSON.stringify(coordinates));
-      }
+      // if (coordinates) {
+      //   formDataToSend.append('coordinates', JSON.stringify(coordinates));
+      // }
 
-      // Add service radius
-      console.log('Debug - formData.serviceRadius:', formData.serviceRadius);
-      if (formData.serviceRadius) {
-        formDataToSend.append('serviceRadius', formData.serviceRadius);
-        console.log('Debug - Added serviceRadius to FormData:', formData.serviceRadius);
-      } else {
-        console.log('Debug - No serviceRadius found in formData, using default');
-      }
+      // // Add service radius
+      // console.log('Debug - formData.serviceRadius:', formData.serviceRadius);
+      // if (formData.serviceRadius) {
+      //   formDataToSend.append('serviceRadius', formData.serviceRadius);
+      //   console.log('Debug - Added serviceRadius to FormData:', formData.serviceRadius);
+      // } else {
+      //   console.log('Debug - No serviceRadius found in formData, using default');
+      // }
 
-      // Debug: Log all form data being sent
-      console.log('FormData being sent:');
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(`${key}:`, value);
-      }
+      // // Debug: Log all form data being sent
+      // console.log('FormData being sent:');
+      // for (let [key, value] of formDataToSend.entries()) {
+      //   console.log(`${key}:`, value);
+      // }
 
-      const imagesArray = imageUrls.map((url, index) => ({
-        url,
-        publicId: "",
-        isPrimary: index === 0
-      }));
+      // const imagesArray = imageUrls.map((url, index) => ({
+      //   url,
+      //   publicId: "",
+      //   isPrimary: index === 0
+      // }));
 
-      formDataToSend.append("images", JSON.stringify(imagesArray));
-      const videoObj = {
-        url: videoUrl,
-        publicId: ""
-      };
+      // formDataToSend.append("images", JSON.stringify(imagesArray));
+      // const videoObj = {
+      //   url: videoUrl,
+      //   publicId: ""
+      // };
 
-      formDataToSend.append("video", JSON.stringify(videoObj));
+      // formDataToSend.append("video", JSON.stringify(videoObj));
 
-      // Submit to backend
-      const response = await apiService.createRentalListing(formDataToSend);
+      // // Submit to backend
+      // const response = await apiService.createRentalListing(formDataToSend);
+
+      // Replace the FormData logic with this:
+const payload = {
+  title: formData.title,
+  description: formData.description,
+  price: {
+    pricePerDay: parseFloat(formData.pricePerDay),
+    amount: parseFloat(formData.pricePerDay),
+    period: 'daily'
+  },
+  product: selectedProduct._id,
+  category: selectedCategory.id,
+  location: {
+    address: formData.location,
+    city: city,
+    state: state,
+    pincode: '000000',
+    coordinates: {
+      latitude: coordinates.lat,
+      longitude: coordinates.lng
+    },
+    serviceRadius: formData.serviceRadius || 7
+  },
+  contactInfo: {
+    phone: formData.phone,
+    email: formData.email
+  },
+  images: imageUrls.map((url, index) => ({
+    url,
+    publicId: "",
+    isPrimary: index === 0
+  })),
+  video: {
+    url: videoUrl,
+    publicId: ""
+  },
+  features: ['Good condition', 'Well maintained'],
+  tags: [selectedProduct.name, selectedCategory.name],
+  availability: {
+    startDate: new Date(),
+    isAvailable: true
+  }
+};
+
+// Send as a normal JSON object
+const response = await apiService.createRentalListing(payload);
 
       if (response.success) {
         // Refresh subscription data to update counters

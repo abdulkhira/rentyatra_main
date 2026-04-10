@@ -2040,7 +2040,7 @@ Please check:
   }
 
   // Create rental listing (for users)
-  async createRentalListing(formData) {
+  async createRentalListing2(formData) {
     const url = `${this.baseURL}/rental-requests`;
     const config = {
       method: 'POST',
@@ -2086,6 +2086,33 @@ Please check:
       throw error;
     }
   }
+
+  async createRentalListing(payload) {
+  const url = `${this.baseURL}/rental-requests`;
+  
+  const config = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // Include your Auth token here if required
+      'Authorization': `Bearer ${localStorage.getItem('token')}` 
+    },
+    body: JSON.stringify(payload), // Send as JSON string
+  };
+
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create listing');
+    }
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
 
   // Get user's own rental requests
   async getUserRentalListings(page = 1, limit = 10, status = '') {

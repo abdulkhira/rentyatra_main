@@ -325,7 +325,184 @@ const getFeaturedRentalRequests = async (req, res) => {
 // @desc    Create rental request (for regular users)
 // @route   POST /api/rental-requests
 // @access  Private (User)
+
 const createRentalRequest = async (req, res) => {
+  try {
+    console.log('=== Create Rental Request Started ===');
+    
+    // 1. Authenticated User Check
+    const userId = req.user?.userId || req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    const userExists = await User.findById(userId);
+    if (!userExists) {
+      return res.status(404).json({ success: false, message: 'User account not found' });
+    }
+
+    // 2. Extract Fields from Request Body
+    const {
+      title,
+      description,
+      pricePerDay,
+      priceAmount,
+      pricePeriod,
+      product,
+      category,
+      location, // This might be the address string from frontend
+      address,
+      city,
+      state,
+      pincode,
+      coordinates,
+      serviceRadius,
+      condition,
+      features,
+      tags,
+      startDate,
+      phone,
+      email,
+      alternatePhone
+    } = req.body;
+
+    // 3. Basic Validation
+    if (!title || !description || !(pricePerDay || priceAmount) || !category || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: title, description, price, category, or phone'
+      });
+    }
+
+    // --- 4. UNIVERSAL SAFE PARSING (Handles JSON or FormData strings) ---
+
+    const safeParse = (data, defaultVal = null) => {
+      if (!data) return defaultVal;
+      if (typeof data === 'string') {
+        try { return JSON.parse(data); } catch (e) { return defaultVal; }
+      }
+      return data;
+    };
+
+    // Images Processing
+    const rawImages = safeParse(req.body.images, []);
+    const images = rawImages.map((img, index) => ({
+      url: img.url,
+      publicId: img.publicId || "",
+      isPrimary: img.isPrimary || index === 0,
+      uploadedAt: new Date()
+    }));
+
+    // Video Processing
+    const rawVideo = safeParse(req.body.video);
+    const video = rawVideo?.url ? {
+      url: rawVideo.url,
+      publicId: rawVideo.publicId || "",
+      uploadedAt: new Date()
+    } : null;
+
+    // Coordinates Mapping
+    const rawCoords = safeParse(coordinates);
+    const parsedCoordinates = {
+      latitude: rawCoords?.lat || rawCoords?.latitude || 22.9676,
+      longitude: rawCoords?.lng || rawCoords?.longitude || 76.0508
+    };
+
+    // Arrays (Features & Tags)
+    const featuresArray = Array.isArray(features) ? features : safeParse(features, []);
+    const tagsArray = Array.isArray(tags) ? tags : safeParse(tags, []);
+
+    // 5. Construct Schema-Compliant Data Object
+    const rentalRequestData = {
+      title: title.trim(),
+      description: description.trim(),
+      location: {
+        address: address || location,
+        city: city || 'Not specified',
+        state: state || 'Not specified',
+        pincode: pincode || '000000',
+        coordinates: parsedCoordinates,
+        serviceRadius: parseInt(serviceRadius) || 7,
+        locationType: req.body.locationType || 'residential'
+      },
+      price: {
+        pricePerDay: parseFloat(pricePerDay || priceAmount),
+        amount: parseFloat(priceAmount || pricePerDay),
+        currency: req.body.currency || 'INR',
+        period: pricePeriod || 'daily'
+      },
+      product,
+      category,
+      condition: condition || 'good',
+      features: featuresArray,
+      tags: tagsArray,
+      images,
+      video,
+      user: userId,
+      contactInfo: {
+        phone: phone,
+        email: email || userExists.email,
+        alternatePhone: alternatePhone || null
+      },
+      availability: {
+        startDate: startDate ? new Date(startDate) : new Date(),
+        isAvailable: true
+      },
+      status: 'pending'
+    };
+
+    // 6. Save to Database
+    const rentalRequest = new RentalRequest(rentalRequestData);
+    await rentalRequest.save();
+
+    console.log('✅ Listing saved:', rentalRequest._id);
+
+    // 7. Update Subscription Counter
+    try {
+      let subscription = await Subscription.findOne({
+        userId: userId,
+        status: 'active',
+        endDate: { $gt: new Date() }
+      });
+
+      if (!subscription) {
+        // Create default plan if none exists
+        subscription = new Subscription({
+          userId: userId,
+          planId: 'free_tier',
+          planName: 'Free Tier',
+          status: 'active',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          maxListings: 2,
+          currentListings: 0
+        });
+      }
+
+      subscription.currentListings += 1;
+      await subscription.save();
+    } catch (subErr) {
+      console.error('⚠️ Subscription update failed (Non-critical):', subErr.message);
+    }
+
+    // 8. Final Response
+    res.status(201).json({
+      success: true,
+      message: 'Rental request submitted successfully and is pending review.',
+      data: rentalRequest
+    });
+
+  } catch (error) {
+    console.error('❌ Controller Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while creating listing',
+      error: error.message
+    });
+  }
+};
+
+const createRentalRequest2 = async (req, res) => {
   try {
     console.log('=== Create Rental Request ===');
     console.log('Request body:', req.body);
