@@ -2040,7 +2040,7 @@ Please check:
   }
 
   // Create rental listing (for users)
-  async createRentalListing2(formData) {
+  async createRentalListing(formData) {
     const url = `${this.baseURL}/rental-requests`;
     const config = {
       method: 'POST',
@@ -2086,28 +2086,6 @@ Please check:
       throw error;
     }
   }
-
-  async createRentalListing(payload) {
-  const url = `${this.baseURL}/rental-requests`;
-  const token = localStorage.getItem('token'); // Ensure your token key is correct
-
-  const config = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(payload),
-  };
-
-  const response = await fetch(url, config);
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || `Error: ${response.status}`);
-  }
-  return data;
-}
 
   // Get user's own rental requests
   async getUserRentalListings(page = 1, limit = 10, status = '') {

@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCTybWX-zsRixTgZ9q6rabPJZr9srY9S9g",
@@ -12,6 +12,32 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+
+let messaging = null;
+
+// ✅ SAFE INIT
+const initMessaging = async () => {
+  try {
+    const supported = await isSupported();
+
+    const isLocal =
+      window.location.hostname === "localhost" ||
+      window.location.hostname.startsWith("192.168");
+
+    const isWebView = /wv|WebView/i.test(navigator.userAgent);
+
+    if (supported && !isLocal && !isWebView) {
+      messaging = getMessaging(app);
+      console.log("✅ Firebase messaging initialized");
+    } else {
+      console.log("⚠️ Firebase messaging skipped (unsupported env)");
+    }
+  } catch (e) {
+    console.log("❌ Firebase messaging error:", e);
+  }
+};
+
+// call it
+initMessaging();
 
 export { messaging, getToken, onMessage };

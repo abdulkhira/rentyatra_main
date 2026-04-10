@@ -381,211 +381,81 @@ const PostAd = () => {
 
     console.log('All validations passed, proceeding with submission');
 
-    try {
-      setLoading(true);
-      setError('');
 
-      // 🚀 STEP 1: Upload Images
-      const imageUrls = [];
-      for (let img of images) {
-        const url = await uploadToCloudinary(img.file, "image");
-        imageUrls.push(url);
-      }
-
-      // 🚀 STEP 2: Upload Video
-      let videoUrl = "";
-      if (video?.file) {
-        videoUrl = await uploadToCloudinary(video.file, "video");
-      }
-
-      console.log("Uploaded images:", imageUrls);
-      console.log("Uploaded video:", videoUrl);
-
-      // Create FormData for file uploads
-      // const formDataToSend = new FormData();
-
-      // // Add text fields (matching backend API expectations)
-      // formDataToSend.append('title', formData.title);
-      // formDataToSend.append('description', formData.description);
-      // formDataToSend.append('priceAmount', parseFloat(formData.pricePerDay));
-      // formDataToSend.append('pricePeriod', 'daily');
-      // formDataToSend.append('product', selectedProduct._id);
-      // formDataToSend.append('category', selectedCategory.id);
-
-      // // Location data - send as nested structure as expected by backend
-      // formDataToSend.append('location', formData.location);
-      // formDataToSend.append('address', formData.location);
-
-      // Extract city and state from location string or use coordinates data
-      let city = 'Not specified';
-      let state = 'Not specified';
-
-      if (coordinates && coordinates.city) {
-        // Use city from coordinates if available
-        city = coordinates.city;
-      } else {
-        // Fallback to parsing from location string
-        const locationParts = formData.location.split(',');
-        city = locationParts[0]?.trim() || 'Not specified';
-        state = locationParts[1]?.trim() || 'Not specified';
-      }
-
-      // formDataToSend.append('city', city);
-      // formDataToSend.append('state', state);
-      // formDataToSend.append('pincode', '000000'); // You can add pincode input field later
-
-      // formDataToSend.append('phone', formData.phone);
-      // formDataToSend.append('email', formData.email);
-      // formDataToSend.append('features', JSON.stringify(['Good condition', 'Well maintained'])); // Default features
-      // formDataToSend.append('tags', JSON.stringify([selectedProduct.name, selectedCategory.name])); // Default tags
-
-      // if (coordinates) {
-      //   formDataToSend.append('coordinates', JSON.stringify(coordinates));
-      // }
-
-      // // Add service radius
-      // console.log('Debug - formData.serviceRadius:', formData.serviceRadius);
-      // if (formData.serviceRadius) {
-      //   formDataToSend.append('serviceRadius', formData.serviceRadius);
-      //   console.log('Debug - Added serviceRadius to FormData:', formData.serviceRadius);
-      // } else {
-      //   console.log('Debug - No serviceRadius found in formData, using default');
-      // }
-
-      // // Debug: Log all form data being sent
-      // console.log('FormData being sent:');
-      // for (let [key, value] of formDataToSend.entries()) {
-      //   console.log(`${key}:`, value);
-      // }
-
-      // const imagesArray = imageUrls.map((url, index) => ({
-      //   url,
-      //   publicId: "",
-      //   isPrimary: index === 0
-      // }));
-
-      // formDataToSend.append("images", JSON.stringify(imagesArray));
-      // const videoObj = {
-      //   url: videoUrl,
-      //   publicId: ""
-      // };
-
-      // formDataToSend.append("video", JSON.stringify(videoObj));
-
-      // // Submit to backend
-      // const response = await apiService.createRentalListing(formDataToSend);
-
-      // Replace the FormData logic with this:
-const safePayload = {
-  // Strings: trim and default to empty string
-  title: (formData.title || "").trim(),
-  description: (formData.description || "").trim(),
-
-  price: {
-    // Numbers: Parse and default to 0 or 1 (schema min is 1)
-    pricePerDay: parseFloat(formData.pricePerDay) || 0,
-    amount: parseFloat(formData.pricePerDay) || 0,
-    currency: 'INR',
-    period: 'daily'
-  },
-
-  // IDs: Ensure they exist or send null (Mongoose will catch null via validation)
-  product: selectedProduct?._id ?? null,
-  category: selectedCategory?._id ?? selectedCategory?.id ?? null,
-
-  location: {
-    address: formData.location ?? "Address not provided",
-    city: city ?? "Not specified",
-    state: state ?? "Not specified",
-    pincode: formData.pincode ?? "000000",
-    coordinates: {
-      // Default to 0,0 or a specific city center if null
-      latitude: coordinates?.lat ?? coordinates?.latitude ?? 22.9676,
-      longitude: coordinates?.lng ?? coordinates?.longitude ?? 76.0508
-    },
-    serviceRadius: parseInt(formData.serviceRadius) || 7
-  },
-
-  contactInfo: {
-    phone: formData.phone ?? "",
-    email: formData.email ?? ""
-  },
-
-  // Arrays: Ensure it's always an array, even if images is empty
-  images: (imageUrls || []).map((url, index) => ({
-    url: url ?? "",
-    publicId: "",
-    isPrimary: index === 0,
-    uploadedAt: new Date()
-  })),
-
-  // Video: Default to a null-friendly object
-  video: {
-    url: videoUrl || null,
-    publicId: "",
-    uploadedAt: videoUrl ? new Date() : null
-  },
-
-  // Metadata: Defaults for required schema fields
-  features:  ['Good condition'],
-  tags: [selectedProduct?.name, selectedCategory?.name].filter(Boolean),
-  condition: formData.condition ?? 'good',
-  
-  availability: {
-    startDate: formData.startDate ? new Date(formData.startDate) : new Date(),
-    isAvailable: true
-  }
-};
-
-// Send as a normal JSON object
-const response = await apiService.createRentalListing(safePayload);
-
-      if (response.success) {
-        // Refresh subscription data to update counters
-        // if (user?.id || user?._id) {
-        //   const userId = user.id || user._id;
-        //   await refreshUserSubscription(userId);
-        // }
-
-        // Show success message
-        setError(''); // Clear any previous errors
-        // Show success notification
-        const successMessage = 'Rental listing submitted successfully! It will be reviewed by our admin team before going live.';
-        alert(successMessage); // You can replace this with a proper toast notification
-        navigate('/dashboard', { state: { activeTab: 'my-ads' } });
-      } else {
-        // Handle validation errors
-        if (response.errors) {
-          console.error('Validation errors:', response.errors);
-          const errorMessages = Object.values(response.errors).map(error =>
-            typeof error === 'object' ? error.message : error
-          ).join(', ');
-          setError(`Validation failed: ${errorMessages}`);
-        } else {
-          setError(response.message || 'Failed to submit rental listing');
-        }
-      }
-    } catch (error) {
-      console.error('Error submitting rental listing:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        data: error.response?.data
-      });
-
-      // Try to get more specific error information
-      if (error.response?.data?.errors) {
-        console.error('Validation errors from server:', error.response.data.errors);
-        const errorMessages = Object.values(error.response.data.errors).map(error =>
-          typeof error === 'object' ? error.message : error
-        ).join(', ');
-        setError(`Validation failed: ${errorMessages}`);
-      } else {
-        setError(error.response?.data?.message || error.message || 'Failed to submit rental listing. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+  try {
+    // 1. Upload Assets
+    const imageUrls = [];
+    for (let img of images) {
+      const url = await uploadToCloudinary(img.file, "image");
+      imageUrls.push(url);
     }
+    const videoUrl = video?.file ? await uploadToCloudinary(video.file, "video") : "";
+
+    // 2. Derive City/State
+    const locationParts = formData.location.split(',');
+    const city = coordinates?.city || locationParts[0]?.trim() || 'Not specified';
+    const state = coordinates?.state || locationParts[1]?.trim() || 'Not specified';
+
+    // 3. Prepare FormData
+    const formDataToSend = new FormData();
+    
+    // Basic Fields
+    formDataToSend.append('title', formData.title);
+    formDataToSend.append('description', formData.description);
+    formDataToSend.append('priceAmount', formData.pricePerDay);
+    formDataToSend.append('pricePeriod', 'daily');
+    formDataToSend.append('product', selectedProduct._id);
+    formDataToSend.append('category', selectedCategory._id || selectedCategory.id);
+    formDataToSend.append('condition', formData.condition || 'good');
+    
+    // Location Data
+    formDataToSend.append('location', formData.location); // Full address string
+    formDataToSend.append('city', city);
+    formDataToSend.append('state', state);
+    formDataToSend.append('pincode', '000000');
+    formDataToSend.append('serviceRadius', formData.serviceRadius || 7);
+    
+    // Coordinates (Stringified)
+    formDataToSend.append('coordinates', JSON.stringify({
+      lat: coordinates.lat,
+      lng: coordinates.lng
+    }));
+
+    // Contact
+    formDataToSend.append('phone', formData.phone);
+    formDataToSend.append('email', formData.email);
+
+    // Assets (Stringified)
+    const imagesArray = imageUrls.map((url, index) => ({
+      url,
+      publicId: "",
+      isPrimary: index === 0
+    }));
+    formDataToSend.append("images", JSON.stringify(imagesArray));
+
+    if (videoUrl) {
+      formDataToSend.append("video", JSON.stringify({ url: videoUrl, publicId: "" }));
+    }
+
+    // Features & Tags
+    formDataToSend.append('features', JSON.stringify(['Good condition', 'Well maintained']));
+    formDataToSend.append('tags', JSON.stringify([selectedProduct.name, selectedCategory.name]));
+
+    // 4. Submit
+    const response = await apiService.createRentalListing(formDataToSend);
+
+    if (response.success) {
+      alert('Success!');
+      navigate('/dashboard');
+    } else {
+      setError(response.message);
+    }
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+
   };
 
   return (
