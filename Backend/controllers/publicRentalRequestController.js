@@ -426,40 +426,92 @@ const createRentalRequest = async (req, res) => {
     let videoPublicId = null;
 
     let video = null;
-    const mongoose = require('mongoose');
 
 
+    /**
+     * ✅ FIXED IMAGE PARSING
+     */
     if (req.body.images) {
-      let imageArray;
+      try {
+        let parsedImages;
 
-      if (Array.isArray(req.body.images)) {
-        imageArray = req.body.images;
-      } else if (typeof req.body.images === "string") {
-        imageArray = [req.body.images];
-      } else {
-        imageArray = [];
+        // Case 1: JSON string (BEST CASE)
+        if (typeof req.body.images === "string") {
+          try {
+            parsedImages = JSON.parse(req.body.images);
+          } catch {
+            // fallback → single URL string
+            parsedImages = [req.body.images];
+          }
+        }
+
+        // Case 2: Already array
+        else if (Array.isArray(req.body.images)) {
+          parsedImages = req.body.images;
+        }
+
+        else {
+          parsedImages = [];
+        }
+
+        // Normalize to schema format
+        images = parsedImages.map((item, index) => {
+          if (typeof item === "string") {
+            return {
+              url: item,
+              publicId: "",
+              isPrimary: index === 0,
+              uploadedAt: new Date()
+            };
+          }
+
+          return {
+            url: item.url,
+            publicId: item.publicId || "",
+            isPrimary: item.isPrimary ?? index === 0,
+            uploadedAt: new Date()
+          };
+        });
+
+      } catch (err) {
+        console.error("❌ Image parsing error:", err);
+        images = [];
       }
-
-      images = imageArray.map((url, index) => ({
-        _id: new mongoose.Types.ObjectId(), // ⚠️ manual
-        url,
-        publicId: null,
-        isPrimary: index === 0,
-        uploadedAt: new Date()
-      }));
     }
 
-    console.log("PROCESSED IMAGES:", images);
+    console.log("✅ FINAL IMAGES:", images);
 
-    // 2. Process Video
-    // let video = null;
+
+    /**
+     * ✅ FIXED VIDEO PARSING
+     */
     if (req.body.video) {
-      video = {
-        url: req.body.video,
-        publicId: req.body.video,
-        uploadedAt: new Date()
-      };
+      try {
+        let parsedVideo;
+
+        if (typeof req.body.video === "string") {
+          try {
+            parsedVideo = JSON.parse(req.body.video);
+          } catch {
+            parsedVideo = { url: req.body.video };
+          }
+        } else {
+          parsedVideo = req.body.video;
+        }
+
+        video = {
+          url: parsedVideo.url || parsedVideo,
+          publicId: parsedVideo.publicId || "",
+          uploadedAt: new Date()
+        };
+
+      } catch (err) {
+        console.error("❌ Video parsing error:", err);
+        video = null;
+      }
     }
+
+    console.log("✅ FINAL VIDEO:", video);
 
     // Parse features and tags if they are strings
     let featuresArray = [];

@@ -458,10 +458,19 @@ const PostAd = () => {
         console.log(`${key}:`, value);
       }
 
-      imageUrls.forEach((url) => {
-        formDataToSend.append('images', url);
-      });
-      formDataToSend.append('video', videoUrl);
+      const imagesArray = uploadedImageUrls.map((url, index) => ({
+        url,
+        publicId: "",
+        isPrimary: index === 0
+      }));
+
+      formData.append("images", JSON.stringify(imagesArray));
+      const videoObj = {
+        url: uploadedVideoUrl,
+        publicId: ""
+      };
+
+      formData.append("video", JSON.stringify(videoObj));
 
       // Submit to backend
       const response = await apiService.createRentalListing(formDataToSend);
