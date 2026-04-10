@@ -527,7 +527,7 @@ const safePayload = {
   },
 
   // Metadata: Defaults for required schema fields
-  features: Array.isArray(features) ? features : ['Good condition'],
+  features:  ['Good condition'],
   tags: [selectedProduct?.name, selectedCategory?.name].filter(Boolean),
   condition: formData.condition ?? 'good',
   
