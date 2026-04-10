@@ -458,52 +458,6 @@ const PostAd = () => {
         console.log(`${key}:`, value);
       }
 
-      // // Add images (convert base64 to files)
-      // for (let i = 0; i < images.length; i++) {
-      //   try {
-      //     const response = await fetch(images[i]);
-      //     const blob = await response.blob();
-      //     const file = new File([blob], `image_${i}.jpg`, { type: 'image/jpeg' });
-      //   } catch (error) {
-      //     console.error('Error processing image:', error);
-      //     throw new Error('Failed to process images: ' + error.message);
-      //   }
-      // }
-      // // Add images directly from the stored File objects
-      // for (let i = 0; i < images.length; i++) {
-      //   // We directly append the native File object! No Base64 decoding needed.
-      //   formDataToSend.append('images', images[i].file);
-      // }
-
-      // // Add video
-      // try {
-      //   console.log('Processing video:', {
-      //     name: video.name,
-      //     type: video.file.type,
-      //     size: video.file.size,
-      //     preview: video.preview
-      //   });
-
-      //   const videoResponse = await fetch(video.preview);
-      //   const videoBlob = await videoResponse.blob();
-      //   const videoFile = new File([videoBlob], video.name, { type: video.file.type });
-
-      //   console.log('Video file created:', {
-      //     name: videoFile.name,
-      //     type: videoFile.type,
-      //     size: videoFile.size
-      //   });
-
-      // } catch (error) {
-      //   console.error('Error processing video:', error);
-      //   throw new Error('Failed to process video: ' + error.message);
-      // }
-      // // Add video directly from the stored File object
-      // if (video && video.file) {
-      //   formDataToSend.append('video', video.file);
-      // }
-
-      // formDataToSend.append('images', JSON.stringify(imageUrls));
       imageUrls.forEach((url) => {
         formDataToSend.append('images', url);
       });
