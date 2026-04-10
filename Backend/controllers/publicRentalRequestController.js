@@ -328,179 +328,107 @@ const getFeaturedRentalRequests = async (req, res) => {
 
 const createRentalRequest = async (req, res) => {
   try {
-    console.log('=== Create Rental Request Started ===');
-    
-    // 1. Authenticated User Check
+    console.log('=== Incoming JSON Request ===');
     const userId = req.user?.userId || req.user?._id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User not authenticated' });
-    }
 
+    // 1. User Validation
+    if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
     const userExists = await User.findById(userId);
-    if (!userExists) {
-      return res.status(404).json({ success: false, message: 'User account not found' });
-    }
+    if (!userExists) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // 2. Extract Fields from Request Body
+    // 2. Destructure with Defaults (Matching Frontend SafePayload)
     const {
       title,
       description,
-      pricePerDay,
-      priceAmount,
-      pricePeriod,
+      price,
       product,
       category,
-      location, // This might be the address string from frontend
-      address,
-      city,
-      state,
-      pincode,
-      coordinates,
-      serviceRadius,
-      condition,
+      location,
+      contactInfo,
+      images,
+      video,
       features,
       tags,
-      startDate,
-      phone,
-      email,
-      alternatePhone
+      condition,
+      availability
     } = req.body;
 
-    // 3. Basic Validation
-    if (!title || !description || !(pricePerDay || priceAmount) || !category || !phone) {
+    // 3. Server-side Validation
+    if (!title || !description || !price?.pricePerDay || !category || !contactInfo?.phone) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: title, description, price, category, or phone'
+        message: 'Missing required fields: Check title, price, category, and phone.'
       });
     }
 
-    // --- 4. UNIVERSAL SAFE PARSING (Handles JSON or FormData strings) ---
-
-    const safeParse = (data, defaultVal = null) => {
-      if (!data) return defaultVal;
-      if (typeof data === 'string') {
-        try { return JSON.parse(data); } catch (e) { return defaultVal; }
-      }
-      return data;
-    };
-
-    // Images Processing
-    const rawImages = safeParse(req.body.images, []);
-    const images = rawImages.map((img, index) => ({
-      url: img.url,
-      publicId: img.publicId || "",
-      isPrimary: img.isPrimary || index === 0,
-      uploadedAt: new Date()
-    }));
-
-    // Video Processing
-    const rawVideo = safeParse(req.body.video);
-    const video = rawVideo?.url ? {
-      url: rawVideo.url,
-      publicId: rawVideo.publicId || "",
-      uploadedAt: new Date()
-    } : null;
-
-    // Coordinates Mapping
-    const rawCoords = safeParse(coordinates);
-    const parsedCoordinates = {
-      latitude: rawCoords?.lat || rawCoords?.latitude || 22.9676,
-      longitude: rawCoords?.lng || rawCoords?.longitude || 76.0508
-    };
-
-    // Arrays (Features & Tags)
-    const featuresArray = Array.isArray(features) ? features : safeParse(features, []);
-    const tagsArray = Array.isArray(tags) ? tags : safeParse(tags, []);
-
-    // 5. Construct Schema-Compliant Data Object
+    // 4. Construct Final Mongoose Data
     const rentalRequestData = {
       title: title.trim(),
       description: description.trim(),
-      location: {
-        address: address || location,
-        city: city || 'Not specified',
-        state: state || 'Not specified',
-        pincode: pincode || '000000',
-        coordinates: parsedCoordinates,
-        serviceRadius: parseInt(serviceRadius) || 7,
-        locationType: req.body.locationType || 'residential'
-      },
-      price: {
-        pricePerDay: parseFloat(pricePerDay || priceAmount),
-        amount: parseFloat(priceAmount || pricePerDay),
-        currency: req.body.currency || 'INR',
-        period: pricePeriod || 'daily'
-      },
       product,
       category,
       condition: condition || 'good',
-      features: featuresArray,
-      tags: tagsArray,
-      images,
-      video,
-      user: userId,
-      contactInfo: {
-        phone: phone,
-        email: email || userExists.email,
-        alternatePhone: alternatePhone || null
+      price: {
+        pricePerDay: parseFloat(price.pricePerDay),
+        amount: parseFloat(price.amount || price.pricePerDay),
+        currency: price.currency || 'INR',
+        period: price.period || 'daily'
       },
+      location: {
+        address: location.address,
+        city: location.city,
+        state: location.state,
+        pincode: location.pincode || '000000',
+        coordinates: {
+          latitude: location.coordinates?.latitude || 22.9676,
+          longitude: location.coordinates?.longitude || 76.0508
+        },
+        serviceRadius: parseInt(location.serviceRadius) || 7
+      },
+      contactInfo: {
+        phone: contactInfo.phone,
+        email: contactInfo.email || userExists.email,
+        alternatePhone: contactInfo.alternatePhone || null
+      },
+      images: Array.isArray(images) ? images : [],
+      video: video?.url ? video : null,
+      features: Array.isArray(features) ? features : [],
+      tags: Array.isArray(tags) ? tags : [],
+      user: userId,
       availability: {
-        startDate: startDate ? new Date(startDate) : new Date(),
+        startDate: availability?.startDate ? new Date(availability.startDate) : new Date(),
         isAvailable: true
       },
       status: 'pending'
     };
 
-    // 6. Save to Database
+    // 5. Save and Respond
     const rentalRequest = new RentalRequest(rentalRequestData);
     await rentalRequest.save();
 
-    console.log('✅ Listing saved:', rentalRequest._id);
+    // 6. Async Subscription Update (Don't let this block the response)
+    updateSubscriptionCount(userId).catch(err => console.error("Sub Error:", err));
 
-    // 7. Update Subscription Counter
-    try {
-      let subscription = await Subscription.findOne({
-        userId: userId,
-        status: 'active',
-        endDate: { $gt: new Date() }
-      });
-
-      if (!subscription) {
-        // Create default plan if none exists
-        subscription = new Subscription({
-          userId: userId,
-          planId: 'free_tier',
-          planName: 'Free Tier',
-          status: 'active',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-          maxListings: 2,
-          currentListings: 0
-        });
-      }
-
-      subscription.currentListings += 1;
-      await subscription.save();
-    } catch (subErr) {
-      console.error('⚠️ Subscription update failed (Non-critical):', subErr.message);
-    }
-
-    // 8. Final Response
     res.status(201).json({
       success: true,
-      message: 'Rental request submitted successfully and is pending review.',
+      message: 'Listing created and pending admin review.',
       data: rentalRequest
     });
 
   } catch (error) {
-    console.error('❌ Controller Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error while creating listing',
-      error: error.message
-    });
+    console.error('Save Error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Helper function to keep controller clean
+async function updateSubscriptionCount(userId) {
+  const subscription = await Subscription.findOne({ userId, status: 'active' });
+  if (subscription) {
+    subscription.currentListings += 1;
+    await subscription.save();
+  }
+}
 
 const createRentalRequest2 = async (req, res) => {
   try {

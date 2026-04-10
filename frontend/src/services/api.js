@@ -2089,29 +2089,24 @@ Please check:
 
   async createRentalListing(payload) {
   const url = `${this.baseURL}/rental-requests`;
-  
+  const token = localStorage.getItem('token'); // Ensure your token key is correct
+
   const config = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      // Include your Auth token here if required
-      'Authorization': `Bearer ${localStorage.getItem('token')}` 
+      'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify(payload), // Send as JSON string
+    body: JSON.stringify(payload),
   };
 
-  try {
-    const response = await fetch(url, config);
-    const data = await response.json();
+  const response = await fetch(url, config);
+  const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to create listing');
-    }
-    return data;
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(data.message || `Error: ${response.status}`);
   }
+  return data;
 }
 
   // Get user's own rental requests
