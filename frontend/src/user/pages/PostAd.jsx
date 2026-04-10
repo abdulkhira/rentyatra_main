@@ -385,7 +385,7 @@ const PostAd = () => {
       setLoading(true);
       setError('');
 
-       // 🚀 STEP 1: Upload Images
+      // 🚀 STEP 1: Upload Images
       const imageUrls = [];
       for (let img of images) {
         const url = await uploadToCloudinary(img.file, "image");
@@ -451,6 +451,12 @@ const PostAd = () => {
       } else {
         console.log('Debug - No serviceRadius found in formData, using default');
       }
+
+      for (let i = 0; i < images.length; i++) {
+        formDataToSend.append('images', images[i].file);
+      }
+
+      formDataToSend.append('video', video.file);
 
       // Debug: Log all form data being sent
       console.log('FormData being sent:');
@@ -729,7 +735,7 @@ const PostAd = () => {
               </p>
             </div>
 
-          
+
             <form onSubmit={(e) => {
               console.log('Form onSubmit triggered!');
               handleSubmit(e);
@@ -1007,7 +1013,7 @@ const PostAd = () => {
                 </Button>
               </div>
             </form>
-              {error && (
+            {error && (
               <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
                 <p className="text-red-700 text-xs md:text-sm font-medium">{error}</p>
               </div>

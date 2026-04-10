@@ -23,7 +23,7 @@ const getPublicRentalRequests = async (req, res) => {
     const query = {
       status: 'approved'
     };
-    
+
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -32,7 +32,7 @@ const getPublicRentalRequests = async (req, res) => {
         { 'location.state': { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     if (category) {
       // If category is provided, we need to find the category by name first
       const Category = require('../models/Category');
@@ -44,7 +44,7 @@ const getPublicRentalRequests = async (req, res) => {
         query.category = null;
       }
     }
-    
+
     if (city) {
       query['location.city'] = { $regex: city, $options: 'i' };
     }
@@ -60,21 +60,21 @@ const getPublicRentalRequests = async (req, res) => {
     let requests;
     if (userLat && userLng) {
       console.log('Using location-based filtering in getPublicRentalRequests:', { userLat, userLng });
-      
+
       // Use findNearbyRequests to filter by each product's serviceRadius
       requests = await RentalRequest.findNearbyRequests(
         parseFloat(userLat),
         parseFloat(userLng),
         50 // Maximum distance limit (actual filtering uses each product's serviceRadius)
       )
-      .where(query) // Apply additional filters (search, category, city)
-      .populate('user', 'name email')
-      .populate('product', 'name')
-      .populate('category', 'name')
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit))
-      .select('-reviewedBy -reviewedAt -rejectionReason');
+        .where(query) // Apply additional filters (search, category, city)
+        .populate('user', 'name email')
+        .populate('product', 'name')
+        .populate('category', 'name')
+        .sort(sort)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .select('-reviewedBy -reviewedAt -rejectionReason');
     } else {
       // Regular query without location filtering
       requests = await RentalRequest.find(query)
@@ -171,7 +171,7 @@ const getPublicRentalRequest = async (req, res) => {
         console.log('Debug - Request status in DB:', anyRequest.status);
         console.log('Debug - Request user in DB:', anyRequest.user);
       }
-      
+
       return res.status(404).json({
         success: false,
         message: 'Rental request not found or not available'
@@ -229,24 +229,24 @@ const getFeaturedRentalRequests = async (req, res) => {
     // If user coordinates are provided, use location-based filtering
     if (userLat && userLng) {
       console.log('Using location-based filtering based on each product\'s serviceRadius:', { userLat, userLng });
-      
+
       // Use the findNearbyRequests static method for location-based filtering
       // This will filter products where user is within each product's individual serviceRadius
       // maxDistanceKm parameter is now a safety limit (50km), actual filtering uses product.serviceRadius
       requests = await RentalRequest.findNearbyRequests(
-        parseFloat(userLat), 
-        parseFloat(userLng), 
+        parseFloat(userLat),
+        parseFloat(userLng),
         50 // Maximum distance limit for safety (actual filtering uses each product's serviceRadius)
       )
-      .populate('user', 'name email')
-      .populate('product', 'name')
-      .populate('category', 'name')
-      .sort({ isBoosted: -1, boostedAt: -1, createdAt: -1 })
-      .limit(parseInt(limit))
-      .select('-reviewedBy -reviewedAt -rejectionReason');
-      
+        .populate('user', 'name email')
+        .populate('product', 'name')
+        .populate('category', 'name')
+        .sort({ isBoosted: -1, boostedAt: -1, createdAt: -1 })
+        .limit(parseInt(limit))
+        .select('-reviewedBy -reviewedAt -rejectionReason');
+
       console.log(`After location filtering (user must be within each product's serviceRadius), found: ${requests.length} requests`);
-      
+
       // Exclude listings whose owner/user no longer exists
       const invalidRequests = requests.filter(req => !req.user || !req.user._id);
       if (invalidRequests.length > 0) {
@@ -255,14 +255,14 @@ const getFeaturedRentalRequests = async (req, res) => {
           console.warn(`⚠️ Found ${invalidRequests.length} orphaned rental requests (users don't exist). Use /api/admin/rental-requests/cleanup-orphaned to clean them up.`);
         }
       }
-      
+
       requests = requests.filter(req => req.user && req.user._id);
-      
+
       console.log('After filtering invalid users, found:', requests.length, 'requests');
     } else {
       console.log('Using regular query without location filtering - fetching ALL approved rentals');
       console.log('Query:', JSON.stringify(query, null, 2));
-      
+
       // Regular query without location filtering - fetch all approved rentals
       // Sort by boosted first, then by creation date (newest first)
       requests = await RentalRequest.find(query)
@@ -274,7 +274,7 @@ const getFeaturedRentalRequests = async (req, res) => {
         .select('-reviewedBy -reviewedAt -rejectionReason');
 
       console.log('After regular query, found:', requests.length, 'requests');
-      
+
       // Exclude listings whose owner/user no longer exists
       const invalidRequests = requests.filter(req => !req.user || !req.user._id);
       if (invalidRequests.length > 0) {
@@ -293,9 +293,9 @@ const getFeaturedRentalRequests = async (req, res) => {
           console.warn(`⚠️ Found ${invalidRequests.length} orphaned rental requests. These are filtered out. Use admin cleanup endpoint to remove them.`);
         }
       }
-      
+
       requests = requests.filter(req => req.user && req.user._id);
-      
+
       console.log('After filtering invalid users, found:', requests.length, 'requests');
       if (invalidRequests.length > 0 && process.env.NODE_ENV === 'development') {
         console.log(`⚠️ Removed ${invalidRequests.length} orphaned rental requests (users don't exist)`);
@@ -331,18 +331,18 @@ const createRentalRequest = async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Request files:', req.files);
     console.log('User info:', req.user);
-    
+
     // Validate that user exists in database before creating rental request
     const User = require('../models/User');
     const userId = req.user?.userId;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
         message: 'User not authenticated'
       });
     }
-    
+
     // Verify user exists in database
     const userExists = await User.findById(userId).select('_id');
     if (!userExists) {
@@ -352,9 +352,9 @@ const createRentalRequest = async (req, res) => {
         message: 'User account not found. Please login again.'
       });
     }
-    
+
     console.log('✅ User verified in database:', userId);
-    
+
     // Debug specific fields
     console.log('Debug fields:', {
       title: req.body.title,
@@ -373,29 +373,29 @@ const createRentalRequest = async (req, res) => {
       userId: req.user?.userId
     });
 
-        const {
-          title,
-          description,
-          pricePerDay,
-          priceAmount,
-          pricePeriod,
-          product,
-          category,
-          location,
-          address,
-          city,
-          state,
-          pincode,
-          coordinates,
-          serviceRadius,
-          condition,
-          features,
-          tags,
-          startDate,
-          phone,
-          email,
-          alternatePhone
-        } = req.body;
+    const {
+      title,
+      description,
+      pricePerDay,
+      priceAmount,
+      pricePeriod,
+      product,
+      category,
+      location,
+      address,
+      city,
+      state,
+      pincode,
+      coordinates,
+      serviceRadius,
+      condition,
+      features,
+      tags,
+      startDate,
+      phone,
+      email,
+      alternatePhone
+    } = req.body;
 
     // Validate required fields
     if (!title || !description || !(pricePerDay || priceAmount) || !category || !location || !phone || !email) {
@@ -424,14 +424,14 @@ const createRentalRequest = async (req, res) => {
     const images = [];
     let videoUrl = null;
     let videoPublicId = null;
-    
+
     // if (req.files) {
     //   console.log('Processing uploaded files:', req.files);
-      
+
     //   // Handle images
     //   if (req.files.images && req.files.images.length > 0) {
     //     console.log('Processing', req.files.images.length, 'images');
-        
+
     //     for (const file of req.files.images) {
     //       console.log('Processing image:', {
     //         fieldname: file.fieldname,
@@ -439,7 +439,7 @@ const createRentalRequest = async (req, res) => {
     //         mimetype: file.mimetype,
     //         size: file.size
     //       });
-          
+
     //       if (file.mimetype.startsWith('image/')) {
     //         // Upload image to Cloudinary
     //         try {
@@ -459,14 +459,14 @@ const createRentalRequest = async (req, res) => {
     //               }
     //             ).end(file.buffer);
     //           });
-            
+
     //           images.push({
     //             url: uploadResult.secure_url,
     //             publicId: uploadResult.public_id,
     //             isPrimary: images.length === 0, // First image is primary
     //             uploadedAt: new Date()
     //           });
-              
+
     //           console.log('Image uploaded successfully:', uploadResult.secure_url);
     //         } catch (error) {
     //           console.error('Error uploading image to Cloudinary:', error);
@@ -475,11 +475,11 @@ const createRentalRequest = async (req, res) => {
     //       }
     //     }
     //   }
-      
+
     //   // Handle video
     //   if (req.files.video && req.files.video.length > 0) {
     //     console.log('Processing', req.files.video.length, 'videos');
-        
+
     //     for (const file of req.files.video) {
     //       console.log('Processing video:', {
     //         fieldname: file.fieldname,
@@ -487,7 +487,7 @@ const createRentalRequest = async (req, res) => {
     //         mimetype: file.mimetype,
     //         size: file.size
     //       });
-          
+
     //       if (file.mimetype.startsWith('video/')) {
     //         // Upload video to Cloudinary
     //         try {
@@ -507,10 +507,10 @@ const createRentalRequest = async (req, res) => {
     //               }
     //             ).end(file.buffer);
     //           });
-              
+
     //           videoUrl = uploadResult.secure_url;
     //           videoPublicId = uploadResult.public_id;
-              
+
     //           console.log('Video uploaded successfully:', uploadResult.secure_url);
     //         } catch (error) {
     //           console.error('Error uploading video to Cloudinary:', error);
@@ -554,7 +554,7 @@ const createRentalRequest = async (req, res) => {
     // Parse features and tags if they are strings
     let featuresArray = [];
     let tagsArray = [];
-    
+
     if (features) {
       try {
         featuresArray = typeof features === 'string' ? JSON.parse(features) : features;
@@ -562,7 +562,7 @@ const createRentalRequest = async (req, res) => {
         featuresArray = features.split(',').map(f => f.trim());
       }
     }
-    
+
     if (tags) {
       try {
         tagsArray = typeof tags === 'string' ? JSON.parse(tags) : tags;
@@ -575,8 +575,8 @@ const createRentalRequest = async (req, res) => {
     let parsedCoordinates = null;
     if (coordinates) {
       try {
-        parsedCoordinates = typeof coordinates === 'string' 
-          ? JSON.parse(coordinates) 
+        parsedCoordinates = typeof coordinates === 'string'
+          ? JSON.parse(coordinates)
           : coordinates;
       } catch (e) {
         console.log('Invalid coordinates format, ignoring:', coordinates);
@@ -648,7 +648,7 @@ const createRentalRequest = async (req, res) => {
 
     // Create the rental request
     const rentalRequest = new RentalRequest(rentalRequestData);
-    
+
     // Validate the document before saving
     const validationError = rentalRequest.validateSync();
     if (validationError) {
@@ -657,7 +657,7 @@ const createRentalRequest = async (req, res) => {
         errors: validationError.errors,
         name: validationError.name
       });
-      
+
       // Log each validation error
       for (const field in validationError.errors) {
         const error = validationError.errors[field];
@@ -668,14 +668,14 @@ const createRentalRequest = async (req, res) => {
           kind: error.kind
         });
       }
-      
+
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: validationError.errors
       });
     }
-    
+
     await rentalRequest.save();
     console.log('Rental request saved successfully:', rentalRequest._id);
 
@@ -684,7 +684,7 @@ const createRentalRequest = async (req, res) => {
       console.log('=== Subscription Update Process ===');
       console.log('User ID from request:', req.user.userId);
       console.log('User ID type:', typeof req.user.userId);
-      
+
       const Subscription = require('../models/Subscription');
       let subscription = await Subscription.findOne({
         userId: req.user.userId,
@@ -697,12 +697,12 @@ const createRentalRequest = async (req, res) => {
       // If no active subscription found, create a default one for new users
       if (!subscription) {
         console.log('No active subscription found, creating default subscription for new user');
-        
+
         // Create a default subscription for new users (2 post ads)
         const startDate = new Date();
         const endDate = new Date();
         endDate.setDate(endDate.getDate() + 365); // 1 year default
-        
+
         subscription = new Subscription({
           userId: req.user.userId,
           planId: 'new_user_default',
@@ -719,7 +719,7 @@ const createRentalRequest = async (req, res) => {
           maxListings: 2, // 2 post ads for new users
           maxPhotos: 10
         });
-        
+
         await subscription.save();
         console.log('Default subscription created for new user:', subscription._id);
       }
@@ -729,7 +729,7 @@ const createRentalRequest = async (req, res) => {
       await subscription.save();
       console.log('Subscription counters updated - currentListings:', subscription.currentListings);
       console.log('Remaining post ads:', subscription.maxListings - subscription.currentListings);
-      
+
     } catch (subscriptionError) {
       console.error('Error updating subscription counters:', subscriptionError);
       console.error('Subscription error details:', {
@@ -769,12 +769,12 @@ const createRentalRequest = async (req, res) => {
       cause: error.cause
     });
     console.error('Full error object:', error);
-    
+
     // If there's an error and images were uploaded, clean them up
     if (req.files) {
       try {
         console.log('Cleaning up uploaded files...');
-        
+
         // Clean up images
         if (req.files.images && Array.isArray(req.files.images) && req.files.images.length > 0) {
           for (const file of req.files.images) {
@@ -787,7 +787,7 @@ const createRentalRequest = async (req, res) => {
             }
           }
         }
-        
+
         // Clean up video
         if (req.files.video && Array.isArray(req.files.video) && req.files.video.length > 0) {
           for (const file of req.files.video) {
@@ -800,7 +800,7 @@ const createRentalRequest = async (req, res) => {
             }
           }
         }
-        
+
         console.log('Files cleaned up successfully');
       } catch (cleanupError) {
         console.error('Error cleaning up uploaded files:', cleanupError);
@@ -830,7 +830,7 @@ const getUserRentalRequests = async (req, res) => {
     const query = {
       user: req.user.userId
     };
-    
+
     if (status) {
       query.status = status;
     }
@@ -910,7 +910,7 @@ const updateRentalRequest = async (req, res) => {
       reqUserIdString: req.user.userId.toString(),
       areEqual: rentalRequest.user.toString() === req.user.userId.toString()
     });
-    
+
     if (rentalRequest.user.toString() !== req.user.userId.toString()) {
       return res.status(403).json({
         success: false,
@@ -939,15 +939,15 @@ const updateRentalRequest = async (req, res) => {
 
     // Update fields
     const updateData = {};
-    
+
     if (description !== undefined) {
       updateData.description = description.trim();
     }
-    
+
     if (priceAmount !== undefined) {
       updateData['price.amount'] = parseFloat(priceAmount);
     }
-    
+
     if (serviceRadius !== undefined) {
       updateData['location.serviceRadius'] = parseInt(serviceRadius);
     }
@@ -1010,7 +1010,7 @@ const boostRentalRequest = async (req, res) => {
     // Find the user and check boost credits
     const User = require('../models/User');
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -1039,13 +1039,13 @@ const boostRentalRequest = async (req, res) => {
     // Deduct one boost credit
     user.boostCredits.usedBoosts += 1;
     user.boostCredits.remainingBoosts = user.boostCredits.freeBoosts + user.boostCredits.purchasedBoosts - user.boostCredits.usedBoosts;
-    
+
     await user.save();
 
     // Also update BoostPackage if user has active packages
     const BoostPackage = require('../models/BoostPackage');
     console.log('🔍 Looking for active boost packages for user:', userId);
-    
+
     const activePackage = await BoostPackage.findOne({
       user: userId,
       status: 'active',
