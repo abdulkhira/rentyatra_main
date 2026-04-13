@@ -573,7 +573,7 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-app.get('/debug-test', (req, res) => {
+app.get('/api/debug-test', (req, res) => {
   console.log("LOGGING IS WORKING: " + new Date().toISOString());
   res.send("Check your terminal or dashboard logs now.");
 });
