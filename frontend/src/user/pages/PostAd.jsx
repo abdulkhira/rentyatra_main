@@ -298,41 +298,69 @@ const PostAd = () => {
     const videoUrl = video?.file ? await uploadToCloudinary(video.file, "video") : "";
 
     // 2. Prepare FormData (Matching your curl request keys)
-    const formDataToSend = new FormData();
+    // const formDataToSend = new FormData();
     
-    formDataToSend.append('title', formData.title);
-    formDataToSend.append('description', formData.description);
-    formDataToSend.append('priceAmount', formData.pricePerDay);
-    formDataToSend.append('pricePeriod', 'daily');
-    formDataToSend.append('product', selectedProduct._id);
-    formDataToSend.append('category', selectedCategory._id || selectedCategory.id);
-    formDataToSend.append('location', formData.location);
-    formDataToSend.append('city', coordinates?.city || 'Not specified');
-    formDataToSend.append('state', coordinates?.state || 'Not specified');
-    formDataToSend.append('pincode', formData.pincode || '361001');
-    formDataToSend.append('phone', formData.phone);
-    formDataToSend.append('email', formData.email || 'test@gmail.com');
-    formDataToSend.append('serviceRadius', formData.serviceRadius || 7);
+    // formDataToSend.append('title', formData.title);
+    // formDataToSend.append('description', formData.description);
+    // formDataToSend.append('priceAmount', formData.pricePerDay);
+    // formDataToSend.append('pricePeriod', 'daily');
+    // formDataToSend.append('product', selectedProduct._id);
+    // formDataToSend.append('category', selectedCategory._id || selectedCategory.id);
+    // formDataToSend.append('location', formData.location);
+    // formDataToSend.append('city', coordinates?.city || 'Not specified');
+    // formDataToSend.append('state', coordinates?.state || 'Not specified');
+    // formDataToSend.append('pincode', formData.pincode || '361001');
+    // formDataToSend.append('phone', formData.phone);
+    // formDataToSend.append('email', formData.email || 'test@gmail.com');
+    // formDataToSend.append('serviceRadius', formData.serviceRadius || 7);
 
-    // Stringified Objects/Arrays
-    formDataToSend.append('coordinates', JSON.stringify({
-      lat: formData.coordinates.lat,
-      lng: formData.coordinates.lng
-    }));
+    // // Stringified Objects/Arrays
+    // formDataToSend.append('coordinates', JSON.stringify({
+    //   lat: formData.coordinates.lat,
+    //   lng: formData.coordinates.lng
+    // }));
 
-    const imagesArray = imageUrls.map((url, index) => ({
-      url: url,
-      publicId: "",
-      isPrimary: index === 0
-    }));
-    formDataToSend.append('images', JSON.stringify(imagesArray));
+    // const imagesArray = imageUrls.map((url, index) => ({
+    //   url: url,
+    //   publicId: "",
+    //   isPrimary: index === 0
+    // }));
+    // formDataToSend.append('images', JSON.stringify(imagesArray));
 
-    if (videoUrl) {
-      formDataToSend.append('video', JSON.stringify({ url: videoUrl, publicId: "" }));
-    }
+    // if (videoUrl) {
+    //   formDataToSend.append('video', JSON.stringify({ url: videoUrl, publicId: "" }));
+    // }
+
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      priceAmount: formData.pricePerDay,
+      pricePeriod: "daily",
+      product: selectedProduct._id,
+      category: selectedCategory._id || selectedCategory.id,
+      location: formData.location,
+      city: coordinates?.city || 'Not specified',
+      state: coordinates?.state || 'Not specified',
+      pincode: formData.pincode || '361001',
+      phone: formData.phone,
+      email: formData.email || 'test@gmail.com',
+      serviceRadius: formData.serviceRadius || 7,
+      coordinates: {
+        lat: formData.coordinates.lat,
+        lng: formData.coordinates.lng
+      },
+      images: imageUrls.map((url, index) => ({
+        url,
+        publicId: "",
+        isPrimary: index === 0
+      })),
+      video: videoUrl
+        ? { url: videoUrl, publicId: "" }
+        : null
+    };
 
     // 3. Submit
-    const response = await apiService.createRentalListing(formDataToSend);
+    const response = await apiService.createRentalListing(payload);
 
     if (response.success) {
       alert('Success!');

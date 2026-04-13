@@ -23,7 +23,6 @@ router.get('/', getPublicRentalRequests);
 // @access  Private (User)
 router.post('/',
   protect,
-  uploadRentalRequest.none(),
   createRentalRequest
 );
 

@@ -2040,12 +2040,15 @@ Please check:
   }
 
   // Create rental listing (for users)
-  async createRentalListing(formData) {
+  async createRentalListing(payload) {
     const url = `${this.baseURL}/rental-requests`;
     const config = {
       method: 'POST',
-      headers: this.getFileUploadHeaders(), 
-      body: formData, // The browser automatically sets the correct Content-Type + Boundary
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.token}`
+      },
+      body: JSON.stringify(payload)
     };
 
     try {

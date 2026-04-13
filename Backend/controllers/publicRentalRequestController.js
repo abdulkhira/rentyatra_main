@@ -364,8 +364,8 @@ const createRentalRequest = async (req, res) => {
 
     // 5. Parse Data from FormData Strings
     const parsedCoords = safeParse(req.body.coordinates, { lat: 0, lng: 0 });
-    const rawImages = safeParse(req.body.images, []);
-    const rawVideo = safeParse(req.body.video, null);
+    const rawImages = req.body.images || [];
+    const rawVideo = req.body.video || null;
     const price = parseFloat(priceAmount);
 
     // 6. Construct Document Object

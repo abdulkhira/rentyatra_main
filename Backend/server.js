@@ -573,10 +573,7 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-app.get('/api/debug-test', (req, res) => {
-  console.log("LOGGING IS WORKING: " + new Date().toISOString());
-  res.send("Check your terminal or dashboard logs now.");
-});
+
 // 404 handler
 app.use((req, res) => {
   // Ensure CORS headers are set for 404 responses
