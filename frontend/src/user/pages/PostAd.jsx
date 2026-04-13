@@ -42,7 +42,7 @@ const PostAd = () => {
     coordinates: null, // Store lat/lng coordinates
     serviceRadius: 7, // Default service radius
     condition: 'good',
-    phone: '',
+    phone: user?.phone || '',
     // email: '',
   });
 
@@ -688,9 +688,9 @@ const PostAd = () => {
                             type="number"
                             min="0"
                             max="50"
-                            value={formData.serviceRadius || 7}
+                            value={formData.serviceRadius }
                             onChange={(e) => {
-                              const radius = parseInt(e.target.value) || 7;
+                              const radius = parseInt(e.target.value) ;
                               setFormData(prev => ({
                                 ...prev,
                                 serviceRadius: radius

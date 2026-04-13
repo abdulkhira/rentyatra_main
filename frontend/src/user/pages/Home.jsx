@@ -52,27 +52,6 @@ const Home = memo(() => {
         <CategoryGrid />
       </Suspense>
 
-      {/* RecentlyViewed - Load when near viewport */}
-      <LazyLoadSection
-        fallback={
-          <div className="py-8 px-4">
-            <div className="max-w-7xl mx-auto">
-              <RecentlyViewedSkeleton count={4} />
-            </div>
-          </div>
-        }
-      >
-        <Suspense fallback={
-          <div className="py-8 px-4">
-            <div className="max-w-7xl mx-auto">
-              <RecentlyViewedSkeleton count={4} />
-            </div>
-          </div>
-        }>
-          <RecentlyViewed />
-        </Suspense>
-      </LazyLoadSection>
-
       {/* FeaturedListings - Load last when scrolled to (below fold, heaviest) */}
       <LazyLoadSection
         fallback={
@@ -99,6 +78,27 @@ const Home = memo(() => {
           </div>
         }>
           <FeaturedListings />
+        </Suspense>
+      </LazyLoadSection>
+
+       {/* RecentlyViewed - Load when near viewport */}
+      <LazyLoadSection
+        fallback={
+          <div className="py-8 px-4">
+            <div className="max-w-7xl mx-auto">
+              <RecentlyViewedSkeleton count={4} />
+            </div>
+          </div>
+        }
+      >
+        <Suspense fallback={
+          <div className="py-8 px-4">
+            <div className="max-w-7xl mx-auto">
+              <RecentlyViewedSkeleton count={4} />
+            </div>
+          </div>
+        }>
+          <RecentlyViewed />
         </Suspense>
       </LazyLoadSection>
     </div>

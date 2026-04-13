@@ -14,7 +14,7 @@ const getSocketIO = () => {
 // @access  Private
 const createTicket = asyncHandler(async (req, res) => {
   const { subject, description, priority, userName, userEmail, userPhone } = req.body;
-  const userId = req.user?.id;
+  const userId = req.user?.userId;
 
   console.log('Creating ticket for user ID:', userId);
   console.log('User from JWT:', req.user);
@@ -24,7 +24,7 @@ const createTicket = asyncHandler(async (req, res) => {
   if (!userId) {
     console.log('No user ID found in JWT token');
     console.log('Creating ticket with fallback user data');
-    
+
     // Fallback: Create ticket with minimal user data
     const ticket = await Ticket.create({
       subject,
@@ -52,13 +52,13 @@ const createTicket = asyncHandler(async (req, res) => {
 
   // Fetch complete user details from database
   const user = await User.findById(validUserId);
-  
+
   console.log('User found in database:', user);
-  
+
   if (!user) {
     console.log('User not found in database for ID:', userId);
     console.log('Attempting to create ticket with JWT user data as fallback');
-    
+
     // Fallback: Use JWT user data if database lookup fails
     const ticket = await Ticket.create({
       subject,
@@ -142,13 +142,13 @@ const getUserTickets = asyncHandler(async (req, res) => {
 // @route   GET /api/tickets/my-tickets
 // @access  Private
 const getMyTickets = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   console.log("USER:", req.user);
 
-
+  console.log("userId:", userId);
   const tickets = await Ticket.find({ userId })
     .sort({ createdAt: -1 });
-
+  console.log("tickets:", tickets);
   res.json({
     success: true,
     count: tickets.length,
@@ -185,7 +185,7 @@ const updateTicketStatus = asyncHandler(async (req, res) => {
 
   console.log('📝 Current ticket status:', ticket.status);
   console.log('📝 Updating to status:', status);
-  
+
   ticket.status = status;
   ticket.lastUpdate = new Date();
   await ticket.save();

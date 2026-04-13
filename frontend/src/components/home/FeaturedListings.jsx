@@ -60,6 +60,7 @@ const FeaturedListings = memo(() => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Featured Listings</h2>
+          {featuredItems.length > 0 && (
           <button 
             onClick={handleViewAll}
             className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition flex items-center gap-1"
@@ -69,6 +70,7 @@ const FeaturedListings = memo(() => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+          )}
         </div>
 
         {listingsLoading ? (
