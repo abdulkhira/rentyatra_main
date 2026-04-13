@@ -344,6 +344,9 @@ const createRentalRequest = async (req, res) => {
       }
     };
 
+    console.log("CHECKING REQ BODY:", req.body);
+    console.log("IS IMAGES A STRING?:", typeof req.body.images);
+
     // 3. Destructure Body
     const { 
       title, description, priceAmount, pricePeriod, product, 
@@ -355,7 +358,7 @@ const createRentalRequest = async (req, res) => {
     if (!title || !description || !priceAmount || !category || !location || !phone || !email) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields'
+        message: 'Missing required fields: title, description, price, category, location, phone, email'
       });
     }
 
