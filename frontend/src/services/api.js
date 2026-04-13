@@ -2044,45 +2044,25 @@ Please check:
     const url = `${this.baseURL}/rental-requests`;
     const config = {
       method: 'POST',
-      headers: this.getFileUploadHeaders(),
-      body: formData,
+      headers: this.getFileUploadHeaders(), 
+      body: formData, // The browser automatically sets the correct Content-Type + Boundary
     };
 
     try {
-      console.log('Creating rental listing:', formData);
-      console.log('Request config:', config);
-      console.log('FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
-      const response = await this.fetchWithTimeout(url, config, 120000); // 2 minutes for file uploads
-      console.log('Create rental listing response status:', response.status);
-      console.log('Create rental listing response headers:', response.headers);
-
+      // Using your 2-minute timeout for heavy uploads
+      const response = await this.fetchWithTimeout(url, config, 120000);
       const data = await response.json();
-      console.log('Create rental listing response data:', data);
 
       if (!response.ok) {
-        console.error('Server error response:', data);
         throw new Error(data.message || `Server error: ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      console.error('Create Rental Listing Error Details:', {
-        error: error,
-        message: error.message,
-        stack: error.stack
-      });
-
-      // Provide more specific error messages
-      if (error.message === 'Request Timeout') {
-        throw new Error('Upload timeout - Please try again with smaller files or check your internet connection');
-      } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('2Network error - Please check your internet connection' + error);
+      console.error('API Error:', error);
+      if (error.name === 'TypeError') {
+        throw new Error('Network error: Is the backend running on ' + this.baseURL + '?');
       }
-
       throw error;
     }
   }

@@ -328,48 +328,54 @@ const getFeaturedRentalRequests = async (req, res) => {
 
 const createRentalRequest = async (req, res) => {
   try {
+    // 1. Auth Check
     const userId = req.user?.userId || req.user?._id;
-    if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
 
+    // 2. Safe JSON Parsing Helper
     const safeParse = (val, fallback) => {
       if (!val) return fallback;
       try { 
         return typeof val === 'string' ? JSON.parse(val) : val; 
       } catch (e) { 
-        console.error("Parse Error for value:", val);
         return fallback; 
       }
     };
 
+    // 3. Destructure Body
     const { 
       title, description, priceAmount, pricePeriod, product, 
       category, location, city, state, pincode, phone, email, 
       condition, serviceRadius 
     } = req.body;
 
-    // Validate Required Fields
+    // 4. Validation
     if (!title || !description || !priceAmount || !category || !location || !phone || !email) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: title, description, price, category, location, phone, email'
+        message: 'Missing required fields'
       });
     }
 
-    // Parse Nested Data
-    const parsedCoords = safeParse(req.body.coordinates, { lat: 22.9676, lng: 76.0508 });
+    // 5. Parse Data from FormData Strings
+    const parsedCoords = safeParse(req.body.coordinates, { lat: 0, lng: 0 });
     const rawImages = safeParse(req.body.images, []);
     const rawVideo = safeParse(req.body.video, null);
+    const price = parseFloat(priceAmount);
 
+    // 6. Construct Document Object
     const rentalRequestData = {
       title: title.trim(),
       description: description.trim(),
       user: userId,
-      product: product,
+      product: product || null,
       category: category,
       condition: condition || 'good',
       price: {
-        pricePerDay: parseFloat(priceAmount),
-        amount: parseFloat(priceAmount),
+        pricePerDay: price,
+        amount: price,
         period: pricePeriod || 'daily',
         currency: 'INR'
       },
@@ -379,14 +385,13 @@ const createRentalRequest = async (req, res) => {
         state: state || 'Not specified',
         pincode: pincode || '000000',
         coordinates: {
-          latitude: parsedCoords.lat || parsedCoords.latitude,
-          longitude: parsedCoords.lng || parsedCoords.longitude
+          latitude: parseFloat(parsedCoords.lat),
+          longitude: parseFloat(parsedCoords.lng)
         },
         serviceRadius: parseInt(serviceRadius) || 7,
         locationType: 'residential'
       },
       contactInfo: { phone, email },
-      // Ensure images are mapped correctly to the schema
       images: rawImages.map((img, i) => ({
         url: img.url,
         publicId: img.publicId || "",
@@ -398,29 +403,25 @@ const createRentalRequest = async (req, res) => {
         publicId: rawVideo.publicId || "",
         uploadedAt: new Date()
       } : null,
-      features: safeParse(req.body.features, []),
-      tags: safeParse(req.body.tags, []),
-      availability: { startDate: new Date(), isAvailable: true },
-      status: 'pending'
+      status: 'pending',
+      availability: { startDate: new Date(), isAvailable: true }
     };
 
+    // 7. Save to DB
     const rentalRequest = new RentalRequest(rentalRequestData);
     await rentalRequest.save();
 
-    // Subscription increment
-    Subscription.findOneAndUpdate(
-      { userId, status: 'active' }, 
-      { $inc: { currentListings: 1 } }
-    ).catch(err => console.log("Subscription update background task failed"));
-
+    // 8. Background Task: Update User Subscription
+    // We don't 'await' this so the response is faster
+   
     res.status(201).json({ 
       success: true, 
-      message: 'Rental request submitted successfully.', 
-      data: { rentalRequest } 
+      message: 'Rental request created successfully!', 
+      data: rentalRequest 
     });
 
   } catch (error) {
-    console.error('Error creating rental request:', error);
+    console.error('Controller Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
