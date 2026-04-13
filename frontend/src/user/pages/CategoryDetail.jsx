@@ -291,7 +291,7 @@ const CategoryDetail = () => {
               {navigationLevel === 'rental-requests' && selectedCategoryLocal && `${selectedCategoryLocal.name} Rentals`}
             </h1>
             {/* Breadcrumb */}
-            {navigationHistory.length > 0 && (
+          {/*  {navigationHistory.length > 0 && (
               <div className="flex items-center text-sm text-gray-500 mt-1">
                 <span>Categories</span>
                 {navigationHistory.map((history, index) => (
@@ -302,6 +302,7 @@ const CategoryDetail = () => {
                 ))}
               </div>
             )}
+             */}
           </div>
         </div>
       </div>

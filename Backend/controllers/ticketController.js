@@ -142,7 +142,9 @@ const getUserTickets = asyncHandler(async (req, res) => {
 // @route   GET /api/tickets/my-tickets
 // @access  Private
 const getMyTickets = asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
+  console.log("USER:", req.user);
+
 
   const tickets = await Ticket.find({ userId })
     .sort({ createdAt: -1 });

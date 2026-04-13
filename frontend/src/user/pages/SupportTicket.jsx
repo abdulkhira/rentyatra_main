@@ -88,16 +88,19 @@ const SupportTicket = () => {
     try {
       setLoading(true);
       console.log('🔍 Starting to load tickets...');
+      const token = localStorage.getItem("token");
+
       
       // Use direct fetch to bypass API service issues with cache busting
       console.log('🔍 Using direct fetch with cache busting...');
       const timestamp = new Date().getTime();
-      const url = `/api/tickets/public?t=${timestamp}`;
+      const url = `/api/tickets/my-tickets?t=${timestamp}`;
       console.log('🔍 Fetching URL:', url);
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
           'Content-Type': 'application/json'

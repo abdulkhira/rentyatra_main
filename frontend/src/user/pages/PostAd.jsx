@@ -284,96 +284,153 @@ const PostAd = () => {
 
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  setLoading(true);
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-  try {
-    // 1. Upload Assets to Cloudinary
-    const imageUrls = [];
-    for (let img of images) {
-      const url = await uploadToCloudinary(img.file, "image");
-      imageUrls.push(url);
+    console.log('Form submission started');
+    console.log('Form data:', formData);
+    console.log('Images count:', images.length);
+    console.log('Video:', video);
+    console.log('Selected product:', selectedProduct);
+    console.log('Selected category:', selectedCategory);
+    console.log('Selected category ID:', selectedCategory?.id);
+    console.log('Selected category _id:', selectedCategory?._id);
+    console.log('Coordinates:', formData.coordinates);
+    console.log('Location field:', formData.location);
+    console.log('Service radius:', formData.serviceRadius);
+
+    // Check each required field individually for better error messages
+    if (!formData.title) {
+      setError('Please enter a title');
+      return;
     }
-    const videoUrl = video?.file ? await uploadToCloudinary(video.file, "video") : "";
-
-    // 2. Prepare FormData (Matching your curl request keys)
-    // const formDataToSend = new FormData();
-    
-    // formDataToSend.append('title', formData.title);
-    // formDataToSend.append('description', formData.description);
-    // formDataToSend.append('priceAmount', formData.pricePerDay);
-    // formDataToSend.append('pricePeriod', 'daily');
-    // formDataToSend.append('product', selectedProduct._id);
-    // formDataToSend.append('category', selectedCategory._id || selectedCategory.id);
-    // formDataToSend.append('location', formData.location);
-    // formDataToSend.append('city', coordinates?.city || 'Not specified');
-    // formDataToSend.append('state', coordinates?.state || 'Not specified');
-    // formDataToSend.append('pincode', formData.pincode || '361001');
-    // formDataToSend.append('phone', formData.phone);
-    // formDataToSend.append('email', formData.email || 'test@gmail.com');
-    // formDataToSend.append('serviceRadius', formData.serviceRadius || 7);
-
-    // // Stringified Objects/Arrays
-    // formDataToSend.append('coordinates', JSON.stringify({
-    //   lat: formData.coordinates.lat,
-    //   lng: formData.coordinates.lng
-    // }));
-
-    // const imagesArray = imageUrls.map((url, index) => ({
-    //   url: url,
-    //   publicId: "",
-    //   isPrimary: index === 0
-    // }));
-    // formDataToSend.append('images', JSON.stringify(imagesArray));
-
-    // if (videoUrl) {
-    //   formDataToSend.append('video', JSON.stringify({ url: videoUrl, publicId: "" }));
-    // }
-
-    const payload = {
-      title: formData.title,
-      description: formData.description,
-      priceAmount: formData.pricePerDay,
-      pricePeriod: "daily",
-      product: selectedProduct._id,
-      category: selectedCategory._id || selectedCategory.id,
-      location: formData.location,
-      city: coordinates?.city || 'Not specified',
-      state: coordinates?.state || 'Not specified',
-      pincode: formData.pincode || '361001',
-      phone: formData.phone,
-      email: formData.email || 'test@gmail.com',
-      serviceRadius: formData.serviceRadius || 7,
-      coordinates: {
-        lat: formData.coordinates.lat,
-        lng: formData.coordinates.lng
-      },
-      images: imageUrls.map((url, index) => ({
-        url,
-        publicId: "",
-        isPrimary: index === 0
-      })),
-      video: videoUrl
-        ? { url: videoUrl, publicId: "" }
-        : null
-    };
-
-    // 3. Submit
-    const response = await apiService.createRentalListing(payload);
-
-    if (response.success) {
-      alert('Success!');
-      navigate('/dashboard');
-    } else {
-      setError(response.message);
+    if (!formData.description) {
+      setError('Please enter a description');
+      return;
     }
-  } catch (error) {
-    setError(error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!formData.location) {
+      setError('Please select your location');
+      return;
+    }
+    if (!formData.phone) {
+      setError('Please enter your phone number');
+      return;
+    }
+    if (!formData.email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    if (!formData.pricePerDay) {
+      setError('Please specify rental price per day');
+      return;
+    }
+
+    // Validate coordinates
+    if (!formData.coordinates || !formData.coordinates.lat || !formData.coordinates.lng) {
+      setError('Please select your location on the map');
+      return;
+    }
+
+    // Validate phone number
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      setError('Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Validate field lengths
+    if (formData.title.length < 5) {
+      setError('Title must be at least 5 characters long');
+      return;
+    }
+
+    if (formData.description.length < 20) {
+      setError('Description must be at least 20 characters long');
+      return;
+    }
+
+    if (images.length < 4) {
+      setError('Please upload at least 4 images');
+      return;
+    }
+
+    if (!video) {
+      setError('Please upload a video');
+      return;
+    }
+
+    if (!selectedProduct || !selectedCategory) {
+      setError('Please select a product and category');
+      return;
+    }
+
+    console.log('All validations passed, proceeding with submission');
+
+
+    try {
+      // 1. Upload Assets to Cloudinary
+      const imageUrls = [];
+      for (let img of images) {
+        const url = await uploadToCloudinary(img.file, "image");
+        imageUrls.push(url);
+      }
+      const videoUrl = video?.file ? await uploadToCloudinary(video.file, "video") : "";
+
+      // 2. Prepare FormData (Matching your curl request keys)
+      
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        priceAmount: formData.pricePerDay,
+        pricePeriod: "daily",
+        product: selectedProduct._id,
+        category: selectedCategory._id || selectedCategory.id,
+        location: formData.location,
+        city: coordinates?.city || 'Not specified',
+        state: coordinates?.state || 'Not specified',
+        pincode: formData.pincode || '361001',
+        phone: formData.phone,
+        email: formData.email || 'test@gmail.com',
+        serviceRadius: formData.serviceRadius || 7,
+        coordinates: {
+          lat: formData.coordinates.lat,
+          lng: formData.coordinates.lng
+        },
+        images: imageUrls.map((url, index) => ({
+          url,
+          publicId: "",
+          isPrimary: index === 0
+        })),
+        video: videoUrl
+          ? { url: videoUrl, publicId: "" }
+          : null
+      };
+
+      // 3. Submit
+      const response = await apiService.createRentalListing(payload);
+
+      if (response.success) {
+        const successMessage = 'Rental listing submitted successfully! It will be reviewed by our admin team before going live.';
+        alert(successMessage); // You can replace this with a proper toast notification
+        navigate('/dashboard');
+      } else {
+        setError(response.message);
+      }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-3 md:py-6 px-3 md:px-4 pb-24 md:pb-6">

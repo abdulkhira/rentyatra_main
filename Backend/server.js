@@ -535,7 +535,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import database connection
 const connectDB = require('./config/db');
-
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
