@@ -317,10 +317,10 @@ const PostAd = () => {
       setError('Please enter your phone number');
       return;
     }
-    if (!formData.email) {
-      setError('Please enter your email address');
-      return;
-    }
+    // if (!formData.email) {
+    //   setError('Please enter your email address');
+    //   return;
+    // }
 
     if (!formData.pricePerDay) {
       setError('Please specify rental price per day');
@@ -341,11 +341,11 @@ const PostAd = () => {
     }
 
     // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // if (!emailRegex.test(formData.email)) {
+    //   setError('Please enter a valid email address');
+    //   return;
+    // }
 
     // Validate field lengths
     if (formData.title.length < 5) {
@@ -395,11 +395,11 @@ const PostAd = () => {
         product: selectedProduct._id,
         category: selectedCategory._id || selectedCategory.id,
         location: formData.location,
-        city: coordinates?.city || 'Not specified',
-        state: coordinates?.state || 'Not specified',
-        pincode: formData.pincode || '361001',
+        city: coordinates?.city || '',
+        state: coordinates?.state || '',
+        pincode: formData.pincode || '',
         phone: formData.phone,
-        email: formData.email || 'test@gmail.com',
+        email: formData.email || '',
         serviceRadius: formData.serviceRadius || 7,
         coordinates: {
           lat: formData.coordinates.lat,
