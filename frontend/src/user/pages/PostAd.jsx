@@ -386,7 +386,7 @@ const PostAd = () => {
       const videoUrl = video?.file ? await uploadToCloudinary(video.file, "video") : "";
 
       // 2. Prepare FormData (Matching your curl request keys)
-      
+
       const payload = {
         title: formData.title,
         description: formData.description,
@@ -399,7 +399,7 @@ const PostAd = () => {
         state: coordinates?.state || '',
         pincode: formData.pincode || '',
         phone: formData.phone,
-        email: formData.email || '',
+        email: formData.email || 'optional',
         serviceRadius: formData.serviceRadius || 7,
         coordinates: {
           lat: formData.coordinates.lat,
@@ -688,9 +688,9 @@ const PostAd = () => {
                             type="number"
                             min="0"
                             max="50"
-                            value={formData.serviceRadius }
+                            value={formData.serviceRadius}
                             onChange={(e) => {
-                              const radius = parseInt(e.target.value) ;
+                              const radius = parseInt(e.target.value);
                               setFormData(prev => ({
                                 ...prev,
                                 serviceRadius: radius
@@ -744,7 +744,7 @@ const PostAd = () => {
                   <input
                     type="email"
                     name="email"
-                    value={formData.email || ''}
+                    value={formData.email}
                     onChange={handleChange}
                     placeholder="your@email.com"
                     className="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base border-2 border-gray-200 rounded-lg md:rounded-xl focus:ring-2 md:focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all"
