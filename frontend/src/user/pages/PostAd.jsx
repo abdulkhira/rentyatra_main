@@ -284,10 +284,7 @@ const PostAd = () => {
 
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
+   
     console.log('Form submission started');
     console.log('Form data:', formData);
     console.log('Images count:', images.length);
@@ -372,6 +369,11 @@ const PostAd = () => {
       setError('Please select a product and category');
       return;
     }
+
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
 
     console.log('All validations passed, proceeding with submission');
 
