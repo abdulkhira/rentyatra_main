@@ -284,10 +284,7 @@ const PostAd = () => {
 
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
+   
     console.log('Form submission started');
     console.log('Form data:', formData);
     console.log('Images count:', images.length);
@@ -334,11 +331,11 @@ const PostAd = () => {
     }
 
     // Validate phone number
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      setError('Please enter a valid 10-digit phone number');
-      return;
-    }
+    // const phoneRegex = /^[6-9]\d{9}$/;
+    // if (!phoneRegex.test(formData.phone)) {
+    //   setError('Please enter a valid 10-digit phone number');
+    //   return;
+    // }
 
     // Validate email
     // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -372,6 +369,11 @@ const PostAd = () => {
       setError('Please select a product and category');
       return;
     }
+
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
 
     console.log('All validations passed, proceeding with submission');
 
