@@ -363,10 +363,10 @@ const PostAd = () => {
       return;
     }
 
-    if (!video) {
-      setError('Please upload a video');
-      return;
-    }
+    // if (!video) {
+    //   setError('Please upload a video');
+    //   return;
+    // }
 
     if (!selectedProduct || !selectedCategory) {
       setError('Please select a product and category');
