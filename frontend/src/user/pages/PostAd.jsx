@@ -334,11 +334,11 @@ const PostAd = () => {
     }
 
     // Validate phone number
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      setError('Please enter a valid 10-digit phone number');
-      return;
-    }
+    // const phoneRegex = /^[6-9]\d{9}$/;
+    // if (!phoneRegex.test(formData.phone)) {
+    //   setError('Please enter a valid 10-digit phone number');
+    //   return;
+    // }
 
     // Validate email
     // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
