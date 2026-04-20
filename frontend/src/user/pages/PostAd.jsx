@@ -284,7 +284,7 @@ const PostAd = () => {
 
 
   const handleSubmit = async (e) => {
-   
+
     console.log('Form submission started');
     console.log('Form data:', formData);
     console.log('Images count:', images.length);
@@ -377,7 +377,6 @@ const PostAd = () => {
 
     console.log('All validations passed, proceeding with submission');
 
-
     try {
       // 1. Upload Assets to Cloudinary
       const imageUrls = [];
@@ -397,8 +396,8 @@ const PostAd = () => {
         product: selectedProduct._id,
         category: selectedCategory._id || selectedCategory.id,
         location: formData.location,
-        city: coordinates?.city || '',
-        state: coordinates?.state || '',
+        city: coordinates?.address || '',
+        state: coordinates?.city || '',
         pincode: formData.pincode || '',
         phone: formData.phone,
         email: formData.email || 'optional',
