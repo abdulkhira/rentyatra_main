@@ -11,10 +11,8 @@ const getAllRentalRequests = async (req, res) => {
     console.log('=== Get All Rental Requests (Admin) ===');
     console.log('Request query:', req.query);
     console.log('Request user:', req.user);
-    
+
     const {
-      page = 1,
-      limit = 10,
       status,
       search,
       category,
@@ -25,19 +23,19 @@ const getAllRentalRequests = async (req, res) => {
 
     // Build query
     const query = {};
-    
+
     if (status) {
       query.status = status;
     }
-    
+
     if (category) {
       query.category = category;
     }
-    
+
     if (city) {
       query['location.city'] = { $regex: city, $options: 'i' };
     }
-    
+
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -51,84 +49,28 @@ const getAllRentalRequests = async (req, res) => {
     const sort = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
     console.log('Final query:', query);
     console.log('Sort:', sort);
-    console.log('Skip:', skip, 'Limit:', parseInt(limit));
 
-    // Execute query
+    // Execute query (Pagination removed)
     let requests = await RentalRequest.find(query)
       .populate('user', 'name email phone')
       .populate('product', 'name')
       .populate('category', 'name')
       .populate('reviewedBy', 'name email')
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit));
+      .sort(sort);
 
-    // Filter out orphaned requests (where user doesn't exist)
-    const beforeFilterCount = requests.length;
-    const invalidRequests = requests.filter(req => !req.user || !req.user._id);
-    
-    // Auto-cleanup orphaned requests silently (only log once to avoid spam)
-    if (invalidRequests.length > 0) {
-      // Only log warning once per server session to avoid log spam
-      if (!global._orphanedRequestsLogged) {
-        // Find ALL orphaned requests in database (not just current page)
-        Promise.all([
-          RentalRequest.find({}).select('_id user').lean(),
-          User.find({}).select('_id').lean()
-        ])
-          .then(([allRequests, allUsers]) => {
-            const existingUserIds = new Set(allUsers.map(u => u._id.toString()));
-            const orphanedRequestIds = allRequests
-              .filter(req => !req.user || !existingUserIds.has(req.user.toString()))
-              .map(req => req._id);
-            
-            if (orphanedRequestIds.length > 0) {
-              console.warn(`⚠️ Found ${orphanedRequestIds.length} orphaned rental requests (users deleted). Auto-cleaning up...`);
-              
-              // Auto-cleanup ALL orphaned requests in background (non-blocking)
-              return RentalRequest.deleteMany({ _id: { $in: orphanedRequestIds } });
-            }
-            return Promise.resolve({ deletedCount: 0 });
-          })
-          .then(result => {
-            if (result.deletedCount > 0) {
-              console.log(`✅ Auto-cleaned up ${result.deletedCount} orphaned rental requests`);
-            }
-          })
-          .catch(err => {
-            console.error('❌ Error auto-cleaning orphaned requests:', err.message);
-          });
-        
-        global._orphanedRequestsLogged = true; // Mark as logged to avoid spam
-      }
-    }
-    
     // Filter out orphaned requests from response
+    const beforeFilterCount = requests.length;
     requests = requests.filter(req => req.user && req.user._id);
 
-    // Note: Total count should only include valid requests, but we'll calculate it separately
-    // to avoid performance issues with large datasets
-    const total = await RentalRequest.countDocuments(query);
-    
     console.log('Found requests:', requests.length, `(filtered from ${beforeFilterCount} total)`);
-    console.log('Total count in DB:', total);
 
     res.status(200).json({
       success: true,
       data: {
         requests,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / parseInt(limit)),
-          totalRequests: total,
-          hasNext: skip + requests.length < total,
-          hasPrev: parseInt(page) > 1
-        }
+        totalRequests: requests.length
       }
     });
 
@@ -221,9 +163,6 @@ const updateRentalRequestStatus = async (req, res) => {
       });
     }
 
-    // Store old status to check if it's a new approval
-    const oldStatus = request.status;
-
     // Update status using the model method
     await request.updateStatus(status, req.admin._id, rejectionReason);
 
@@ -238,48 +177,30 @@ const updateRentalRequestStatus = async (req, res) => {
     // Log when a request becomes visible to users
     if (status === 'approved') {
       console.log(`✅ Rental request "${request.title}" (ID: ${request._id}) has been approved and is now visible to all users in featured listings!`);
-      
+
       // Send push notification to user when rental is approved
-      // Try to find user by multiple methods
       let user = null;
       let userId = null;
-      
-      // Method 1: Use populated user if available
+
       if (request.user && request.user._id) {
         userId = request.user._id;
         user = await User.findById(userId);
-      } 
-      // Method 2: Use user field directly (ObjectId) if populate failed
-      else if (request.user) {
+      } else if (request.user) {
         userId = request.user;
         user = await User.findById(userId);
-      }
-      // Method 3: Try to find user by email from contactInfo
-      else if (request.contactInfo && request.contactInfo.email) {
-        console.log('⚠️ User field is null, trying to find user by email:', request.contactInfo.email);
+      } else if (request.contactInfo && request.contactInfo.email) {
         user = await User.findOne({ email: request.contactInfo.email.toLowerCase() });
-        if (user) {
-          userId = user._id;
-          console.log('✅ Found user by email:', user._id);
-        }
-      }
-      // Method 4: Try to find user by phone from contactInfo
-      else if (request.contactInfo && request.contactInfo.phone) {
-        console.log('⚠️ User field is null, trying to find user by phone:', request.contactInfo.phone);
+        if (user) userId = user._id;
+      } else if (request.contactInfo && request.contactInfo.phone) {
         const cleanPhone = request.contactInfo.phone.replace(/\D/g, '');
         const formattedPhone = cleanPhone.length === 10 ? `+91${cleanPhone}` : request.contactInfo.phone;
         user = await User.findOne({ phone: formattedPhone });
-        if (user) {
-          userId = user._id;
-          console.log('✅ Found user by phone:', user._id);
-        }
+        if (user) userId = user._id;
       }
-      
+
       if (user && userId) {
         try {
-          // Check if user has FCM tokens
           if (user.fcmTokens?.length > 0 || user.fcmTokenMobile?.length > 0) {
-            // Combine web and mobile tokens, remove duplicates
             const webTokens = user.fcmTokens || [];
             const mobileTokens = user.fcmTokenMobile || [];
             const allTokensSet = new Set([...webTokens, ...mobileTokens]);
@@ -288,7 +209,6 @@ const updateRentalRequestStatus = async (req, res) => {
             const rentalTitle = request.title || 'Your rental listing';
             const rentalId = request._id.toString();
 
-            // Use custom message if provided, otherwise use default
             const defaultMessage = `Your rental "${rentalTitle.substring(0, 50)}" has been approved and is now live!`;
             const notificationBody = notificationMessage || defaultMessage;
 
@@ -307,41 +227,21 @@ const updateRentalRequestStatus = async (req, res) => {
               icon: '/favicon.png'
             };
 
-            console.log('📤 Sending rental approval notification:', {
-              userId: user._id.toString(),
-              rentalId: rentalId,
-              tokenCount: allTokens.length
-            });
-
             if (allTokens.length > 0) {
               const result = await sendPushNotification(allTokens, payload);
               if (result.success) {
-                console.log('✅ Rental approval notification sent successfully:', {
-                  successCount: result.successCount,
-                  failureCount: result.failureCount
-                });
+                console.log('✅ Rental approval notification sent successfully');
               } else {
                 console.error('❌ Rental approval notification failed:', result.message);
               }
-            } else {
-              console.log('⚠️ User has no FCM tokens, skipping rental approval notification');
             }
-          } else {
-            console.log('⚠️ User found but has no FCM tokens registered');
           }
         } catch (notificationError) {
           console.error('⚠️ Error sending rental approval notification:', notificationError.message);
-          // Don't throw - notification failure shouldn't break approval process
         }
-      } else {
-        console.log('⚠️ Could not find user for rental request. User field is null and could not find user by email/phone.');
-        console.log('Rental request contactInfo:', {
-          email: request.contactInfo?.email,
-          phone: request.contactInfo?.phone
-        });
       }
     } else if (status === 'rejected') {
-      console.log(`❌ Rental request "${request.title}" (ID: ${request._id}) has been rejected and will not be visible to users.`);
+      console.log(`❌ Rental request "${request.title}" (ID: ${request._id}) has been rejected.`);
     }
 
     res.status(200).json({
@@ -376,7 +276,6 @@ const deleteRentalRequest = async (req, res) => {
       });
     }
 
-    // Delete images from Cloudinary
     if (request.images && request.images.length > 0) {
       try {
         for (const image of request.images) {
@@ -384,11 +283,9 @@ const deleteRentalRequest = async (req, res) => {
         }
       } catch (imageError) {
         console.error('Error deleting images from Cloudinary:', imageError);
-        // Continue with request deletion even if image deletion fails
       }
     }
 
-    // Delete the request
     await RentalRequest.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
@@ -468,7 +365,6 @@ const bulkUpdateRentalRequestStatus = async (req, res) => {
       });
     }
 
-    // Update multiple requests
     const updateData = {
       status,
       reviewedBy: req.admin._id,
@@ -509,26 +405,19 @@ const bulkUpdateRentalRequestStatus = async (req, res) => {
 const cleanupOrphanedRentalRequests = async (req, res) => {
   try {
     console.log('=== Cleanup Orphaned Rental Requests (Admin) ===');
-    
-    const User = require('../models/User');
+
     const { dryRun = false } = req.body;
-    
-    // Find all rental requests
+
     const allRequests = await RentalRequest.find({}).select('_id title user status createdAt');
-    console.log(`📊 Total rental requests in database: ${allRequests.length}`);
-    
-    // Get all user IDs that exist
     const existingUserIds = new Set();
     const users = await User.find({}).select('_id');
     users.forEach(user => existingUserIds.add(user._id.toString()));
-    console.log(`📊 Total users in database: ${existingUserIds.size}`);
-    
-    // Find orphaned requests
+
     const orphanedRequests = [];
-    
+
     for (const request of allRequests) {
       const userId = request.user ? request.user.toString() : null;
-      
+
       if (!userId || !existingUserIds.has(userId)) {
         orphanedRequests.push({
           _id: request._id,
@@ -539,9 +428,7 @@ const cleanupOrphanedRentalRequests = async (req, res) => {
         });
       }
     }
-    
-    console.log(`⚠️  Found ${orphanedRequests.length} orphaned rental requests`);
-    
+
     if (orphanedRequests.length === 0) {
       return res.status(200).json({
         success: true,
@@ -552,13 +439,12 @@ const cleanupOrphanedRentalRequests = async (req, res) => {
         }
       });
     }
-    
-    // Status breakdown
+
     const statusBreakdown = {};
     orphanedRequests.forEach(req => {
       statusBreakdown[req.status] = (statusBreakdown[req.status] || 0) + 1;
     });
-    
+
     if (dryRun) {
       return res.status(200).json({
         success: true,
@@ -567,17 +453,14 @@ const cleanupOrphanedRentalRequests = async (req, res) => {
           orphanedCount: orphanedRequests.length,
           deletedCount: 0,
           statusBreakdown,
-          orphanedRequests: orphanedRequests.slice(0, 50) // Return first 50 for preview
+          orphanedRequests: orphanedRequests.slice(0, 50)
         }
       });
     }
-    
-    // Actually delete orphaned requests
+
     const idsToDelete = orphanedRequests.map(req => req._id);
     const result = await RentalRequest.deleteMany({ _id: { $in: idsToDelete } });
-    
-    console.log(`✅ Successfully deleted ${result.deletedCount} orphaned rental requests`);
-    
+
     res.status(200).json({
       success: true,
       message: `Successfully cleaned up ${result.deletedCount} orphaned rental requests`,
@@ -587,7 +470,7 @@ const cleanupOrphanedRentalRequests = async (req, res) => {
         statusBreakdown
       }
     });
-    
+
   } catch (error) {
     console.error('Error cleaning up orphaned rental requests:', error);
     res.status(500).json({
@@ -604,51 +487,34 @@ const cleanupOrphanedRentalRequests = async (req, res) => {
 const getRentalRequestsByUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const {
-      page = 1,
-      limit = 10,
-      status
-    } = req.query;
+    const { status } = req.query;
 
     // Build query
     const query = { user: userId };
-    
+
     if (status) {
       query.status = status;
     }
 
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Execute query
+    // Execute query (Pagination removed)
     let requests = await RentalRequest.find(query)
       .populate('user', 'name email phone')
       .populate('category', 'name')
       .populate('reviewedBy', 'name email')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+      .sort({ createdAt: -1 });
 
-    // Filter out orphaned requests (where user doesn't exist)
+    // Filter out orphaned requests
     const invalidRequests = requests.filter(req => !req.user || !req.user._id);
     if (invalidRequests.length > 0) {
       console.warn(`⚠️ Found ${invalidRequests.length} orphaned rental requests for user ${userId}`);
     }
     requests = requests.filter(req => req.user && req.user._id);
 
-    const total = await RentalRequest.countDocuments(query);
-
     res.status(200).json({
       success: true,
       data: {
         requests,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / parseInt(limit)),
-          totalRequests: total,
-          hasNext: skip + requests.length < total,
-          hasPrev: parseInt(page) > 1
-        }
+        totalRequests: requests.length
       }
     });
 
