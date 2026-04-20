@@ -52,7 +52,7 @@ const getAllRentalRequests = async (req, res) => {
     console.log('Final query:', query);
     console.log('Sort:', sort);
 
-    // Execute query (Pagination removed)
+    // Execute query to get ALL data
     let requests = await RentalRequest.find(query)
       .populate('user', 'name email phone')
       .populate('product', 'name')
@@ -178,7 +178,6 @@ const updateRentalRequestStatus = async (req, res) => {
     if (status === 'approved') {
       console.log(`✅ Rental request "${request.title}" (ID: ${request._id}) has been approved and is now visible to all users in featured listings!`);
 
-      // Send push notification to user when rental is approved
       let user = null;
       let userId = null;
 
@@ -453,7 +452,7 @@ const cleanupOrphanedRentalRequests = async (req, res) => {
           orphanedCount: orphanedRequests.length,
           deletedCount: 0,
           statusBreakdown,
-          orphanedRequests: orphanedRequests.slice(0, 50)
+          orphanedRequests: orphanedRequests // Removed the .slice(0, 50) so it returns all of them
         }
       });
     }
@@ -496,7 +495,7 @@ const getRentalRequestsByUser = async (req, res) => {
       query.status = status;
     }
 
-    // Execute query (Pagination removed)
+    // Execute query to get ALL data
     let requests = await RentalRequest.find(query)
       .populate('user', 'name email phone')
       .populate('category', 'name')
