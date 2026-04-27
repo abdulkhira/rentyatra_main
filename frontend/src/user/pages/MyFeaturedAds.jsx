@@ -5,14 +5,15 @@ import { useSubscription } from '../../contexts/SubscriptionContext';
 import { useBoost } from '../../contexts/BoostContext';
 import apiService from '../../services/api';
 import {
-  Star,
   TrendingUp,
   Package,
-  Plus,
   Zap,
   ArrowLeft,
   BadgeCheck,
-  Clock
+  Clock,
+  PackageSearch,
+  ChevronRight,
+  ShieldAlert
 } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
@@ -42,31 +43,21 @@ const MyFeaturedAds = () => {
 
   // Load subscription and rental data when component mounts or when location changes
   useEffect(() => {
-    console.log('MyFeaturedAds - User data:', user);
-
-    // CRITICAL: Force reload boost credits from API to ensure fresh data
     if (user?.id || user?._id) {
-      console.log('🔄 MyFeaturedAds: Force reloading boost credits from API...');
       if (forceReloadBoostCredits) {
         forceReloadBoostCredits();
       }
     }
 
-    // Fetch user's rental listings
     const fetchRentalListings = async () => {
       const token = localStorage.getItem('token');
-      if (!token || !user) {
-        console.log('No token or user found, skipping rental listings fetch');
-        return;
-      }
+      if (!token || !user) return;
 
       setLoadingRentals(true);
       try {
         const response = await apiService.getUserRentalListings();
         if (response.success) {
           setRentalListings(response.data.requests || []);
-        } else {
-          console.error('API returned success: false', response);
         }
       } catch (error) {
         console.error('Error fetching rental listings:', error);
@@ -76,16 +67,11 @@ const MyFeaturedAds = () => {
     };
 
     if (user) {
-      // Load subscription data
       if (user?.id || user?._id) {
         const userId = user.id || user._id;
-        console.log('MyFeaturedAds - Loading subscription for userId:', userId);
         loadUserSubscriptionRef.current(userId);
       }
-      // Load rental listings
       fetchRentalListings();
-    } else {
-      console.log('MyFeaturedAds - No user ID found');
     }
   }, [user?.id, user?._id, location.pathname]);
 
@@ -99,39 +85,25 @@ const MyFeaturedAds = () => {
   const calculateRemainingAvailable = () => {
     let remainingPostAds = 0;
 
-    // Handle real subscription data
     if (effectiveUserSubscription && effectiveUserSubscription.status === 'active') {
       const plan = subscriptionPlans.find(p => p.id === effectiveUserSubscription.planId);
       if (plan) {
-        // Calculate remaining Post Ads
         const currentListings = effectiveUserSubscription.currentListings || 0;
         const maxListings = plan.maxListings === -1 ? Infinity : plan.maxListings;
         remainingPostAds += Math.max(0, maxListings - currentListings);
       } else {
-        // Fallback for custom plans (like new_user_default)
         const currentListings = effectiveUserSubscription.currentListings || 0;
         const maxListings = effectiveUserSubscription.maxListings || 0;
         remainingPostAds += Math.max(0, maxListings - currentListings);
       }
     } else if (!effectiveUserSubscription && !subscriptionLoading) {
-      // If no subscription data and not loading, assume new user with 2 free post ads
-      // This is a fallback for cases where subscription data hasn't loaded yet
-      console.log('No subscription data found, assuming new user with 2 free post ads');
       remainingPostAds = 2; // Default for new users
     }
 
-    // From referrals (mock data for now - replace with actual referral system)
-    const referralBenefits = user?.referralBenefits || {
-      postAds: 0
-    };
-
+    const referralBenefits = user?.referralBenefits || { postAds: 0 };
     remainingPostAds += referralBenefits.postAds || 0;
 
-    // From other sources (promotional offers, etc.)
-    const promotionalBenefits = user?.promotionalBenefits || {
-      postAds: 0
-    };
-
+    const promotionalBenefits = user?.promotionalBenefits || { postAds: 0 };
     remainingPostAds += promotionalBenefits.postAds || 0;
 
     return {
@@ -150,62 +122,35 @@ const MyFeaturedAds = () => {
         const totalPostAds = plan.maxListings === -1 ? Infinity : plan.maxListings;
         const remainingPostAds = totalPostAds === Infinity ? Infinity : Math.max(0, totalPostAds - usedPostAds);
 
-        return {
-          usedPostAds,
-          totalPostAds,
-          remainingPostAds
-        };
+        return { usedPostAds, totalPostAds, remainingPostAds };
       } else {
-        // Fallback for custom plans
         const usedPostAds = effectiveUserSubscription.currentListings || 0;
         const totalPostAds = effectiveUserSubscription.maxListings || 0;
         const remainingPostAds = Math.max(0, totalPostAds - usedPostAds);
 
-        return {
-          usedPostAds,
-          totalPostAds,
-          remainingPostAds
-        };
+        return { usedPostAds, totalPostAds, remainingPostAds };
       }
     } else {
-      // No active subscription but not loading - might be a new user with default credits
       if (!subscriptionLoading) {
-        // Show default 2 free post ads for new users
-        return {
-          usedPostAds: 0,
-          totalPostAds: 2,
-          remainingPostAds: 2
-        };
+        return { usedPostAds: 0, totalPostAds: 2, remainingPostAds: 2 };
       }
-      // Still loading - show 0
-      return {
-        usedPostAds: 0,
-        totalPostAds: 0,
-        remainingPostAds: 0
-      };
+      return { usedPostAds: 0, totalPostAds: 0, remainingPostAds: 0 };
     }
   };
 
   const postAdsStats = calculatePostAdsStats();
 
-  // CRITICAL: Validate and recalculate boost credits to prevent showing invalid values
+  // Validate and recalculate boost credits
   const validateBoostCredits = () => {
-    // Recalculate remainingBoosts to ensure it's correct
     const calculatedRemaining = (boostCredits.freeBoosts || 0) +
       (boostCredits.purchasedBoosts || 0) -
       (boostCredits.usedBoosts || 0);
 
-    // If remainingBoosts is invalid (NaN, negative, or extremely high), use calculated value
     let validRemainingBoosts = boostCredits.remainingBoosts;
     if (isNaN(validRemainingBoosts) ||
       validRemainingBoosts < 0 ||
       validRemainingBoosts > 10000 ||
       Math.abs(validRemainingBoosts - calculatedRemaining) > 10) {
-      console.warn('⚠️ Invalid boost credits detected, using calculated value:', {
-        stored: validRemainingBoosts,
-        calculated: calculatedRemaining,
-        boostCredits
-      });
       validRemainingBoosts = Math.max(0, calculatedRemaining);
     }
 
@@ -219,242 +164,229 @@ const MyFeaturedAds = () => {
   const validatedBoostStats = validateBoostCredits();
 
   const stats = {
-    // Post Ads stats
     usedPostAds: postAdsStats.usedPostAds,
     totalPostAds: postAdsStats.totalPostAds,
     remainingPostAds: postAdsStats.remainingPostAds,
-    // Boost stats from validated context
     totalBoosts: validatedBoostStats.totalBoosts,
     remainingBoosts: validatedBoostStats.remainingBoosts,
     usedBoosts: validatedBoostStats.usedBoosts
   };
 
-  // Debug logging
-  console.log('MyFeaturedAds Debug Info:', {
-    userSubscription: effectiveUserSubscription,
-    subscriptionLoading,
-    currentPlan,
-    remainingAvailable,
-    postAdsStats,
-    stats,
-    user: user?.id || user?._id
-  });
-
-  const getDaysRemaining = (endDate) => {
-    const end = new Date(endDate);
-    const now = new Date();
-    const diff = end - now;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    return { days, hours };
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   // Show loading state while subscription data is being fetched
   if (subscriptionLoading || boostLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading subscription data...</p>
+      <div className="min-h-screen bg-[#f0f0f5] flex items-center justify-center font-sans">
+        <div className="p-8 text-center bg-white rounded-3xl shadow-sm border border-gray-100 max-w-sm w-full">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#fc8019] to-[#ffc107] rounded-full mx-auto mb-4 animate-bounce shadow-sm"></div>
+          <p className="text-gray-500 font-bold tracking-tight">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="p-4 md:p-6">
+    <div className="min-h-screen bg-[#f0f0f5] font-sans pb-20">
+      <div className="max-w-[1000px] mx-auto px-4 md:px-8 py-6 md:py-8">
+
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-4 mb-2">
-            <button
-              onClick={() => navigate('/dashboard/account')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900">My Featured Ads</h2>
-              <p className="text-sm text-gray-600">Manage your Post-ads</p>
+        <div className="mb-8 flex items-center gap-4">
+          <button
+            onClick={() => navigate('/dashboard/account')}
+            className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-[#fc8019] transition-colors shrink-0"
+          >
+            <ChevronRight size={20} className="rotate-180" />
+          </button>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">My Featured Ads</h1>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Manage Your Inventory</p>
+          </div>
+        </div>
+
+        {/* Stats Dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+
+          {/* Post Ads Stats */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110 z-0"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+                  <Package size={24} />
+                </div>
+                <div className="bg-gray-50 px-3 py-1 rounded-lg border border-gray-100">
+                  <TrendingUp size={16} className="text-gray-400" />
+                </div>
+              </div>
+
+              <h3 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider mb-1">Post Ads Quota</h3>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                  {stats.totalPostAds === Infinity ? '∞' : stats.totalPostAds}
+                </span>
+                <span className="text-sm font-bold text-gray-400">Total</span>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-50">
+                {effectiveUserSubscription && effectiveUserSubscription.status === 'active' ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-extrabold text-green-600 bg-green-50 px-3 py-1 rounded-lg">
+                      {stats.totalPostAds === Infinity ? 'Unlimited Available' : `${stats.remainingPostAds} Remaining`}
+                    </span>
+                    {stats.usedPostAds > 0 && (
+                      <span className="text-xs font-bold text-gray-500">
+                        {stats.usedPostAds} Used
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+                    <ShieldAlert size={14} className="text-gray-400" />
+                    {stats.remainingPostAds > 0 ? `${stats.remainingPostAds} from offers` : 'No active subscription'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Boost Stats */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110 z-0"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${stats.remainingBoosts === 0 ? 'bg-red-100 text-red-500' : 'bg-orange-100 text-[#fc8019]'
+                  }`}>
+                  <Zap size={24} />
+                </div>
+                {stats.remainingBoosts <= 1 && (
+                  <div className={`px-3 py-1 rounded-lg border text-[10px] font-extrabold uppercase tracking-wider ${stats.remainingBoosts === 0 ? 'bg-red-50 border-red-100 text-red-600' : 'bg-yellow-50 border-yellow-100 text-yellow-600'
+                    }`}>
+                    {stats.remainingBoosts === 0 ? 'No Credits' : 'Low Credits'}
+                  </div>
+                )}
+              </div>
+
+              <h3 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider mb-1">Available Boosts</h3>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                  {stats.remainingBoosts}
+                </span>
+                <span className="text-sm font-bold text-gray-400">Credits</span>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                {stats.usedBoosts > 0 ? (
+                  <span className="text-xs font-bold text-gray-500">
+                    {stats.usedBoosts} Previously Used
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold text-gray-500">Ready to use</span>
+                )}
+
+                {stats.remainingBoosts === 0 && (
+                  <button
+                    onClick={() => navigate('/buy-boost')}
+                    className="text-xs font-extrabold text-white bg-gray-900 hover:bg-black px-4 py-1.5 rounded-lg transition-colors"
+                  >
+                    Buy More
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Post Ads Stats */}
-          <Card className="p-4 bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Package size={20} />
-                  <h3 className="font-bold text-lg">Post Ads</h3>
-                </div>
-                <div className="text-2xl font-bold mb-1">
-                  {stats.totalPostAds === Infinity ? '∞' : stats.totalPostAds}
-                </div>
-                <div className="text-sm opacity-90">
-                  {effectiveUserSubscription && effectiveUserSubscription.status === 'active' ? (
-                    <>
-                      {stats.totalPostAds === Infinity ? (
-                        'Unlimited'
-                      ) : (
-                        <>
-                          {stats.remainingPostAds} remaining
-                          {stats.usedPostAds > 0 && (
-                            <div className="text-xs opacity-75 mt-1">
-                              {stats.usedPostAds} used
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-xs opacity-75">
-                      {stats.remainingPostAds > 0 ?
-                        `${stats.remainingPostAds} from referrals & offers` :
-                        'No active subscription'
-                      }
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <TrendingUp size={24} />
-              </div>
-            </div>
-          </Card>
-
-          {/* Boost Stats */}
-          <Card className={`p-4 text-white ${stats.remainingBoosts === 0
-              ? 'bg-gradient-to-br from-red-500 to-red-600'
-              : stats.remainingBoosts <= 1
-                ? 'bg-gradient-to-br from-orange-500 to-orange-600'
-                : 'bg-gradient-to-br from-purple-500 to-pink-600'
-            }`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap size={20} />
-                  <h3 className="font-bold text-lg">Boost</h3>
-                  {stats.remainingBoosts === 0 && (
-                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full">No Credits</span>
-                  )}
-                  {stats.remainingBoosts === 1 && (
-                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Low Credits</span>
-                  )}
-                </div>
-                <div className="text-2xl font-bold mb-1">{stats.remainingBoosts}</div>
-                <div className="text-sm opacity-90">
-                  {stats.remainingBoosts > 0 ? `${stats.remainingBoosts} remaining` : 'No boosts left'}
-                </div>
-                {stats.usedBoosts > 0 && (
-                  <div className="text-xs opacity-75 mt-1">
-                    {stats.usedBoosts} used
-                  </div>
-                )}
-                {stats.remainingBoosts === 0 && (
-                  <div className="text-xs opacity-90 mt-2">
-                    <button
-                      onClick={() => navigate('/buy-boost')}
-                      className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors"
-                    >
-                      Buy More
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <TrendingUp size={24} />
-              </div>
-            </div>
-          </Card>
-        </div>
-
         {/* Products Listing Section */}
-        {loadingRentals ? (
-          <Card className="p-8 md:p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your listings...</p>
-          </Card>
-        ) : rentalListings.length === 0 ? (
-          <Card className="p-8 md:p-12 text-center">
-            <Package size={48} className="mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg md:text-xl font-bold mb-2">No Post Ads yet</h3>
-            <p className="text-sm text-gray-600 mb-6">Subscribe to start posting your rental ads</p>
-            <Button onClick={() => navigate('/subscription')}>
-              Subscribe Now
-            </Button>
-          </Card>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mb-6">
+          <h2 className="text-xl font-extrabold text-gray-900 tracking-tight mb-6">Your Active Ads</h2>
+
+          {loadingRentals ? (
+            <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-sm">
+              <div className="w-12 h-12 bg-gradient-to-br from-[#fc8019] to-[#ffc107] rounded-full mx-auto mb-4 animate-bounce shadow-sm"></div>
+              <p className="text-gray-500 font-bold">Loading your listings...</p>
+            </div>
+          ) : rentalListings.length === 0 ? (
+            <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-sm border-dashed">
+              <div className="w-20 h-20 mx-auto mb-5 bg-gray-50 rounded-full flex items-center justify-center">
+                <PackageSearch size={36} className="text-gray-400" />
+              </div>
+              <h3 className="text-2xl font-extrabold mb-2 text-gray-900 tracking-tight">No Ads Posted Yet</h3>
+              <p className="text-gray-500 mb-8 font-medium">Get a subscription and start earning by renting out your items.</p>
+              <Button
+                onClick={() => navigate('/subscription')}
+                className="bg-[#fc8019] hover:bg-orange-600 border-none rounded-xl font-bold py-3 px-8 shadow-sm transition-colors"
+              >
+                Subscribe Now
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {rentalListings.map((listing) => (
-                <Card key={listing._id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  {/* Status Badge */}
-                  <div className={`px-3 py-1 text-xs font-bold flex items-center gap-1.5 ${listing.status === 'approved' ? 'bg-green-500 text-white' :
-                      listing.status === 'pending' ? 'bg-yellow-500 text-white' :
-                        listing.status === 'rejected' ? 'bg-red-500 text-white' :
-                          'bg-gray-500 text-white'
-                    }`}>
-                    {listing.status === 'approved' && <BadgeCheck size={14} />}
-                    {listing.status === 'pending' && <Clock size={14} />}
-                    {listing.status?.toUpperCase() || 'UNKNOWN'}
+                <div key={listing._id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 group flex flex-col">
+
+                  {/* Status Badge Over Image */}
+                  <div className="absolute top-3 left-3 z-10">
+                    <div className={`px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 rounded-full shadow-sm backdrop-blur-md ${listing.status === 'approved' ? 'bg-green-500/90 text-white' :
+                        listing.status === 'pending' ? 'bg-yellow-500/90 text-white' :
+                          listing.status === 'rejected' ? 'bg-red-500/90 text-white' :
+                            'bg-gray-500/90 text-white'
+                      }`}>
+                      {listing.status === 'approved' && <BadgeCheck size={12} />}
+                      {listing.status === 'pending' && <Clock size={12} />}
+                      {listing.status?.toUpperCase() || 'UNKNOWN'}
+                    </div>
                   </div>
 
-                  <div className="relative h-32">
+                  {/* Image Area */}
+                  <div className="relative h-40 bg-gray-50">
                     {listing.images && listing.images.length > 0 ? (
-                      <ImageCarousel images={listing.images.map(img => img.url)} className="h-full" />
+                      <ImageCarousel images={listing.images.map(img => img.url)} className="h-full object-cover" />
                     ) : (
-                      <div className="h-full w-full bg-gray-200 flex items-center justify-center">
-                        <Package size={32} className="text-gray-400" />
+                      <div className="h-full w-full flex items-center justify-center">
+                        <Package size={32} className="text-gray-300" />
                       </div>
                     )}
                   </div>
-                  <div className="p-3">
-                    <h4 className="font-bold text-gray-900 mb-1 truncate">{listing.title}</h4>
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">{listing.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-base font-bold text-blue-600">
-                        ₹{listing.price?.amount || listing.price?.pricePerDay}/day
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {listing.location?.city || listing.location?.address}
+
+                  {/* Content Area */}
+                  <div className="p-5 flex flex-col flex-1">
+                    <h4 className="font-extrabold text-gray-900 mb-1.5 truncate text-base group-hover:text-[#fc8019] transition-colors">{listing.title}</h4>
+                    <p className="text-xs text-gray-500 mb-4 line-clamp-2 font-medium leading-relaxed">{listing.description}</p>
+
+                    <div className="mt-auto pt-4 border-t border-gray-50 flex items-end justify-between">
+                      <div>
+                        <span className="text-xl font-extrabold text-gray-900 tracking-tight">
+                          ₹{listing.price?.amount || listing.price?.pricePerDay}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider ml-1">/ day</span>
+                      </div>
+                      <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100 truncate max-w-[100px]">
+                        {listing.location?.city || listing.location?.address || 'Location'}
                       </span>
                     </div>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
+          )}
+        </div>
 
-            {/* No Active Subscription Banner */}
-            {stats.totalPostAds === 0 && (
-              <Card className="mt-6 p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-xl mb-2">Want to post more ads?</h3>
-                    <p className="text-sm opacity-90">Subscribe now and boost your rental business!</p>
-                  </div>
-                  <Button
-                    onClick={() => navigate('/subscription')}
-                    className="bg-white text-blue-600 hover:bg-gray-100"
-                  >
-                    Subscribe Now
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </>
+        {/* No Active Subscription Banner - Swiggy Style */}
+        {stats.totalPostAds === 0 && rentalListings.length > 0 && (
+          <div className="mt-8 bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-6 md:p-8 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <h3 className="font-extrabold text-xl mb-1 tracking-tight">Want to post more ads?</h3>
+              <p className="text-sm font-medium text-gray-300">Unlock more inventory slots by subscribing to a premium plan.</p>
+            </div>
+            <button
+              onClick={() => navigate('/subscription')}
+              className="bg-[#fc8019] hover:bg-orange-500 text-white font-bold px-6 py-3 rounded-xl transition-colors whitespace-nowrap shadow-sm shrink-0"
+            >
+              View Subscription Plans
+            </button>
+          </div>
         )}
-
       </div>
     </div>
   );

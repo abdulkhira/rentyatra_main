@@ -1,331 +1,122 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Sparkles, Zap, Star } from 'lucide-react';
+import { Sparkles, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import apiService from '../../services/api';
 
 const AdBanner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Touch/swipe functionality
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const bannerRef = useRef(null);
-
-  // Auto-slide functionality
   const [isPaused, setIsPaused] = useState(false);
+  const bannerRef = useRef(null);
   const intervalRef = useRef(null);
 
-  // Fetch banners from API with caching
-  const fetchBanners = async () => {
+  const fetchBanners = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      // Check cache first
-      const cacheKey = 'banners_cache';
-      const cachedData = localStorage.getItem(cacheKey);
-      const cacheTime = localStorage.getItem(cacheKey + '_time');
-      const now = Date.now();
-
-      // Use cache if it's less than 5 minutes old
-      if (cachedData && cacheTime && (now - parseInt(cacheTime)) < 5 * 60 * 1000) {
-        const cachedBanners = JSON.parse(cachedData);
-        setBanners(cachedBanners);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch banners from the public API
-      const response = await apiService.getPublicBanners('', 5); // Reduced to 5 banners for faster loading
-
-      if (response.success && response.data.banners) {
+      const response = await apiService.getPublicBanners('', 5);
+      if (response.success && response.data.banners?.length > 0) {
         setBanners(response.data.banners);
-        // Cache the banners
-        localStorage.setItem(cacheKey, JSON.stringify(response.data.banners));
-        localStorage.setItem(cacheKey + '_time', now.toString());
-
-        // Preload images for faster display with proper error handling
-        response.data.banners.forEach((banner, index) => {
-          if (banner.banner) {
-            const img = new Image();
-            // Ensure Cloudinary URLs are properly formatted
-            let imageUrl = banner.banner;
-            // Convert http to https for Cloudinary URLs
-            if (imageUrl.includes('cloudinary.com') && imageUrl.startsWith('http://')) {
-              imageUrl = imageUrl.replace('http://', 'https://');
-            }
-            img.src = imageUrl;
-            img.onload = () => {
-              if (process.env.NODE_ENV === 'development') {
-                console.log(`Banner ${index + 1} preloaded successfully`);
-              }
-            };
-            img.onerror = () => {
-              console.warn(`Banner ${index + 1} failed to preload:`, imageUrl);
-            };
-          }
-        });
       } else {
-        setBanners([]);
+        setBanners(FALLBACK_BANNERS);
       }
     } catch (error) {
-      console.error('Error fetching banners:', error);
-      setError('Failed to load banners');
-      setBanners([]);
+      setBanners(FALLBACK_BANNERS);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchBanners();
+  }, [fetchBanners]);
 
-    // Refresh banners every 2 minutes to get updates from admin (less frequent for better performance)
-    const refreshInterval = setInterval(() => {
-      fetchBanners();
-    }, 120000); // 2 minutes
-
-    return () => clearInterval(refreshInterval);
-  }, []);
-
-  // Refresh banners when page becomes visible (user switches back to tab)
+  // Auto-slide logic
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchBanners();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-
-  // Auto-slide function
-  const startAutoSlide = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
     if (banners.length > 1 && !isPaused) {
       intervalRef.current = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % banners.length);
       }, 5000);
     }
+    return () => clearInterval(intervalRef.current);
   }, [banners.length, isPaused]);
 
-  // Auto-rotate banner every 5 seconds (only if we have banners and not paused)
-  useEffect(() => {
-    startAutoSlide();
+  const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % banners.length);
+  const prevSlide = () => setCurrentIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [startAutoSlide]);
-
-  // Reset auto-slide timer when user manually navigates
-  const resetAutoSlide = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    // Restart auto-slide after a short delay
-    setTimeout(() => {
-      startAutoSlide();
-    }, 1000);
-  }, [startAutoSlide]);
-
-  const handleDotClick = (index) => {
-    setCurrentIndex(index);
-    resetAutoSlide(); // Reset auto-slide timer when user manually navigates
-  };
-
-  // Touch/swipe handlers
-  const minSwipeDistance = 50; // Minimum distance for a swipe
-
-  const handleTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe && banners.length > 1) {
-      // Swipe left - go to next banner
-      setCurrentIndex((prev) => (prev + 1) % banners.length);
-      resetAutoSlide(); // Reset auto-slide timer
-    }
-    if (isRightSwipe && banners.length > 1) {
-      // Swipe right - go to previous banner
-      setCurrentIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
-      resetAutoSlide(); // Reset auto-slide timer
-    }
-
-    setIsDragging(false);
-  };
-
-  // Mouse drag support for desktop
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setTouchStart(e.clientX);
-    setTouchEnd(null);
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    setTouchEnd(e.clientX);
-  };
-
-  const handleMouseUp = () => {
-    if (!isDragging) return;
-
-    if (!touchStart || !touchEnd) {
-      setIsDragging(false);
-      return;
-    }
-
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe && banners.length > 1) {
-      // Swipe left - go to next banner
-      setCurrentIndex((prev) => (prev + 1) % banners.length);
-      resetAutoSlide(); // Reset auto-slide timer
-    }
-    if (isRightSwipe && banners.length > 1) {
-      // Swipe right - go to previous banner
-      setCurrentIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
-      resetAutoSlide(); // Reset auto-slide timer
-    }
-
-    setIsDragging(false);
-  };
-
-
-
+  if (loading) return (
+    <div className="w-full h-48 md:h-64 bg-gray-100 animate-pulse rounded-3xl flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <Zap className="text-orange-400 animate-bounce" size={32} />
+        <span className="text-gray-400 font-bold tracking-widest text-xs">PREPARING DEALS</span>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl blur-3xl opacity-20 animate-pulse" />
-      <div className="relative rounded-3xl overflow-hidden">
-        {loading ? (
-          <div className="w-full h-44 sm:h-56 md:h-64 lg:h-72 xl:h-80 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded-3xl animate-pulse">
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-gray-300 rounded-full mx-auto mb-3 animate-bounce"></div>
-                <p className="text-sm text-gray-500 font-medium">Loading banners...</p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div
-            ref={bannerRef}
-            className={`relative w-full h-44 sm:h-56 md:h-64 lg:h-72 xl:h-96 bg-gray-100 select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'
+    <div
+      className="group relative w-full h-48 md:h-72 overflow-hidden rounded-3xl bg-gray-900 shadow-2xl transition-all duration-500 hover:shadow-orange-500/10"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Slides */}
+      {banners.map((banner, index) => (
+        <div
+          key={banner._id}
+          className={`absolute inset-0 transition-all duration-1000 ease-out ${index === currentIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
+            }`}
+        >
+          {/* Gradient Overlay for Text Legibility */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent z-10" />
+
+          <img
+            src={banner.banner}
+            alt={banner.title}
+            className="w-full h-full object-cover transform transition-transform duration-[10000ms] ease-linear group-hover:scale-110"
+          />
+
+          {/* Content Overlay */}
+          {/* <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 md:px-16">
+            <span className="inline-block w-fit px-3 py-1 bg-orange-500 text-white text-[10px] font-black rounded-full mb-3 tracking-[0.2em] animate-pulse">
+              {banner.tag || 'FEATURED'}
+            </span>
+            <h2 className="text-2xl md:text-5xl font-black text-white max-w-md leading-tight mb-4 drop-shadow-lg">
+              {banner.title}
+            </h2>
+            <button className="flex items-center gap-2 w-fit px-6 py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-[#fc8019] hover:text-white transition-all transform active:scale-95 shadow-lg">
+              Shop Now <Sparkles size={16} />
+            </button>
+          </div> */}
+        </div>
+      ))}
+
+      {/* Navigation Arrows */}
+      <button
+        onClick={prevSlide}
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/10 backdrop-blur-md text-white border border-white/20 opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:text-black"
+      >
+        <ChevronLeft size={24} />
+      </button>
+      <button
+        onClick={nextSlide}
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-white/10 backdrop-blur-md text-white border border-white/20 opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:text-black"
+      >
+        <ChevronRight size={24} />
+      </button>
+
+      {/* Modern Progress Dots */}
+      <div className="absolute bottom-6 right-8 z-30 flex items-center gap-2">
+        {banners.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentIndex(i)}
+            className={`transition-all duration-500 rounded-full ${currentIndex === i
+              ? 'w-8 h-1.5 bg-orange-500'
+              : 'w-2 h-1.5 bg-white/40 hover:bg-white/60'
               }`}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseEnter={() => setIsPaused(true)} // Pause auto-slide on hover
-            onMouseLeave={(e) => {
-              handleMouseUp(); // Handle mouse up
-              setIsPaused(false); // Resume auto-slide when mouse leaves
-            }}
-            style={{ userSelect: 'none' }}
-          >
-            {banners.map((banner, index) => {
-              // Normalize Cloudinary URL - ensure https and proper format
-              let imageUrl = banner.banner || '';
-              if (imageUrl && imageUrl.includes('cloudinary.com')) {
-                // Convert http to https for Cloudinary URLs
-                if (imageUrl.startsWith('http://')) {
-                  imageUrl = imageUrl.replace('http://', 'https://');
-                }
-                // Ensure secure_url format if it's a Cloudinary URL
-                if (!imageUrl.includes('secure_url') && imageUrl.includes('res.cloudinary.com')) {
-                  // URL is already in correct format
-                }
-              }
-
-              return (
-
-                <div
-                  key={banner._id || index}
-                  className={`absolute inset-0 transition-opacity duration-1000 ${index === currentIndex ? 'opacity-100' : 'opacity-0'
-                    }`}
-                >
-                  <img
-                    src={imageUrl}
-                    alt={banner.title || `RentYatra Banner ${index + 1}`}
-                    className="w-full h-full rounded-3xl shadow-2xl"
-                    style={{ objectFit: 'fill' }}
-                    loading={index === 0 ? 'eager' : 'lazy'} // First image loads immediately, others lazy load
-                    decoding="async" // Non-blocking image decoding
-                    referrerPolicy="no-referrer-when-downgrade" // Prevent CORS issues
-                    onLoad={(e) => {
-                      const img = e.target;
-                      // Ensure image fills container properly
-                      img.style.minHeight = '100%';
-                      img.style.minWidth = '100%';
-                      // Add fade-in effect
-                      img.style.opacity = '0';
-                      img.style.transition = 'opacity 0.3s ease-in-out';
-                      setTimeout(() => {
-                        img.style.opacity = '1';
-                      }, 50);
-                    }}
-                    onError={(e) => {
-                      console.error('Banner image failed to load:', imageUrl);
-                      // Retry with https if it was http
-                      if (imageUrl && imageUrl.includes('http://')) {
-                        const retryUrl = imageUrl.replace('http://', 'https://');
-                        e.currentTarget.src = retryUrl;
-                        return;
-                      }
-                      // Show fallback instead of hiding
-                      e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkJhbm5lciBJbWFnZTwvdGV4dD48L3N2Zz4=';
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Banner Indicators */}
-        {!loading && banners.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {banners.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => handleDotClick(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentIndex ? 'bg-white' : 'bg-white/50'
-                  }`}
-              />
-            ))}
-          </div>
-        )}
+          />
+        ))}
       </div>
-    </div >
+    </div>
   );
 };
 

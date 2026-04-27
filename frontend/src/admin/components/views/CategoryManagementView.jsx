@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import {
+    Plus, Edit, Trash2, Image as ImageIcon, Loader2,
+    X, Upload, Package, CheckCircle, AlertCircle,
+    Download // Added Download icon
+} from 'lucide-react';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
 import apiService from '../../../services/api';
 
@@ -11,31 +16,20 @@ const CategoriesManagementView = () => {
     const [error, setError] = useState('');
     const { adminToken } = useAdminAuth();
 
-    // Set admin token in API service
-    useEffect(() => {
-        if (adminToken) {
-            apiService.setAdminToken(adminToken);
-            console.log('Admin token set in API service:', adminToken);
-        } else {
-            console.warn('No admin token available');
-        }
-    }, [adminToken]);
-
-    // Form state
-    const [formData, setFormData] = useState({
-        name: ''
-    });
-
-    const [editFormData, setEditFormData] = useState({
-        name: ''
-    });
-
+    // ... existing state for forms ...
+    const [formData, setFormData] = useState({ name: '' });
+    const [editFormData, setEditFormData] = useState({ name: '' });
     const [images, setImages] = useState([]);
     const [imagePreview, setImagePreview] = useState([]);
     const [editImages, setEditImages] = useState([]);
     const [editImagePreview, setEditImagePreview] = useState([]);
 
-    // Fetch products
+    useEffect(() => {
+        if (adminToken) {
+            apiService.setAdminToken(adminToken);
+        }
+    }, [adminToken]);
+
     const fetchProducts = async () => {
         setLoading(true);
         try {
@@ -51,6 +45,43 @@ const CategoriesManagementView = () => {
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    // --- NEW: CSV EXPORT FUNCTION ---
+    const handleExportCSV = () => {
+        if (products.length === 0) {
+            alert("No data available to export");
+            return;
+        }
+
+        // Define headers
+        const headers = ["Name", "Status", "Manager", "Created At"];
+
+        // Map data to rows
+        const rows = products.map(product => [
+            `"${product.name}"`, // Wrap in quotes to handle commas in names
+            product.status || 'Active',
+            `"${product.addedBy?.name || 'Super Admin'}"`,
+            new Date(product.createdAt).toLocaleDateString()
+        ]);
+
+        // Combine into string
+        const csvContent = [
+            headers.join(","),
+            ...rows.map(row => row.join(","))
+        ].join("\n");
+
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `categories_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // ... handleImageUpload, handleEditProduct, handleSubmit, handleEditSubmit, handleDeleteProduct (no changes) ...
 
     // Handle form input changes
     const handleInputChange = (e) => {
@@ -236,129 +267,103 @@ const CategoriesManagementView = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="p-6 bg-[#F8FAFC] min-h-screen space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800">Category Management</h1>
-                    <p className="text-slate-600 mt-2">Manage all categorys in the system</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Categories</h1>
+                    <p className="text-slate-500 font-medium">Organize your rental inventory</p>
                 </div>
-                <button
-                    onClick={() => setShowAddForm(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-                >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Category
-                </button>
+                <div className="flex items-center gap-3">
+                    {/* CSV Export Button */}
+                    <button
+                        onClick={handleExportCSV}
+                        className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-3 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm"
+                    >
+                        <Download className="w-5 h-5" />
+                        Export CSV
+                    </button>
+
+                    <button
+                        onClick={() => setShowAddForm(true)}
+                        className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                    >
+                        <Plus className="w-5 h-5" />
+                        New Category
+                    </button>
+                </div>
             </div>
 
-            {/* Error Message */}
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    {error}
+                <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 rounded-xl flex items-center gap-3">
+                    <AlertCircle className="w-5 h-5" />
+                    <span className="text-sm font-bold">{error}</span>
                 </div>
             )}
 
-            {/* Products List */}
-            <div className="bg-white rounded-xl shadow-lg border border-slate-200">
-                <div className="p-6 border-b border-slate-200">
-                    <h2 className="text-xl font-semibold text-slate-800">All categorys</h2>
+            {/* List Table */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-slate-50">
+                    <h2 className="text-lg font-bold text-slate-800">All Categories ({products.length})</h2>
                 </div>
 
-                {loading ? (
-                    <div className="p-8 text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="text-slate-600 mt-2">Loading categorys...</p>
-                    </div>
-                ) : products.length === 0 ? (
-                    <div className="p-8 text-center">
-                        <div className="text-6xl text-slate-300 mb-4">📦</div>
-                        <h3 className="text-lg font-medium text-slate-700 mb-2">No categorys Found</h3>
-                        <p className="text-slate-500">Start by adding your first category.</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-slate-50">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-slate-50/50">
+                            <tr>
+                                <th className="px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-widest">Category Detail</th>
+                                <th className="px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-widest">Status</th>
+                                <th className="px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-widest">Manager</th>
+                                <th className="px-6 py-4 text-[12px] font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {loading && products.length === 0 ? (
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Category
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Added By
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
+                                    <td colSpan="4" className="py-12 text-center">
+                                        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-slate-200">
-                                {products.map((product) => (
-                                    <tr key={product._id} className="hover:bg-slate-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-12 w-12">
-                                                    {product.images && product.images.length > 0 ? (
-                                                        <img
-                                                            className="h-12 w-12 rounded-lg object-cover"
-                                                            src={product.images[0].url}
-                                                            alt={product.name}
-                                                        />
-                                                    ) : (
-                                                        <div className="h-12 w-12 rounded-lg bg-slate-200 flex items-center justify-center">
-                                                            <svg className="h-6 w-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-slate-900">
-                                                        {product.name}
-                                                    </div>
-                                                </div>
+                            ) : products.map((product) => (
+                                <tr key={product._id} className="hover:bg-slate-50/80 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+                                                {product.images?.[0]?.url ? (
+                                                    <img src={product.images[0].url} className="w-full h-full object-cover" alt="" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center"><ImageIcon className="w-5 h-5 text-slate-400" /></div>
+                                                )}
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.status === 'active'
-                                                ? 'bg-green-100 text-green-800'
-                                                : product.status === 'inactive'
-                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                    : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                {product.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                                            {product.addedBy?.name || 'Admin'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button
-                                                onClick={() => handleEditProduct(product)}
-                                                className="text-blue-600 hover:text-blue-900 mr-3"
-                                            >
-                                                Edit
+                                            <span className="font-bold text-slate-800">{product.name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${product.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                                            }`}>
+                                            {product.status || 'Active'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-sl font-medium text-slate-500">{product.addedBy?.name || 'Super Admin'}</td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => handleEditProduct(product)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                                                <Edit className="w-4 h-4" />
                                             </button>
-                                            <button
-                                                onClick={() => handleDeleteProduct(product)}
-                                                className="text-red-600 hover:text-red-900"
-                                            >
-                                                Delete
+                                            <button onClick={() => handleDeleteProduct(product)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
+                                                <Trash2 className="w-4 h-4" />
                                             </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
+            {/* Modal Components */}
+            {/* ... Modal Logic remains exactly same ... */}
             {/* Add Product Modal */}
             {showAddForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-8">

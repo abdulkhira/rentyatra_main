@@ -4,7 +4,7 @@ import {
   Package, MessageCircle, User, Edit, Trash2, Calendar, Zap,
   CreditCard, Rocket, LogOut, MapPin, Eye, Menu, X, Home,
   Star, ShoppingCart,
-  Mail, Info, FileText, Lock, ChevronRight, Shield, BadgeCheck, Clock, Save
+  Mail, Info, FileText, Lock, ChevronRight, Shield, BadgeCheck, Clock, Save, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApp } from '../../contexts/AppContext';
@@ -20,7 +20,6 @@ const Dashboard = () => {
   const { isAuthenticated, user, logout, loading: authLoading, updateUser } = useAuth();
   const { items, favorites, deleteItem } = useApp();
   const { boostCredits, hasBoostCredits, getBoostStatus, updateBoostCredits } = useBoost();
-
 
   // Safe subscription hook usage with error handling
   let subscriptionData = null;
@@ -105,10 +104,7 @@ const Dashboard = () => {
   useEffect(() => {
     const checkScreenSize = () => {
       const isMobile = window.innerWidth < 768;
-      // Only change tab if we're on the base dashboard route and it's the initial load
-      // But don't change if we're explicitly on the account route
       if (!isMobile && activeTab === 'profile-menu' && location.pathname === '/dashboard') {
-        // Check if we came from account navigation (no specific tab in URL)
         const hasTabInUrl = location.pathname.split('/').length > 2;
         if (!hasTabInUrl) {
           setActiveTab('my-ads');
@@ -116,10 +112,8 @@ const Dashboard = () => {
       }
     };
 
-    // Only run on initial mount, not on every activeTab change
     const isMobile = window.innerWidth < 768;
     if (!isMobile && location.pathname === '/dashboard') {
-      // Check if we came from account navigation (no specific tab in URL)
       const hasTabInUrl = location.pathname.split('/').length > 2;
       if (!hasTabInUrl) {
         setActiveTab('my-ads');
@@ -128,28 +122,25 @@ const Dashboard = () => {
 
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
-  }, []); // Remove activeTab dependency to prevent infinite loops
+  }, []);
 
   // Check if user has remaining post ads
   const checkPostAdsAvailability = () => {
     if (!userSubscription || userSubscription.status !== 'active') {
-      return 0; // No subscription
+      return 0;
     }
-
     const plan = subscriptionPlans.find(p => p.id === userSubscription.planId);
     if (plan) {
       const currentListings = userSubscription.currentListings || 0;
       const maxListings = plan.maxListings === -1 ? Infinity : plan.maxListings;
       return Math.max(0, maxListings - currentListings);
     } else {
-      // Fallback for custom plans (like new_user_default)
       const currentListings = userSubscription.currentListings || 0;
       const maxListings = userSubscription.maxListings || 0;
       return Math.max(0, maxListings - currentListings);
     }
   };
 
-  // Helper function to detect if user is on mobile device
   const isMobileDevice = () => {
     if (typeof window === 'undefined') return false;
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -161,9 +152,6 @@ const Dashboard = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      // Redirect based on device type after logout completes
-      // Mobile: redirect to login page
-      // Desktop: redirect to home page
       if (isMobileDevice()) {
         navigate('/login', { replace: true });
       } else {
@@ -171,7 +159,6 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if logout fails, redirect user
       if (isMobileDevice()) {
         navigate('/login', { replace: true });
       } else {
@@ -182,59 +169,23 @@ const Dashboard = () => {
 
   // Fetch user's rental listings
   const fetchRentalListings = async () => {
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping rental listings fetch');
-      return;
-    }
-
-    // Check if token exists before making the request
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.log('No token found, skipping rental listings fetch');
-      return;
-    }
-
-    // Check if user exists
-    if (!user || !user.id) {
-      console.log('User data not available, skipping rental listings fetch');
-      return;
-    }
+    if (!isAuthenticated || !localStorage.getItem('token') || !user?.id) return;
 
     setLoadingRentals(true);
     try {
       const response = await apiService.getUserRentalListings();
       if (response.success) {
         setRentalListings(response.data.requests || []);
-      } else {
-        console.error('API returned success: false', response);
       }
     } catch (error) {
       console.error('Error fetching rental listings:', error);
-
-      // Handle authentication errors
-      if (error.message && (
-        error.message.includes('Not authorized') ||
-        error.message.includes('user not found') ||
-        error.message.includes('Authentication failed')
-      )) {
-        console.log('⚠️ Authentication error detected, but NOT logging out automatically');
-        // DON'T automatically logout - let API service handle token refresh
-        // Only logout if user explicitly clicks logout button
-        // localStorage.removeItem('token'); // REMOVED - don't clear token automatically
-        // logout(); // REMOVED - don't logout automatically
-      }
     } finally {
       setLoadingRentals(false);
     }
   };
 
-  // Fetch rental listings when component mounts or when activeTab changes to my-ads
   useEffect(() => {
-    // Don't fetch if auth is still loading or user is not available
-    if (authLoading || !isAuthenticated || !user) {
-      return;
-    }
-
+    if (authLoading || !isAuthenticated || !user) return;
     if (activeTab === 'my-ads') {
       fetchRentalListings();
     }
@@ -243,11 +194,7 @@ const Dashboard = () => {
   // Initialize profile form with user data
   useEffect(() => {
     if (user) {
-      console.log('User data available:', user);
-      console.log('User address data:', user.address);
-
       if (user.address) {
-        console.log('Initializing profile form with user address data:', user.address);
         setProfileForm({
           street: user.address.street || '',
           city: user.address.city || '',
@@ -256,23 +203,13 @@ const Dashboard = () => {
           landmark: user.address.landmark || ''
         });
       } else {
-        console.log('No address data found in user object');
-        // Initialize with empty values if no address data
-        setProfileForm({
-          street: '',
-          city: '',
-          state: '',
-          pincode: '',
-          landmark: ''
-        });
+        setProfileForm({ street: '', city: '', state: '', pincode: '', landmark: '' });
       }
     }
   }, [user]);
 
-  // Also initialize when activeTab changes to profile
   useEffect(() => {
     if (activeTab === 'profile' && user && user.address) {
-      console.log('Profile tab activated, loading user address data:', user.address);
       setProfileForm({
         street: user.address.street || '',
         city: user.address.city || '',
@@ -283,31 +220,19 @@ const Dashboard = () => {
     }
   }, [activeTab, user]);
 
-  // Force refresh user data when profile tab is accessed
   useEffect(() => {
     if (activeTab === 'profile' && isAuthenticated) {
-      // Refresh user data to get latest address information
       const refreshUserData = async () => {
         try {
-          console.log('Refreshing user data for profile tab...');
           const response = await apiService.getMe();
-          console.log('API response:', response);
-
-          if (response.success && response.data && response.data.user) {
-            console.log('Refreshed user data:', response.data.user);
-            console.log('Address data from API:', response.data.user.address);
-
-            // Directly update the form with fresh data
-            if (response.data.user.address) {
-              setProfileForm({
-                street: response.data.user.address.street || '',
-                city: response.data.user.address.city || '',
-                state: response.data.user.address.state || '',
-                pincode: response.data.user.address.pincode || '',
-                landmark: response.data.user.address.landmark || ''
-              });
-              console.log('Form updated with fresh data');
-            }
+          if (response.success && response.data?.user?.address) {
+            setProfileForm({
+              street: response.data.user.address.street || '',
+              city: response.data.user.address.city || '',
+              state: response.data.user.address.state || '',
+              pincode: response.data.user.address.pincode || '',
+              landmark: response.data.user.address.landmark || ''
+            });
           }
         } catch (error) {
           console.error('Error refreshing user data:', error);
@@ -317,11 +242,9 @@ const Dashboard = () => {
     }
   }, [activeTab, isAuthenticated]);
 
-  // Load user subscription on mount
   useEffect(() => {
     if (user?.id || user?._id) {
       const userId = user.id || user._id;
-      console.log('Dashboard - Loading subscription for userId:', userId);
       if (loadUserSubscription) {
         loadUserSubscription(userId);
       }
@@ -330,54 +253,50 @@ const Dashboard = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <Card className="p-8 text-center max-w-md">
-          <h2 className="text-2xl font-bold mb-4">Login Required</h2>
-          <p className="text-gray-600 mb-6">Please login to view your dashboard</p>
-          <Button onClick={() => navigate('/login')}>Login</Button>
+      <div className="min-h-screen bg-[#f0f0f5] flex items-center justify-center px-4 font-sans">
+        <Card className="p-8 text-center max-w-md rounded-3xl shadow-sm border border-gray-100 bg-white">
+          <div className="w-16 h-16 mx-auto mb-4 bg-orange-50 rounded-full flex items-center justify-center">
+            <User size={32} className="text-[#fc8019]" />
+          </div>
+          <h2 className="text-2xl font-extrabold mb-2 text-gray-900 tracking-tight">Login Required</h2>
+          <p className="text-gray-500 mb-8 font-medium">Please login to view your dashboard</p>
+          <Button onClick={() => navigate('/login')} className="w-full bg-[#fc8019] hover:bg-orange-600 rounded-xl font-bold py-3 text-base">
+            Login
+          </Button>
         </Card>
       </div>
     );
   }
 
-
-  // Grouped menu items for better organization
+  // Simplified Menu for Swiggy Style
   const menuSections = [
     {
       title: '',
       items: [
-        { id: 'profile', label: 'Profile', icon: User, color: 'blue' },
-        { id: 'featured-ads', label: 'My Featured Ads', icon: Star, color: 'yellow' },
+        { id: 'profile', label: 'My Profile', icon: User },
+        { id: 'featured-ads', label: 'My Featured Ads', icon: Star },
       ]
     },
     {
-      title: 'Account & Services',
+      title: 'Services',
       items: [
-        // { id: 'buy-subscription', label: 'Buy Subscription', icon: ShoppingCart, color: 'purple' },
-        { id: 'buy-boost', label: 'Buy Boost', icon: Zap, color: 'orange' },
-        // { id: 'subscription', label: 'My Subscription', icon: CreditCard, color: 'indigo' },
-        { id: 'my-boost', label: 'My Boost', icon: Zap, color: 'orange' },
+        { id: 'buy-boost', label: 'Buy Boost', icon: Zap },
+        { id: 'my-boost', label: 'My Boost Balance', icon: Sparkles },
       ]
     },
     {
-      title: 'Support & Info',
+      title: 'Help & Legal',
       items: [
-        { id: 'faqs', label: 'FAQs', icon: Info, color: 'lime' },
-        { id: 'contact-us', label: 'Contact Us', icon: Mail, color: 'blue' },
-        { id: 'about-us', label: 'About Us', icon: Info, color: 'slate' },
-      ]
-    },
-    {
-      title: 'Legal',
-      items: [
-        { id: 'terms', label: 'Terms & Conditions', icon: FileText, color: 'gray' },
-        { id: 'privacy', label: 'Privacy Policy', icon: Lock, color: 'gray' },
+        { id: 'faqs', label: 'FAQs', icon: Info },
+        { id: 'contact-us', label: 'Contact Support', icon: MessageCircle },
+        { id: 'terms', label: 'Terms & Conditions', icon: FileText },
+        { id: 'privacy', label: 'Privacy Policy', icon: Shield },
       ]
     },
     {
       title: '',
       items: [
-        { id: 'logout', label: 'Logout', icon: LogOut, color: 'red' },
+        { id: 'logout', label: 'Logout', icon: LogOut, isLogout: true },
       ]
     }
   ];
@@ -388,20 +307,15 @@ const Dashboard = () => {
     }
   };
 
-  // Boost functionality
   const handleBoostRental = async (listing) => {
     try {
-      // Check if user has boost credits
       if (!hasBoostCredits()) {
         const status = getBoostStatus();
-        // Show a more informative message - boost purchase is disabled
         alert(
           `You have used all your boost credits (${status.usedBoosts}/${status.totalBoosts}).\n\nYou had ${status.freeBoosts} free boosts and ${status.purchasedBoosts} purchased boosts.\n\nBoost purchase functionality has been disabled. You can only use free boosts.`
         );
         return;
       }
-
-      // Set the rental to be boosted and show animation
       setBoostedRental(listing);
       setShowBoostAnimation(true);
     } catch (error) {
@@ -413,27 +327,19 @@ const Dashboard = () => {
   const handleBoostComplete = async () => {
     try {
       if (!boostedRental) return;
-
-      // Call API to boost the rental
       const response = await apiService.boostRental(boostedRental._id);
-
       if (response.success) {
-        // Update boost credits from the response (backend handles deduction)
         const updatedCredits = {
           ...boostCredits,
           usedBoosts: boostCredits.usedBoosts + 1,
           remainingBoosts: response.data.remainingBoosts
         };
-
         updateBoostCredits(updatedCredits);
-
-        // Update the rental listings to move boosted rental to top
         setRentalListings(prev => {
           const filtered = prev.filter(item => item._id !== boostedRental._id);
           const boostedItem = { ...boostedRental, isBoosted: true, boostedAt: new Date().toISOString() };
           return [boostedItem, ...filtered];
         });
-
         alert(`${boostedRental.title} has been boosted to featured listings! Remaining boosts: ${response.data.remainingBoosts}`);
       } else {
         alert('Failed to boost rental. Please try again.');
@@ -442,7 +348,6 @@ const Dashboard = () => {
       console.error('Error completing boost:', error);
       alert('Failed to boost rental. Please try again.');
     } finally {
-      // Hide animation and reset state
       setShowBoostAnimation(false);
       setBoostedRental(null);
     }
@@ -459,16 +364,11 @@ const Dashboard = () => {
 
   const handleSaveEdit = async (listingId) => {
     try {
-      console.log('Saving edit for listing:', listingId, editForm);
-
-      // Validate service radius
       const serviceRadius = parseInt(editForm.serviceRadius);
       if (isNaN(serviceRadius) || serviceRadius < 1 || serviceRadius > 50) {
         alert('Service radius must be a number between 1 and 50 km');
         return;
       }
-
-      // Call the API to update the listing
       const response = await apiService.updateRentalRequest(listingId, {
         description: editForm.description,
         priceAmount: editForm.amount,
@@ -476,7 +376,6 @@ const Dashboard = () => {
       });
 
       if (response.success) {
-        // Update the local state with the response data
         setRentalListings(prev => prev.map(listing =>
           listing._id === listingId
             ? {
@@ -487,16 +386,11 @@ const Dashboard = () => {
             }
             : listing
         ));
-
         setEditingListing(null);
         setEditForm({ description: '', amount: '', serviceRadius: '' });
-
-        // Show success message (you can add a toast notification here)
-        console.log('Rental request updated successfully');
       }
     } catch (error) {
       console.error('Error updating listing:', error);
-      // Show error message to user (you can add a toast notification here)
       alert('Failed to update rental request. Please try again.');
     }
   };
@@ -506,23 +400,9 @@ const Dashboard = () => {
     setEditForm({ description: '', amount: '', serviceRadius: '' });
   };
 
-  // Save profile information
   const handleSaveProfile = async () => {
     setSavingProfile(true);
     try {
-      console.log('Saving profile with data:', {
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: {
-          street: profileForm.street,
-          city: profileForm.city,
-          state: profileForm.state,
-          pincode: profileForm.pincode,
-          landmark: profileForm.landmark
-        }
-      });
-
       const response = await apiService.updateUserProfile({
         name: user.name,
         email: user.email,
@@ -537,15 +417,10 @@ const Dashboard = () => {
       });
 
       if (response.success) {
-        console.log('Profile updated successfully:', response);
         alert('Profile updated successfully!');
-
-        // Refresh user data to get updated information
         try {
           const refreshResponse = await apiService.getMe();
-          if (refreshResponse.success && refreshResponse.data && refreshResponse.data.user) {
-            console.log('User data refreshed after profile update');
-            // Update AuthContext user and local form with the latest data
+          if (refreshResponse.success && refreshResponse.data?.user) {
             updateUser(refreshResponse.data.user);
             if (refreshResponse.data.user.address) {
               setProfileForm({
@@ -561,7 +436,6 @@ const Dashboard = () => {
           console.error('Error refreshing user data:', refreshError);
         }
       } else {
-        console.error('Profile update failed:', response);
         alert('Failed to update profile. Please try again.');
       }
     } catch (error) {
@@ -572,59 +446,32 @@ const Dashboard = () => {
     }
   };
 
-  // Handle image upload
   const handleImageUpload = async (file, type) => {
     if (!file) return;
-
     setUploadingImage(true);
-
-    // Immediately show the selected image locally
     if (type === 'profile') {
       const imageUrl = URL.createObjectURL(file);
       setLocalProfileImage(imageUrl);
     }
-
     try {
-      console.log('Uploading image:', { type, file: file.name });
-
       let response;
-
       if (type === 'profile') {
-        // Upload profile image
         response = await apiService.uploadProfileImage(file);
-      } else if (type === 'aadhar-front' || type === 'aadhar-back') {
-        // For Aadhar cards, we need to handle both front and back
-        // For now, let's upload them separately
-        if (type === 'aadhar-front') {
-          // Create a dummy back image or use existing one
-          const dummyFile = new File([''], 'dummy.txt', { type: 'text/plain' });
-          response = await apiService.uploadAadharCard(null, file, dummyFile);
-        } else {
-          // For back image, we might need to handle this differently
-          // Let's use the profile upload for now
-          response = await apiService.uploadProfileImage(file);
-        }
+      } else if (type === 'aadhar-front') {
+        const dummyFile = new File([''], 'dummy.txt', { type: 'text/plain' });
+        response = await apiService.uploadAadharCard(null, file, dummyFile);
+      } else if (type === 'aadhar-back') {
+        response = await apiService.uploadProfileImage(file);
       } else {
-        // Default to profile image upload
         response = await apiService.uploadProfileImage(file);
       }
 
       if (response.success) {
-        console.log('Image uploaded successfully:', response);
         alert('Image uploaded successfully!');
-
-        // Refresh user data to get updated image URLs
         try {
           const refreshResponse = await apiService.getMe();
-          if (refreshResponse.success && refreshResponse.data && refreshResponse.data.user) {
-            console.log('User data refreshed after image upload');
-            console.log('Updated user object:', refreshResponse.data.user);
-            console.log('Profile image URL:', refreshResponse.data.user.profileImage);
-
-            // Update auth context with new user data
+          if (refreshResponse.success && refreshResponse.data?.user) {
             updateUser(refreshResponse.data.user);
-
-            // Update local image with the server URL
             if (type === 'profile' && refreshResponse.data.user.profileImage) {
               setLocalProfileImage(refreshResponse.data.user.profileImage);
             }
@@ -633,125 +480,50 @@ const Dashboard = () => {
           console.error('Error refreshing user data:', refreshError);
         }
       } else {
-        console.error('Image upload failed:', response);
         alert('Failed to upload image. Please try again.');
-        // Reset local image on failure
-        if (type === 'profile') {
-          setLocalProfileImage(null);
-        }
+        if (type === 'profile') setLocalProfileImage(null);
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
       alert('Failed to upload image. Please try again.');
-      // Reset local image on error
-      if (type === 'profile') {
-        setLocalProfileImage(null);
-      }
+      if (type === 'profile') setLocalProfileImage(null);
     } finally {
       setUploadingImage(false);
     }
   };
 
   const handleMenuClick = (tabId) => {
-    if (tabId === 'logout') {
-      handleLogout();
-      return;
-    }
+    if (tabId === 'logout') { handleLogout(); return; }
     if (tabId === 'buy-subscription') {
-      // Clear refresh flag to ensure page refreshes when navigating to subscription page
       sessionStorage.removeItem('subscriptionPageRefreshed');
       navigate('/subscription');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'buy-boost') {
-      navigate('/buy-boost');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'subscription') {
-      navigate('/my-subscription');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'my-boost') {
-      navigate('/my-boost');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'faqs') {
-      navigate('/faqs');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'contact-us') {
-      navigate('/support-ticket');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'privacy') {
-      navigate('/privacy-policy');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'terms') {
-      navigate('/terms-and-conditions');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'about-us') {
-      navigate('/about-us');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'featured-ads') {
-      navigate('/my-featured-ads');
-      setSidebarOpen(false);
-      return;
-    }
-    if (tabId === 'profile') {
-      navigate('/dashboard/profile');
-      setSidebarOpen(false);
-      return;
-    }
-    setActiveTab(tabId);
+    } else if (tabId === 'buy-boost') { navigate('/buy-boost'); }
+    else if (tabId === 'subscription') { navigate('/my-subscription'); }
+    else if (tabId === 'my-boost') { navigate('/my-boost'); }
+    else if (tabId === 'faqs') { navigate('/faqs'); }
+    else if (tabId === 'contact-us') { navigate('/support-ticket'); }
+    else if (tabId === 'privacy') { navigate('/privacy-policy'); }
+    else if (tabId === 'terms') { navigate('/terms-and-conditions'); }
+    else if (tabId === 'about-us') { navigate('/about-us'); }
+    else if (tabId === 'featured-ads') { navigate('/my-featured-ads'); }
+    else if (tabId === 'profile') { navigate('/dashboard/profile'); }
+    else { setActiveTab(tabId); }
+
     setSidebarOpen(false);
   };
 
-  const getColorClasses = (color, isActive) => {
-    const colors = {
-      blue: isActive ? 'bg-blue-600 text-white' : 'text-blue-600 hover:bg-blue-50',
-      yellow: isActive ? 'bg-yellow-600 text-white' : 'text-yellow-600 hover:bg-yellow-50',
-      green: isActive ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-50',
-      red: isActive ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50',
-      purple: isActive ? 'bg-purple-600 text-white' : 'text-purple-600 hover:bg-purple-50',
-      indigo: isActive ? 'bg-indigo-600 text-white' : 'text-indigo-600 hover:bg-indigo-50',
-      teal: isActive ? 'bg-teal-600 text-white' : 'text-teal-600 hover:bg-teal-50',
-      pink: isActive ? 'bg-pink-600 text-white' : 'text-pink-600 hover:bg-pink-50',
-      orange: isActive ? 'bg-orange-600 text-white' : 'text-orange-600 hover:bg-orange-50',
-      cyan: isActive ? 'bg-cyan-600 text-white' : 'text-cyan-600 hover:bg-cyan-50',
-      amber: isActive ? 'bg-amber-600 text-white' : 'text-amber-600 hover:bg-amber-50',
-      lime: isActive ? 'bg-lime-600 text-white' : 'text-lime-600 hover:bg-lime-50',
-      emerald: isActive ? 'bg-emerald-600 text-white' : 'text-emerald-600 hover:bg-emerald-50',
-      slate: isActive ? 'bg-slate-600 text-white' : 'text-slate-600 hover:bg-slate-50',
-      gray: isActive ? 'bg-gray-600 text-white' : 'text-gray-600 hover:bg-gray-50',
-    };
-    return colors[color] || colors.blue;
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Main Content */}
-      <main className="w-full">
+    <div className="min-h-screen bg-[#f0f0f5] font-sans pb-20">
+      <main className="w-full max-w-[1200px] mx-auto">
+
         {/* My Rentals Tab - Sticky Header */}
         {activeTab === 'my-ads' && (
-          <div className="sticky top-0 z-30 bg-gradient-to-br from-slate-50 to-blue-50 px-4 md:px-6 pt-4 pb-4 border-b border-gray-200/50 shadow-sm">
+          <div className="sticky top-0 z-30 bg-white px-4 md:px-6 pt-5 pb-4 border-b border-gray-100 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900">My Rentals</h2>
-                <p className="text-sm text-gray-600">Manage your rental listings</p>
+                <h2 className="text-xl md:text-3xl font-extrabold text-gray-900 tracking-tight">My Rentals</h2>
+                <p className="text-sm text-gray-500 font-medium mt-1">Manage your listings</p>
               </div>
-              <Button onClick={() => navigate('/post-ad')} className="text-sm md:text-base py-2 md:py-3">
+              <Button onClick={() => navigate('/post-ad')} className="text-sm md:text-base py-2.5 md:py-3 px-4 md:px-6 bg-[#fc8019] hover:bg-orange-600 border-none rounded-xl font-bold shadow-sm">
                 <Package size={18} className="mr-2" />
                 Add New
               </Button>
@@ -760,539 +532,393 @@ const Dashboard = () => {
         )}
 
         <div className="p-4 md:p-6">
-          {/* My Rentals Tab */}
+          {/* My Rentals Tab Content */}
           {activeTab === 'my-ads' && (
             <div>
+              {loadingRentals ? (
+                <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#fc8019] to-[#ffc107] rounded-full mx-auto mb-4 animate-bounce shadow-sm"></div>
+                  <p className="text-gray-500 font-bold">Loading your rentals...</p>
+                </div>
+              ) : rentalListings.length === 0 ? (
+                <div className="p-12 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                  <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-[#fc8019] to-[#ffc107] rounded-full flex items-center justify-center shadow-sm">
+                    <Package size={36} className="text-white" />
+                  </div>
+                  <h3 className="text-2xl font-extrabold mb-2 tracking-tight text-gray-900">No rentals yet</h3>
+                  <p className="text-gray-500 mb-8 font-medium">Start listing your items for rent</p>
+                  <Button onClick={() => navigate('/post-ad')} className="bg-[#fc8019] hover:bg-orange-600 border-none rounded-xl font-bold py-3 px-6 shadow-sm">
+                    Create Your First Rental
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {rentalListings.map((listing) => {
+                    return (
+                      <div key={listing._id} className="relative overflow-hidden rounded-2xl border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 bg-white group">
 
-              {/* Content */}
-              <div>
-                {loadingRentals ? (
-                  <Card className="p-8 md:p-12 text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading your rentals...</p>
-                  </Card>
-                ) : rentalListings.length === 0 ? (
-                  <Card className="p-8 md:p-12 text-center">
-                    <Package size={48} className="mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg md:text-xl font-bold mb-2">No rentals yet</h3>
-                    <p className="text-sm text-gray-600 mb-6">Start listing your items for rent</p>
-                    <Button onClick={() => navigate('/post-ad')}>Create Your First Rental</Button>
-                  </Card>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {rentalListings.map((listing) => {
-                      return (
-                        <Card key={listing._id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                          {/* Status Badge */}
-                          <div className={`px-3 py-1 text-xs font-bold flex items-center gap-1.5 ${listing.status === 'approved' ? 'bg-green-500 text-white' :
-                              listing.status === 'pending' ? 'bg-yellow-500 text-white' :
-                                listing.status === 'rejected' ? 'bg-red-500 text-white' :
-                                  'bg-gray-500 text-white'
+                        {/* Status Badge */}
+                        <div className="absolute top-3 left-3 z-10">
+                          <div className={`px-3 py-1 text-[10px] uppercase font-extrabold tracking-wider rounded-full shadow-sm flex items-center gap-1 backdrop-blur-md ${listing.status === 'approved' ? 'bg-green-500/90 text-white' :
+                              listing.status === 'pending' ? 'bg-yellow-500/90 text-white' :
+                                listing.status === 'rejected' ? 'bg-red-500/90 text-white' :
+                                  'bg-gray-500/90 text-white'
                             }`}>
-                            {listing.status === 'approved' && <BadgeCheck size={14} />}
-                            {listing.status === 'pending' && <Clock size={14} />}
-                            {listing.status === 'rejected' && <X size={14} />}
+                            {listing.status === 'approved' && <BadgeCheck size={12} strokeWidth={3} />}
+                            {listing.status === 'pending' && <Clock size={12} strokeWidth={3} />}
+                            {listing.status === 'rejected' && <X size={12} strokeWidth={3} />}
                             {listing.status?.toUpperCase() || 'UNKNOWN'}
                           </div>
+                        </div>
 
-                          <div className="relative h-32">
-                            {listing.images && listing.images.length > 0 ? (
-                              <ImageCarousel images={listing.images.map(img => img.url)} className="h-full" />
-                            ) : (
-                              <div className="h-full w-full bg-gray-200 flex items-center justify-center">
-                                <Package size={32} className="text-gray-400" />
+                        <div className="relative h-40 bg-gray-50">
+                          {listing.images && listing.images.length > 0 ? (
+                            <ImageCarousel images={listing.images.map(img => img.url)} className="h-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <Package size={32} className="text-gray-300" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-4">
+                          {editingListing === listing._id ? (
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-1">Description</label>
+                                <textarea
+                                  value={editForm.description}
+                                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
+                                  rows="2"
+                                  placeholder="Enter description"
+                                />
                               </div>
-                            )}
-                          </div>
-                          <div className="p-3">
-                            {editingListing === listing._id ? (
-                              <div className="space-y-2">
+                              <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                  <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
-                                  <textarea
-                                    value={editForm.description}
-                                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                                    className="w-full p-2 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    rows="2"
-                                    placeholder="Enter description"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium text-gray-700 mb-1">Amount</label>
+                                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-1">Amount</label>
                                   <input
                                     type="number"
                                     value={editForm.amount}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
-                                    className="w-full p-2 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Enter amount"
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
+                                    placeholder="Amount"
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-xs font-medium text-gray-700 mb-1">Service Radius (km)</label>
+                                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-1">Radius (km)</label>
                                   <input
                                     type="number"
-                                    min="1"
-                                    max="50"
-                                    step="1"
+                                    min="1" max="50"
                                     value={editForm.serviceRadius}
                                     onChange={(e) => {
                                       const value = e.target.value;
-                                      // Only allow numbers between 1-50
                                       if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 50)) {
                                         setEditForm(prev => ({ ...prev, serviceRadius: value }));
                                       }
                                     }}
-                                    className="w-full p-2 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Enter service radius (1-50 km)"
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
+                                    placeholder="1-50 km"
                                   />
                                 </div>
-                                <div className="flex gap-1">
-                                  <Button
-                                    onClick={() => handleSaveEdit(listing._id)}
-                                    className="flex-1 text-xs py-1.5 bg-green-600 hover:bg-green-700 text-white"
-                                  >
-                                    <Save size={12} className="mr-1" />
-                                    Save
-                                  </Button>
-                                  <Button
-                                    onClick={handleCancelEdit}
-                                    variant="outline"
-                                    className="flex-1 text-xs py-1.5"
-                                  >
-                                    Cancel
-                                  </Button>
+                              </div>
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  onClick={() => handleSaveEdit(listing._id)}
+                                  className="flex-1 text-xs py-2.5 bg-[#fc8019] hover:bg-orange-600 text-white rounded-xl font-bold border-none"
+                                >
+                                  <Save size={14} className="mr-1.5" /> Save
+                                </Button>
+                                <Button
+                                  onClick={handleCancelEdit}
+                                  variant="outline"
+                                  className="flex-1 text-xs py-2.5 rounded-xl font-bold text-gray-600 border-gray-200 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <h3 className="font-extrabold text-gray-900 mb-1.5 line-clamp-1 text-base tracking-tight group-hover:text-[#fc8019] transition-colors">{listing.title}</h3>
+                              <div className="flex flex-col gap-2 mb-4">
+                                <span className="text-xl font-extrabold text-gray-900 tracking-tight">
+                                  ₹{listing.price?.amount || 0}<span className="text-[10px] text-gray-500 font-medium uppercase ml-1">/ {listing.price?.period || 'day'}</span>
+                                </span>
+                                <div className="flex items-center text-gray-500 text-xs font-medium">
+                                  <MapPin size={12} className="mr-1 text-gray-400" />
+                                  <span className="truncate">
+                                    {listing.location?.address || (listing.location?.city && listing.location.city.length > 2 ? listing.location.city : 'Location not specified')}
+                                  </span>
                                 </div>
                               </div>
-                            ) : (
-                              <>
-                                <h3 className="font-bold text-gray-900 mb-1 line-clamp-1 text-sm md:text-base">{listing.title}</h3>
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-lg md:text-xl font-bold text-blue-600">
-                                    ₹{listing.price?.amount || 0}/{listing.price?.period || 'day'}
-                                  </span>
-                                  <div className="flex items-center gap-1 text-gray-600">
-                                    <MapPin size={14} />
-                                    <span className="text-xs">
-                                      {listing.location?.address ||
-                                        (listing.location?.city &&
-                                          listing.location.city !== 'Unknown' &&
-                                          listing.location.city !== 'Not specified' &&
-                                          listing.location.city.trim() !== '' &&
-                                          listing.location.city.length > 2 ?
-                                          listing.location.city : 'Location not specified')}
-                                    </span>
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                            {editingListing !== listing._id && (
-                              <div className="flex gap-1">
-                                {/* View Button - Only show for APPROVED listings */}
+                            </>
+                          )}
+
+                          {editingListing !== listing._id && (
+                            <>
+                              <div className="w-full h-px bg-gray-100 mb-3"></div>
+                              <div className="flex gap-2">
                                 {listing.status === 'approved' && (
                                   <Button
                                     variant="outline"
-                                    className="flex-1 text-xs py-1.5"
-                                    onClick={() => {
-                                      console.log('Navigating to rental with ID:', listing._id);
-                                      console.log('Full listing object:', listing);
-                                      navigate(`/rental/${listing._id}`);
-                                    }}
+                                    className="flex-1 text-xs py-2 rounded-xl font-bold border-gray-200 text-gray-700 hover:bg-gray-50 group/btn"
+                                    onClick={() => navigate(`/rental/${listing._id}`)}
                                   >
-                                    <Eye size={12} className="mr-1" />
-                                    View
+                                    <Eye size={14} className="mr-1.5 text-gray-400 group-hover/btn:text-gray-700" /> View
                                   </Button>
                                 )}
 
-                                {/* Boost Button - Only show for APPROVED listings */}
                                 {listing.status === 'approved' && (
                                   <Button
                                     variant="outline"
-                                    className={`flex-1 text-xs py-1.5 ${hasBoostCredits()
-                                        ? 'text-orange-600 hover:bg-orange-50 border-orange-200'
-                                        : 'text-gray-400 border-gray-300 cursor-not-allowed'
-                                      }`}
+                                    className={`flex-1 text-xs py-2 rounded-xl font-bold border-gray-200 group/btn ${hasBoostCredits()
+                                      ? 'text-orange-600 hover:bg-orange-50 border-orange-200'
+                                      : 'text-gray-400 cursor-not-allowed'}`}
                                     onClick={() => handleBoostRental(listing)}
                                     disabled={!hasBoostCredits()}
                                   >
-                                    <Zap size={12} className="mr-1" />
-                                    {hasBoostCredits() ? 'Boost' : 'Buy Boost'}
+                                    <Zap size={14} className={`mr-1.5 ${hasBoostCredits() ? 'text-[#fc8019]' : 'text-gray-400'}`} />
+                                    {hasBoostCredits() ? 'Boost' : 'Boost'}
                                   </Button>
                                 )}
 
-                                {/* Edit Button - Always show */}
                                 <Button
                                   variant="outline"
-                                  className="flex-1 text-xs py-1.5"
+                                  className="flex-1 text-xs py-2 rounded-xl font-bold border-gray-200 text-gray-700 hover:bg-gray-50 group/btn"
                                   onClick={() => handleEditListing(listing)}
                                 >
-                                  <Edit size={12} className="mr-1" />
-                                  Edit
+                                  <Edit size={14} className="mr-1.5 text-gray-400 group-hover/btn:text-gray-700" /> Edit
                                 </Button>
 
-                                {/* Delete Button - Always show */}
-                                <Button
-                                  variant="outline"
-                                  className="text-red-600 hover:bg-red-50 text-xs py-1.5 px-2"
+                                <button
+                                  className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors shrink-0"
                                   onClick={() => handleDeleteAd(listing._id)}
                                 >
-                                  <Trash2 size={12} />
-                                </Button>
+                                  <Trash2 size={14} />
+                                </button>
                               </div>
-                            )}
-                          </div>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
-
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <div>
+            <div className="max-w-3xl mx-auto">
               <div className="mb-6 flex items-center justify-between">
-                <div className="flex-1">
-                  <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="flex-1 text-center">
-                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">Profile</h2>
-                </div>
-                <div className="flex-1"></div>
+                <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors">
+                  <ChevronRight size={20} className="rotate-180" />
+                </button>
+                <h2 className="text-xl md:text-2xl font-extrabold text-gray-900 tracking-tight">Edit Profile</h2>
+                <div className="w-10"></div>
               </div>
 
-
-              <Card className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="relative">
-                    {(localProfileImage || user.profileImage || user.profile?.image || user.image) ? (
-                      <img
-                        src={localProfileImage || user.profileImage || user.profile?.image || user.image}
-                        alt="Profile"
-                        className="w-20 h-20 rounded-full object-cover cursor-pointer"
-                        onClick={() => {
-                          if (!uploadingImage && profileFileInputRef.current) {
-                            profileFileInputRef.current.click();
-                          }
-                        }}
-                        onError={(e) => {
-                          console.log('Profile image failed to load, showing initial');
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold cursor-pointer"
-                      onClick={() => {
-                        if (!uploadingImage && profileFileInputRef.current) {
-                          profileFileInputRef.current.click();
-                        }
-                      }}
-                      style={{ display: (localProfileImage || user.profileImage || user.profile?.image || user.image) ? 'none' : 'flex' }}
-                    >
-                      {user.name?.charAt(0) || user.email?.charAt(0)?.toUpperCase() || '?'}
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+                {/* Profile Image Section */}
+                <div className="flex flex-col md:flex-row items-center gap-6 mb-8 pb-8 border-b border-gray-100">
+                  <div className="relative group cursor-pointer" onClick={() => !uploadingImage && profileFileInputRef.current?.click()}>
+                    <div className="w-24 h-24 rounded-full p-1 border-2 border-dashed border-gray-300 group-hover:border-[#fc8019] transition-colors">
+                      {(localProfileImage || user.profileImage || user.profile?.image || user.image) ? (
+                        <img
+                          src={localProfileImage || user.profileImage || user.profile?.image || user.image}
+                          alt="Profile"
+                          className="w-full h-full rounded-full object-cover"
+                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        />
+                      ) : null}
+                      <div className="w-full h-full bg-orange-50 rounded-full flex items-center justify-center text-[#fc8019] text-3xl font-extrabold" style={{ display: (localProfileImage || user.profileImage || user.profile?.image || user.image) ? 'none' : 'flex' }}>
+                        {user.name?.charAt(0) || user.email?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
                     </div>
-                    <button className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                      <BadgeCheck size={14} className="text-white" />
-                    </button>
+                    <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 group-hover:text-[#fc8019]">
+                      <Edit size={14} />
+                    </div>
+                    <input type="file" accept="image/*" ref={profileFileInputRef} style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => { if (e.target.files[0]) handleImageUpload(e.target.files[0], 'profile'); }} />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900">{user.name}</h3>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      ref={profileFileInputRef}
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          handleImageUpload(file, 'profile');
-                        }
-                      }}
-                      disabled={uploadingImage}
-                    />
-                    {!uploadingImage && (
-                      <button
-                        type="button"
-                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
-                        onClick={() => profileFileInputRef.current && profileFileInputRef.current.click()}
-                      >
-                        Change profile photo
-                      </button>
-                    )}
-                    {uploadingImage && <p className="text-xs text-gray-500">Uploading...</p>}
+                  <div className="text-center md:text-left">
+                    <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">{user.name}</h3>
+                    <p className="text-sm font-medium text-gray-500 mb-2">{user.email}</p>
+                    {uploadingImage && <span className="text-[10px] font-bold text-[#fc8019] uppercase tracking-wider bg-orange-50 px-2 py-1 rounded-full">Uploading...</span>}
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                    <input
-                      type="text"
-                      value={user.name || ''}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      readOnly
-                    />
+                {/* Form Fields */}
+                <div className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">Full Name</label>
+                      <input type="text" value={user.name || ''} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 focus:outline-none cursor-not-allowed" readOnly />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">Email Address</label>
+                      <input type="email" value={user.email || ''} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 focus:outline-none cursor-not-allowed" readOnly />
+                    </div>
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                    <input
-                      type="email"
-                      value={user.email || ''}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      readOnly
-                    />
+                    <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">Phone Number</label>
+                    <input type="tel" value={user.phone || ''} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 focus:outline-none cursor-not-allowed" readOnly />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                    <input
-                      type="tel"
-                      value={user.phone || ''}
-                      placeholder="Add your phone number"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+                    <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">Street Address</label>
                     <textarea
                       value={profileForm.street}
                       onChange={(e) => setProfileForm(prev => ({ ...prev, street: e.target.value }))}
                       placeholder="Add your street address"
                       rows="2"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                      <input
-                        type="text"
-                        value={profileForm.city}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, city: e.target.value }))}
-                        placeholder="Add your city"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
+                      <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">City</label>
+                      <input type="text" value={profileForm.city} onChange={(e) => setProfileForm(prev => ({ ...prev, city: e.target.value }))} placeholder="Add your city" className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                      <input
-                        type="text"
-                        value={profileForm.state}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, state: e.target.value }))}
-                        placeholder="Add your state"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
-                      <input
-                        type="text"
-                        value={profileForm.pincode}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, pincode: e.target.value }))}
-                        placeholder="Add your pincode"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Landmark</label>
-                      <input
-                        type="text"
-                        value={profileForm.landmark}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, landmark: e.target.value }))}
-                        placeholder="Add nearby landmark"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
+                      <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">State</label>
+                      <input type="text" value={profileForm.state} onChange={(e) => setProfileForm(prev => ({ ...prev, state: e.target.value }))} placeholder="Add your state" className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all" />
                     </div>
                   </div>
 
-                  {/* Aadhar Card Images */}
-                  <div className="border-t pt-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Aadhar Card Documents</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">Pincode</label>
+                      <input type="text" value={profileForm.pincode} onChange={(e) => setProfileForm(prev => ({ ...prev, pincode: e.target.value }))} placeholder="Add your pincode" className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">Landmark</label>
+                      <input type="text" value={profileForm.landmark} onChange={(e) => setProfileForm(prev => ({ ...prev, landmark: e.target.value }))} placeholder="Add nearby landmark" className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all" />
+                    </div>
+                  </div>
+
+                  {/* Document Section */}
+                  <div className="mt-8 pt-8 border-t border-gray-100">
+                    <h4 className="text-lg font-extrabold text-gray-900 tracking-tight mb-5">Verification Documents</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {/* Aadhar Front */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Aadhar Card Front</label>
+                        <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">Aadhar Card Front</label>
                         {user.rentalProfile?.documents?.aadhar?.frontImage?.url ? (
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                            <img
-                              src={user.rentalProfile.documents.aadhar.frontImage.url}
-                              alt="Aadhar Card Front"
-                              className="w-full h-40 object-contain rounded-lg bg-gray-50"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
-                              }}
-                            />
-                            <div className="hidden text-center p-4">
-                              <p className="text-gray-500">Failed to load Aadhar Front image</p>
-                            </div>
+                          <div className="border border-gray-200 rounded-2xl p-3 bg-gray-50">
+                            <img src={user.rentalProfile.documents.aadhar.frontImage.url} alt="Aadhar Card Front" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.target.style.display = 'none'; }} />
                           </div>
                         ) : (
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                            <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
-                              <FileText size={24} className="text-gray-400" />
+                          <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 bg-gray-50 text-center flex flex-col items-center justify-center">
+                            <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
+                              <FileText size={20} className="text-gray-400" />
                             </div>
-                            <p className="text-gray-500">No Aadhar Front image uploaded</p>
+                            <span className="text-xs font-bold text-gray-500">No Document</span>
                           </div>
                         )}
                       </div>
+                      {/* Aadhar Back */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Aadhar Card Back</label>
+                        <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">Aadhar Card Back</label>
                         {user.rentalProfile?.documents?.aadhar?.backImage?.url ? (
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                            <img
-                              src={user.rentalProfile.documents.aadhar.backImage.url}
-                              alt="Aadhar Card Back"
-                              className="w-full h-40 object-contain rounded-lg bg-gray-50"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
-                              }}
-                            />
-                            <div className="hidden text-center p-4">
-                              <p className="text-gray-500">Failed to load Aadhar Back image</p>
-                            </div>
+                          <div className="border border-gray-200 rounded-2xl p-3 bg-gray-50">
+                            <img src={user.rentalProfile.documents.aadhar.backImage.url} alt="Aadhar Card Back" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.target.style.display = 'none'; }} />
                           </div>
                         ) : (
-                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                            <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
-                              <FileText size={24} className="text-gray-400" />
+                          <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 bg-gray-50 text-center flex flex-col items-center justify-center">
+                            <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3">
+                              <FileText size={20} className="text-gray-400" />
                             </div>
-                            <p className="text-gray-500">No Aadhar Back image uploaded</p>
+                            <span className="text-xs font-bold text-gray-500">No Document</span>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-6 flex gap-3">
-                  <Button
-                    onClick={handleSaveProfile}
-                    disabled={savingProfile}
-                    className="flex-1"
-                  >
-                    {savingProfile ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      // Reset form to original values
-                      setProfileForm({
-                        street: user.address?.street || '',
-                        city: user.address?.city || '',
-                        state: user.address?.state || '',
-                        pincode: user.address?.pincode || '',
-                        landmark: user.address?.landmark || ''
-                      });
-                    }}
-                  >
-                    Cancel
-                  </Button>
+                  <div className="mt-8 flex gap-3 pt-4">
+                    <Button onClick={handleSaveProfile} disabled={savingProfile} className="flex-1 py-3.5 bg-[#fc8019] hover:bg-orange-600 text-white font-bold rounded-xl border-none">
+                      {savingProfile ? 'Saving...' : 'Save Details'}
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      setProfileForm({ street: user.address?.street || '', city: user.address?.city || '', state: user.address?.state || '', pincode: user.address?.pincode || '', landmark: user.address?.landmark || '' });
+                    }} className="flex-1 py-3.5 font-bold rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50">
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
 
           {/* Profile Menu - Mobile View */}
           {activeTab === 'profile-menu' && (
             <div className="md:hidden">
-              {/* User Profile Card */}
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-4 mb-4 text-white shadow-lg">
-                <div className="flex items-center gap-3 mb-3">
+              {/* Swiggy Style User Card */}
+              <div className="bg-gradient-to-r from-[#fc8019] to-[#ffc107] rounded-3xl p-6 mb-6 text-white shadow-sm relative overflow-hidden">
+                <div className="absolute -right-4 -top-12 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <div className="flex items-center gap-4 relative z-10">
                   <div className="relative">
                     {(localProfileImage || user.profileImage || user.profile?.image || user.image) ? (
                       <img
                         src={localProfileImage || user.profileImage || user.profile?.image || user.image}
                         alt="Profile"
-                        className="w-16 h-16 rounded-full object-cover border-2 border-white/30"
-                        onError={(e) => {
-                          console.log('Profile image failed to load, showing initial');
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-white/50 shadow-sm"
+                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                       />
                     ) : null}
-                    <div
-                      className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-2xl font-bold border-2 border-white/30"
-                      style={{ display: (localProfileImage || user.profileImage || user.profile?.image || user.image) ? 'none' : 'flex' }}
-                    >
+                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-2xl font-extrabold border-2 border-white/40 shadow-sm" style={{ display: (localProfileImage || user.profileImage || user.profile?.image || user.image) ? 'none' : 'flex' }}>
                       {user.name?.charAt(0) || user.email?.charAt(0)?.toUpperCase() || '?'}
                     </div>
-                    {/* Verified badge option */}
-                    <button className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                      <BadgeCheck size={14} />
-                    </button>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-white truncate text-base">{user.name}</h3>
-                    <p className="text-xs text-white/80 truncate">{user.phone || user.email}</p>
-                    <p className="text-xs text-white/60 truncate">USR{String(user._id || user.id || '00000').slice(-4).padStart(4, '0')}</p>
+                    <h3 className="font-extrabold text-white text-xl tracking-tight truncate">{user.name}</h3>
+                    <p className="text-sm font-medium text-white/90 truncate">{user.phone || user.email}</p>
+                    <div className="mt-1 inline-flex items-center gap-1 bg-black/10 px-2 py-0.5 rounded-md backdrop-blur-sm">
+                      <Shield size={10} className="text-white" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white">USR{String(user._id || user.id || '000').slice(-4).padStart(4, '0')}</span>
+                    </div>
                   </div>
+                  <ChevronRight size={24} className="text-white/60" onClick={() => handleMenuClick('profile')} />
                 </div>
               </div>
 
-              {/* Menu Sections */}
-              <div className="space-y-4">
+              {/* Menu Sections - Swiggy clean box style */}
+              <div className="space-y-6">
                 {menuSections.map((section, sectionIndex) => (
                   <div key={sectionIndex}>
                     {section.title && (
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1 mb-2">
+                      <h4 className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest px-2 mb-3">
                         {section.title}
                       </h4>
                     )}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                       {section.items.map((item, index) => {
                         const Icon = item.icon;
                         return (
                           <button
                             key={item.id}
                             onClick={() => handleMenuClick(item.id)}
-                            className={`w-full flex items-center justify-between px-4 py-3 transition-all hover:bg-gray-50 ${index !== section.items.length - 1 ? 'border-b border-gray-100' : ''
-                              }`}
+                            className={`w-full flex items-center justify-between px-4 py-4 transition-colors group hover:bg-orange-50/30 ${index !== section.items.length - 1 ? 'border-b border-gray-50' : ''}`}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.color === 'red' ? 'bg-red-50 text-red-600' :
-                                  item.color === 'blue' ? 'bg-blue-50 text-blue-600' :
-                                    item.color === 'green' ? 'bg-green-50 text-green-600' :
-                                      item.color === 'yellow' ? 'bg-yellow-50 text-yellow-600' :
-                                        item.color === 'purple' ? 'bg-purple-50 text-purple-600' :
-                                          item.color === 'indigo' ? 'bg-indigo-50 text-indigo-600' :
-                                            item.color === 'pink' ? 'bg-pink-50 text-pink-600' :
-                                              item.color === 'orange' ? 'bg-orange-50 text-orange-600' :
-                                                item.color === 'teal' ? 'bg-teal-50 text-teal-600' :
-                                                  item.color === 'cyan' ? 'bg-cyan-50 text-cyan-600' :
-                                                    item.color === 'amber' ? 'bg-amber-50 text-amber-600' :
-                                                      item.color === 'lime' ? 'bg-lime-50 text-lime-600' :
-                                                        item.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
-                                                          item.color === 'slate' ? 'bg-slate-50 text-slate-600' :
-                                                            'bg-gray-50 text-gray-600'
-                                }`}>
-                                <Icon size={18} />
+                            <div className="flex items-center gap-4">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${item.isLogout ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-gray-500 group-hover:bg-orange-50 group-hover:text-[#fc8019]'}`}>
+                                <Icon size={18} strokeWidth={2.5} />
                               </div>
-                              <span className="font-semibold text-gray-900 text-sm">{item.label}</span>
+                              <span className={`font-bold text-[15px] tracking-tight ${item.isLogout ? 'text-red-500' : 'text-gray-800'}`}>
+                                {item.label}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2">
                               {item.count !== undefined && item.count > 0 && (
-                                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-600">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-orange-100 text-[#fc8019]">
                                   {item.count}
                                 </span>
                               )}
-                              <ChevronRight size={16} className="text-gray-400" />
+                              <ChevronRight size={18} className="text-gray-300 group-hover:text-[#fc8019] transition-colors" />
                             </div>
                           </button>
                         );
@@ -1306,20 +932,20 @@ const Dashboard = () => {
 
           {/* Other Tabs - Placeholder */}
           {!['my-ads', 'profile', 'profile-menu'].includes(activeTab) && (
-            <Card className="p-8 md:p-12 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+            <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-sm max-w-2xl mx-auto mt-8">
+              <div className="w-16 h-16 mx-auto mb-5 bg-gray-50 rounded-full flex items-center justify-center">
                 {menuSections.flatMap(s => s.items).find(i => i.id === activeTab)?.icon &&
                   (() => {
                     const Icon = menuSections.flatMap(s => s.items).find(i => i.id === activeTab)?.icon;
-                    return <Icon size={32} className="text-gray-400" />;
+                    return <Icon size={28} className="text-gray-400" strokeWidth={2.5} />;
                   })()
                 }
               </div>
-              <h3 className="text-lg md:text-xl font-bold mb-2">
+              <h3 className="text-2xl font-extrabold mb-2 text-gray-900 tracking-tight">
                 {menuSections.flatMap(s => s.items).find(i => i.id === activeTab)?.label}
               </h3>
-              <p className="text-sm text-gray-600">This feature is coming soon!</p>
-            </Card>
+              <p className="text-gray-500 font-medium">This feature is coming soon!</p>
+            </div>
           )}
         </div>
       </main>

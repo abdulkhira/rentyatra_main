@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import Card from '../../../components/common/Card';
-import Button from '../../../components/common/Button';
-import { MessageSquare, Clock, CheckCircle, AlertCircle, User, Mail, Phone, Calendar, Eye, MessageCircle, Hash } from 'lucide-react';
+import {
+  MessageSquare, Clock, CheckCircle, AlertCircle, User,
+  Mail, Phone, Calendar, Eye, Hash, RefreshCw, XCircle, ChevronRight, ShieldAlert, FileText, Send
+} from 'lucide-react';
 import api from '../../../services/api';
 
 const SupportManagementView = () => {
@@ -9,70 +10,38 @@ const SupportManagementView = () => {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showTicketDetails, setShowTicketDetails] = useState(false);
 
-  // Load tickets from API
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Manual load tickets function
   const loadTicketsManually = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Manually loading tickets for admin...');
-      
       let ticketsData = [];
       let useFallback = false;
-      
+
       const data = await api.getTickets();
-      console.log('🔄 Manual admin API data:', data);
-      
-      // Check if the response indicates authentication failure
       if (data && data.requiresAuth) {
-        console.log('⚠️ Manual admin API authentication failed, using public endpoint');
         useFallback = true;
       } else if (data && data.success !== false) {
         ticketsData = data.data || [];
-        console.log('🔄 Manual tickets:', ticketsData);
-        console.log('🔄 Manual tickets count:', ticketsData.length);
       } else {
-        console.log('⚠️ Manual admin API failed, using public endpoint');
         useFallback = true;
       }
-      
+
       if (useFallback) {
         try {
-          // Fallback to public endpoint
           const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
           const response = await fetch(`${apiUrl}/tickets/public`);
-          console.log('🔄 Manual public fetch response status:', response.status);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           const data = await response.json();
-          console.log('🔄 Manual public fetch data:', data);
-          
           ticketsData = data.data || [];
-          console.log('🔄 Manual public tickets:', ticketsData);
-          console.log('🔄 Manual public tickets count:', ticketsData.length);
-          
-          console.log('✅ Manual public tickets loaded successfully');
         } catch (fallbackError) {
-          console.error('❌ Manual both admin and public endpoints failed:', fallbackError.message);
           ticketsData = [];
         }
       }
-      
       setTickets(ticketsData);
-      
-      if (ticketsData.length > 0) {
-        console.log('✅ Manual load successful!');
-      } else {
-        console.log('⚠️ No tickets found in manual load');
-      }
     } catch (error) {
-      console.error('❌ Manual load error:', error);
-      console.error('❌ Error details:', error.message);
+      console.error('Manual load error:', error);
     } finally {
       setLoading(false);
     }
@@ -82,80 +51,36 @@ const SupportManagementView = () => {
     const loadTickets = async () => {
       try {
         setLoading(true);
-        console.log('🔍 Admin loading tickets...');
-        console.log('🔍 API service:', api);
-        console.log('🔍 API base URL:', api.baseURL);
-        
-        // Check if admin token exists
         const adminToken = localStorage.getItem('adminToken');
-        console.log('🔐 Admin token exists:', adminToken ? 'Yes' : 'No');
-        
-        // Try admin API service first, fallback to public endpoint
-        console.log('🔍 Using admin API service...');
         let ticketsData = [];
         let useFallback = false;
-        
+
         if (!adminToken) {
-          console.log('⚠️ No admin token found, using public endpoint directly');
           useFallback = true;
         } else {
           const data = await api.getTickets();
-          console.log('🔍 Admin API data:', data);
-          
-          // Check if the response indicates authentication failure
           if (data && data.requiresAuth) {
-            console.log('⚠️ Admin API authentication failed, using public endpoint');
             useFallback = true;
           } else if (data && data.success !== false) {
-            console.log('🔍 Data success:', data.success);
-            console.log('🔍 Data count:', data.count);
-            console.log('🔍 Data tickets:', data.data);
-            
             ticketsData = data.data || [];
-            console.log('🔍 Tickets data:', ticketsData);
-            console.log('🔍 Number of tickets:', ticketsData.length);
-            
-            if (ticketsData.length === 0) {
-              console.log('⚠️ No tickets found in response');
-            } else {
-              console.log('✅ Tickets loaded successfully:', ticketsData.length);
-            }
           } else {
-            console.log('⚠️ Admin API failed, using public endpoint');
             useFallback = true;
           }
         }
-        
+
         if (useFallback) {
           try {
-            // Fallback to public endpoint
             const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
-          const response = await fetch(`${apiUrl}/tickets/public`);
-            console.log('🔍 Public fetch response status:', response.status);
-            
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
+            const response = await fetch(`${apiUrl}/tickets/public`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            console.log('🔍 Public fetch data:', data);
-            
             ticketsData = data.data || [];
-            console.log('🔍 Public tickets data:', ticketsData);
-            console.log('🔍 Public number of tickets:', ticketsData.length);
-            
-            console.log('✅ Public tickets loaded successfully');
           } catch (fallbackError) {
-            console.error('❌ Both admin and public endpoints failed:', fallbackError.message);
             ticketsData = [];
           }
         }
-        
         setTickets(ticketsData);
       } catch (error) {
-        console.error('❌ Error loading tickets:', error);
-        console.error('❌ Error details:', error.message);
-        console.error('❌ Error stack:', error.stack);
         setTickets([]);
       } finally {
         setLoading(false);
@@ -165,61 +90,53 @@ const SupportManagementView = () => {
     loadTickets();
   }, []);
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getPriorityStyle = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'bg-rose-100 text-rose-700 border-rose-200';
+      case 'medium': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'low': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-800';
-      case 'submitted': return 'bg-blue-100 text-blue-800';
-      case 'ongoing': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getStatusStyle = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'new': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      case 'submitted': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'ongoing':
+      case 'in-progress': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case 'new': return <AlertCircle className="h-4 w-4 text-blue-500" />;
-      case 'submitted': return <AlertCircle className="h-4 w-4 text-blue-500" />;
-      case 'ongoing': return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default: return <MessageSquare className="h-4 w-4 text-gray-500" />;
+    switch (status?.toLowerCase()) {
+      case 'new':
+      case 'submitted': return <AlertCircle className="h-5 w-5 text-indigo-500" />;
+      case 'ongoing':
+      case 'in-progress': return <Clock className="h-5 w-5 text-amber-500" />;
+      case 'completed': return <CheckCircle className="h-5 w-5 text-emerald-500" />;
+      default: return <MessageSquare className="h-5 w-5 text-slate-500" />;
     }
   };
 
   const updateTicketStatus = async (ticketId, newStatus) => {
     try {
-      console.log('🔄 Updating ticket status:', ticketId, newStatus);
-      
-      // Use the new comprehensive admin update endpoint
       try {
         await api.adminUpdateTicket(ticketId, { status: newStatus });
-        console.log('✅ Status updated via admin endpoint');
       } catch (adminError) {
-        console.log('⚠️ Admin endpoint failed, updating locally only:', adminError.message);
-        // Just update locally if admin endpoint fails
-        // In a real app, you might want to show a warning to the user
+        console.log('Admin endpoint failed, updating locally only');
       }
-      
-      // Update local state regardless
-      setTickets(prevTickets => 
-        prevTickets.map(ticket => 
-          ticket._id === ticketId 
+
+      setTickets(prevTickets =>
+        prevTickets.map(ticket =>
+          ticket._id === ticketId
             ? { ...ticket, status: newStatus, lastUpdate: new Date().toISOString().split('T')[0] }
             : ticket
         )
       );
-      
-      console.log('✅ Ticket status updated locally');
     } catch (error) {
-      console.error('❌ Error updating ticket status:', error);
       alert('Error updating ticket status. Please try again.');
     }
   };
@@ -240,184 +157,130 @@ const SupportManagementView = () => {
     setSelectedTicket(null);
   };
 
-  const renderTicketCard = (ticket) => (
-    <Card className="p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            {getStatusIcon(ticket.status)}
-            <h3 className="font-semibold text-gray-900">{ticket.subject}</h3>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(ticket.priority)}`}>
-              {ticket.priority}
-            </span>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
-              {ticket.status}
-            </span>
-          </div>
-          <p className="text-gray-600 text-sm mb-2 line-clamp-2">{ticket.description}</p>
-          {/* User Information Section */}
-          <div className="bg-gray-50 p-3 rounded-lg mb-2">
-            <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-              <User className="h-4 w-4" />
-              User Information
-            </h4>
-            <div className="flex items-center gap-4 text-xs text-gray-500 mb-2 flex-wrap">
-              <div className="flex items-center gap-1">
-                <User className="h-3 w-3 text-gray-500" />
-                <span className="text-gray-500">Name:</span>
-                <span className="font-medium">{ticket.user?.name || 'N/A'}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Mail className="h-3 w-3 text-gray-500" />
-                <span className="text-gray-500">Email:</span>
-                <span className="font-medium">{ticket.user?.email || 'N/A'}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Hash className="h-3 w-3 text-gray-500" />
-                <span className="text-gray-500">ID:</span>
-                <span className="font-medium font-mono text-blue-600">
-                  TKT-{String(ticket._id || ticket.id || '00000').slice(-6).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Phone className="h-3 w-3 text-gray-500" />
-                <span className="text-gray-500">Phone:</span>
-                <span className="font-medium">{ticket.user?.phone || 'N/A'}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3 text-gray-500" />
-                <span className="text-gray-500">Created:</span>
-                <span className="font-medium">{new Date(ticket.createdAt).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => handleViewTicket(ticket)}
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            View
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-800">Support Management</h1>
-          <p className="text-slate-600 mt-2">Loading tickets...</p>
-        </div>
-      </div>
-    );
-  }
+  const stats = {
+    total: tickets.length,
+    new: tickets.filter(t => t.status === 'new' || t.status === 'submitted').length,
+    completed: tickets.filter(t => t.status === 'completed').length
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800">Support Management</h1>
-            <p className="text-slate-600 mt-2">Manage user support tickets and inquiries</p>
+    <div className="p-4 md:p-8 bg-[#F8FAFC] min-h-screen space-y-8 animate-in fade-in duration-500">
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Support Desk</h1>
+          <p className="text-slate-500 font-medium">Manage user inquiries, tickets, and platform support</p>
+        </div>
+        <button
+          onClick={loadTicketsManually}
+          disabled={loading}
+          className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh Tickets
+        </button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { label: 'Total Tickets', val: stats.total, color: 'blue', icon: MessageSquare },
+          { label: 'Action Required', val: stats.new, color: 'amber', icon: AlertCircle },
+          { label: 'Resolved', val: stats.completed, color: 'emerald', icon: CheckCircle },
+        ].map((s, i) => (
+          <div key={i} className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className={`p-4 rounded-2xl bg-${s.color}-50 text-${s.color}-600`}>
+              <s.icon className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-[12px] font-black uppercase tracking-widest text-slate-600">{s.label}</p>
+              <p className="text-2xl font-black text-slate-900">{s.val}</p>
+            </div>
           </div>
-          <Button
-            onClick={loadTicketsManually}
-            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+        ))}
+      </div>
+
+      {/* Segmented Control (Tabs) */}
+      <div className="inline-flex bg-slate-200/50 p-1.5 rounded-2xl overflow-x-auto max-w-full">
+        {[
+          { id: 'all', label: 'All Tickets', count: stats.total },
+          { id: 'new', label: 'New / Open', count: stats.new },
+          { id: 'completed', label: 'Completed', count: stats.completed }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
           >
-            <MessageSquare className="h-4 w-4" />
-            Refresh Tickets
-          </Button>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <MessageSquare className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Tickets</p>
-              <p className="text-2xl font-bold text-gray-900">{tickets.length}</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <AlertCircle className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">New Tickets</p>
-              <p className="text-2xl font-bold text-gray-900">{tickets.filter(t => t.status === 'new' || t.status === 'submitted').length}</p>
-            </div>
-          </div>
-        </Card>
-        
-        
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-900">{tickets.filter(t => t.status === 'completed').length}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'all', label: 'All Tickets', count: tickets.length },
-              { id: 'new', label: 'New', count: tickets.filter(t => t.status === 'new' || t.status === 'submitted').length },
-              { id: 'completed', label: 'Completed', count: tickets.filter(t => t.status === 'completed').length }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.label}
-                <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
-                  activeTab === tab.id
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </nav>
-        </div>
+            {tab.label}
+            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black ${activeTab === tab.id ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'
+              }`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Tickets List */}
       <div className="space-y-4">
-        {filteredTickets.length === 0 ? (
-          <Card className="p-8 text-center">
-            <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No tickets found</p>
-          </Card>
+        {loading ? (
+          [...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm animate-pulse flex gap-4">
+              <div className="w-12 h-12 bg-slate-200 rounded-full shrink-0"></div>
+              <div className="space-y-3 w-full">
+                <div className="h-5 bg-slate-200 rounded w-1/3"></div>
+                <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+              </div>
+            </div>
+          ))
+        ) : filteredTickets.length === 0 ? (
+          <div className="bg-white p-12 text-center rounded-[3rem] border border-slate-100 shadow-sm">
+            <ShieldAlert className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-xl font-black text-slate-800">No tickets found</h3>
+            <p className="text-slate-500 font-medium mt-1">You're all caught up in this queue.</p>
+          </div>
         ) : (
           filteredTickets.map((ticket) => (
-            <div key={ticket._id || ticket.id}>
-              {renderTicketCard(ticket)}
+            <div key={ticket._id || ticket.id} className="group bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all flex flex-col md:flex-row gap-5 md:items-center">
+
+              {/* Avatar & Core Info */}
+              <div className="flex items-start gap-4 flex-1">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                  {ticket.user?.name?.charAt(0) || 'U'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    {getStatusIcon(ticket.status)}
+                    <h3 className="font-bold text-slate-900 truncate pr-4">{ticket.subject}</h3>
+                  </div>
+                  <p className="text-sm font-medium text-slate-500 line-clamp-1 pr-4 mb-3">{ticket.description}</p>
+
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border shadow-sm ${getPriorityStyle(ticket.priority)}`}>
+                      {ticket.priority || 'Normal'}
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border shadow-sm ${getStatusStyle(ticket.status)}`}>
+                      {ticket.status}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-slate-50 text-slate-500 border border-slate-200 shadow-sm flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {new Date(ticket.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="md:border-l md:border-slate-100 md:pl-5 pt-4 md:pt-0 border-t border-slate-50 md:border-t-0 flex justify-between md:justify-end items-center w-full md:w-auto">
+                <div className="text-xs font-bold text-slate-400 md:hidden uppercase tracking-widest">Action</div>
+                <button
+                  onClick={() => handleViewTicket(ticket)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-50 text-indigo-600 font-bold rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                >
+                  Review <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -425,244 +288,152 @@ const SupportManagementView = () => {
 
       {/* Ticket Details Modal */}
       {showTicketDetails && selectedTicket && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold">Ticket Details</h2>
-                  <p className="text-sm text-gray-500 font-mono">
-                    ID: TKT-{String(selectedTicket._id || selectedTicket.id || '00000').slice(-6).toUpperCase()}
-                  </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#F8FAFC] w-full max-w-5xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+
+            {/* Modal Header */}
+            <div className="p-6 md:p-8 border-b border-slate-200 flex justify-between items-center bg-white sticky top-0 z-10 shrink-0">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  {getStatusIcon(selectedTicket.status)}
+                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">Ticket Overview</h2>
                 </div>
-                <button
-                  onClick={handleCloseDetails}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ×
-                </button>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                  ID: TKT-{String(selectedTicket._id || selectedTicket.id || '00000').slice(-6).toUpperCase()}
+                  <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                  Created {new Date(selectedTicket.createdAt).toLocaleDateString()}
+                </p>
               </div>
+              <button onClick={handleCloseDetails} className="p-3 hover:bg-slate-100 rounded-full transition-colors">
+                <XCircle className="w-8 h-8 text-slate-300" />
+              </button>
+            </div>
 
-              <div className="space-y-6">
-                {/* Ticket Info */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">{selectedTicket.subject}</h3>
-                  <p className="text-gray-600">{selectedTicket.description}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(selectedTicket.priority)}`}>
-                      {selectedTicket.priority}
-                    </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTicket.status)}`}>
-                      {selectedTicket.status}
-                    </span>
+            {/* Modal Body - Scrollable */}
+            <div className="overflow-y-auto p-6 md:p-8 flex-1">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                {/* Left Column: The Issue */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <FileText className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Subject</p>
+                        <h3 className="text-xl font-bold text-slate-900">{selectedTicket.subject}</h3>
+                      </div>
+                    </div>
+                    <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                      <p className="text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">{selectedTicket.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Resolution Notes Section */}
+                  <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-indigo-500" /> Admin Resolution Notes
+                      </h4>
+                    </div>
+                    <textarea
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium text-slate-700 placeholder:text-slate-400"
+                      rows={4}
+                      placeholder="Add private resolution notes or steps taken..."
+                      value={selectedTicket.adminNotes || ''}
+                      onChange={(e) => setSelectedTicket(prev => ({ ...prev, adminNotes: e.target.value }))}
+                    />
                   </div>
                 </div>
 
-                {/* User Info */}
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    User Information
-                  </h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-xs text-gray-500">Name:</span>
-                          <span className="text-sm font-medium ml-1">{selectedTicket.user?.name || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-xs text-gray-500">Email:</span>
-                          <span className="text-sm font-medium ml-1">{selectedTicket.user?.email || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Hash className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-xs text-gray-500">Ticket ID:</span>
-                          <span className="text-sm font-medium ml-1 font-mono text-blue-600">
-                            TKT-{String(selectedTicket._id || selectedTicket.id || '00000').slice(-6).toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-xs text-gray-500">Phone:</span>
-                          <span className="text-sm font-medium ml-1">{selectedTicket.user?.phone || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-xs text-gray-500">Created:</span>
-                          <span className="text-sm font-medium ml-1">
-                            {new Date(selectedTicket.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Right Column: Meta & Actions */}
+                <div className="space-y-6">
 
-                {/* Timestamps */}
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Timestamps
-                  </h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <span className="text-xs text-gray-500">Created:</span>
-                          <span className="text-sm font-medium ml-1">
-                            {new Date(selectedTicket.createdAt).toLocaleString()}
-                          </span>
-                        </div>
+                  {/* User Profile Card */}
+                  <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                      <User className="w-4 h-4 text-blue-500" /> Customer Profile
+                    </p>
+                    <div className="flex items-center gap-3 mb-5 pb-5 border-b border-slate-50">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                        {selectedTicket.user?.name?.charAt(0) || 'U'}
                       </div>
-                      {selectedTicket.lastUpdate && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-gray-500" />
-                          <div>
-                            <span className="text-xs text-gray-500">Last Updated:</span>
-                            <span className="text-sm font-medium ml-1">
-                              {new Date(selectedTicket.lastUpdate).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      <div className="overflow-hidden">
+                        <p className="text-sm font-bold text-slate-900 truncate">{selectedTicket.user?.name || 'Unknown User'}</p>
+                        <p className="text-[10px] font-black text-indigo-500 tracking-widest mt-0.5">USR{String(selectedTicket.user?._id || '0000').slice(-4).padStart(4, '0')}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-sm">
+                        <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="font-medium text-slate-700 truncate">{selectedTicket.user?.email || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="font-medium text-slate-700">{selectedTicket.user?.phone || 'N/A'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Status Update */}
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3">Status Update</h4>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Status</label>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        selectedTicket.status === 'new' ? 'bg-yellow-100 text-yellow-800' :
-                        selectedTicket.status === 'submitted' ? 'bg-blue-100 text-blue-800' :
-                        selectedTicket.status === 'in-progress' ? 'bg-orange-100 text-orange-800' :
-                        selectedTicket.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {selectedTicket.status || 'Unknown'}
-                      </span>
+                  {/* Status & Actions Card */}
+                  <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-amber-500" /> Ticket Management
+                    </p>
+
+                    <div className="space-y-4 mb-6">
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 mb-1.5 block">Priority Level</label>
+                        <span className={`inline-flex px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider border shadow-sm ${getPriorityStyle(selectedTicket.priority)}`}>
+                          {selectedTicket.priority || 'Normal'}
+                        </span>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 mb-1.5 block">Current Status</label>
+                        <select
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 cursor-pointer transition-all"
+                          value={selectedTicket.status || 'new'}
+                          onChange={(e) => setSelectedTicket(prev => ({ ...prev, status: e.target.value }))}
+                        >
+                          <option value="new">New</option>
+                          <option value="submitted">Submitted</option>
+                          <option value="in-progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Update Status</label>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={selectedTicket.status}
-                      onChange={async (e) => {
-                        const newStatus = e.target.value;
+
+                    {/* Commit Button */}
+                    <button
+                      onClick={async () => {
                         try {
-                          await updateTicketStatus(selectedTicket._id, newStatus);
-                          setSelectedTicket(prev => ({ ...prev, status: newStatus }));
+                          const updateData = {};
+                          if (selectedTicket.adminNotes !== undefined) updateData.adminNotes = selectedTicket.adminNotes;
+                          if (selectedTicket.status) updateData.status = selectedTicket.status;
+
+                          if (Object.keys(updateData).length > 0) {
+                            await api.adminUpdateTicket(selectedTicket._id, updateData);
+                            // Also update local list status so UI reflects immediately
+                            setTickets(prev => prev.map(t => t._id === selectedTicket._id ? { ...t, ...updateData } : t));
+                          }
+
+                          alert('Ticket updated successfully!');
+                          handleCloseDetails();
                         } catch (error) {
-                          console.error('❌ Error updating status:', error);
-                          alert('Error updating status. Please try again.');
+                          alert('Error updating ticket. Please try again.');
                         }
                       }}
+                      className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
                     >
-                      <option value="new">New</option>
-                      <option value="submitted">Submitted</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                    </select>
+                      <Send className="w-4 h-4" /> Save & Update Ticket
+                    </button>
                   </div>
-                </div>
 
-                {/* Resolution Note */}
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3">Resolution Note</h4>
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    rows={3}
-                    placeholder="Add resolution notes about this ticket..."
-                    value={selectedTicket.adminNotes}
-                    onChange={async (e) => {
-                      const newNotes = e.target.value;
-                      try {
-                        console.log('🔄 Updating resolution notes:', selectedTicket._id, newNotes);
-                        
-                        // Try admin endpoint first
-                        try {
-                          await api.adminUpdateTicket(selectedTicket._id, { adminNotes: newNotes });
-                          console.log('✅ Resolution notes updated via admin endpoint');
-                        } catch (adminError) {
-                          console.log('⚠️ Admin endpoint failed, updating locally only:', adminError.message);
-                          // Just update locally if admin endpoint fails
-                        }
-                        
-                        // Update local state regardless
-                        setTickets(prev => prev.map(t => 
-                          t._id === selectedTicket._id 
-                            ? { ...t, adminNotes: newNotes }
-                            : t
-                        ));
-                        
-                        // Update selected ticket
-                        setSelectedTicket(prev => ({ ...prev, adminNotes: newNotes }));
-                        console.log('✅ Resolution notes updated locally');
-                      } catch (error) {
-                        console.error('❌ Error updating resolution notes:', error);
-                        alert('Error updating resolution notes. Please try again.');
-                      }
-                    }}
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="border-t pt-4 flex gap-3">
-                  <Button
-                    onClick={async () => {
-                      try {
-                        // Use comprehensive admin update endpoint
-                        const updateData = {};
-                        if (selectedTicket.adminNotes !== undefined) {
-                          updateData.adminNotes = selectedTicket.adminNotes;
-                        }
-                        if (selectedTicket.status) {
-                          updateData.status = selectedTicket.status;
-                        }
-                        
-                        if (Object.keys(updateData).length > 0) {
-                          await api.adminUpdateTicket(selectedTicket._id, updateData);
-                          console.log('✅ Ticket updated via comprehensive admin endpoint');
-                        }
-                        
-                        alert('Ticket updated successfully!');
-                        handleCloseDetails();
-                      } catch (error) {
-                        console.error('❌ Error updating ticket:', error);
-                        alert('Error updating ticket. Please try again.');
-                      }
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Update
-                  </Button>
-                  <Button
-                    onClick={handleCloseDetails}
-                    className="bg-gray-600 hover:bg-gray-700 text-white"
-                  >
-                    Close
-                  </Button>
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import apiService from '../../../services/api';
 
 const AddBannerModal = ({ isOpen, onClose, onBannerAdded }) => {
@@ -63,31 +63,26 @@ const AddBannerModal = ({ isOpen, onClose, onBannerAdded }) => {
         throw new Error('Banner image is required');
       }
 
-      console.log('Submitting banner data:', formData);
-
-      // Create data object for API call
       const submitData = {
         title: formData.title,
         image: formData.image
       };
 
       const response = await apiService.addBanner(submitData);
-      
-      console.log('Banner added successfully:', response);
-      
+
       // Reset form
       setFormData({
         title: '',
         image: null
       });
       setImagePreview(null);
-      
+
       // Notify parent component
       onBannerAdded(response.data);
-      
+
       // Close modal
       onClose();
-      
+
     } catch (error) {
       console.error('Error adding banner:', error);
       setError(error.message || 'Failed to add banner');
@@ -111,124 +106,142 @@ const AddBannerModal = ({ isOpen, onClose, onBannerAdded }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Add New Banner</h2>
+        <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center border border-indigo-100">
+              <ImageIcon className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Add New Banner</h2>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Hero Section Media</p>
+            </div>
+          </div>
           <button
             onClick={handleClose}
             disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+            className="p-3 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="w-6 h-6 text-slate-400" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-sm">{error}</p>
+        {/* Form Content */}
+        <div className="overflow-y-auto flex-1">
+          <form id="banner-form" onSubmit={handleSubmit} className="p-8 space-y-8">
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                <p className="text-rose-700 text-sm font-bold">{error}</p>
+              </div>
+            )}
+
+            {/* Banner Title */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 ml-1 block">
+                Banner Title <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="e.g., Summer Furniture Sale"
+                className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                required
+                disabled={loading}
+              />
             </div>
-          )}
 
-          {/* Banner Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Banner Title *
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder="Enter banner title"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-              disabled={loading}
-            />
-          </div>
+            {/* Banner Image Area */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 ml-1 block">
+                Banner Image <span className="text-rose-500">*</span>
+              </label>
 
-          {/* Banner Image */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Banner Image *
-            </label>
-            <div className="space-y-4">
-              {/* File Input */}
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                  id="banner-image"
-                  disabled={loading}
-                />
-                <label
-                  htmlFor="banner-image"
-                  className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
-                >
-                  <div className="text-center">
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">
-                      Click to upload banner image
+              {!imagePreview ? (
+                <div className="relative group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
+                    id="banner-image"
+                    disabled={loading}
+                  />
+                  <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50 group-hover:border-indigo-400 group-hover:bg-indigo-50/50 transition-all duration-200">
+                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <Upload className="h-8 w-8 text-indigo-500" />
+                    </div>
+                    <p className="text-base font-bold text-slate-700">
+                      Drag & Drop or <span className="text-indigo-600">Click to Upload</span>
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      PNG, JPG, GIF up to 10MB
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
+                      PNG, JPG, GIF (Max 10MB)
                     </p>
                   </div>
-                </label>
-              </div>
-
-              {/* Image Preview */}
-              {imagePreview && (
-                <div className="relative">
+                </div>
+              ) : (
+                <div className="relative w-full h-64 rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner group">
                   <img
                     src={imagePreview}
                     alt="Banner preview"
-                    className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                    Preview
+                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <label className="cursor-pointer bg-white/90 backdrop-blur-md text-slate-800 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white transition-colors shadow-lg">
+                      <RefreshCw className="w-4 h-4" />
+                      Change Image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                        disabled={loading}
+                      />
+                    </label>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </form>
+        </div>
 
+        {/* Footer Actions */}
+        <div className="p-6 border-t border-slate-50 bg-slate-50/50 flex gap-3">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={loading}
+            className="flex-1 py-4 text-slate-500 font-bold hover:bg-slate-100 rounded-2xl transition-all disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="banner-form"
+            disabled={loading || !formData.title.trim() || !formData.image}
+            className="flex-[2] py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50 disabled:hover:bg-indigo-600 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-5 w-5" />
+                <span>Upload Banner</span>
+              </>
+            )}
+          </button>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={loading}
-              className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !formData.title.trim() || !formData.image}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center space-x-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Adding...</span>
-                </>
-              ) : (
-                <>
-                  <ImageIcon className="h-4 w-4" />
-                  <span>Add Banner</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

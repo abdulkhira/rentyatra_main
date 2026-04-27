@@ -2,29 +2,46 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, MessageCircle, Plus, Package, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
+const tokens = {
+  primary: '#FF5A1F',
+  primaryDark: '#E04A10',
+  primaryLight: '#FFF1EC',
+  secondary: '#3D5AF1',
+  secondaryLight: '#EEF1FF',
+  success: '#16a34a',
+  bg: '#F4F5F7',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F8F9FB',
+  text: '#1A1A2E',
+  textMuted: '#6B7280',
+  textFaint: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
+  radius: '14px',
+  radiusSm: '10px',
+  radiusLg: '20px',
+  shadow: '0 2px 12px rgba(0,0,0,0.07)',
+  shadowMd: '0 4px 24px rgba(0,0,0,0.10)',
+  shadowLg: '0 8px 40px rgba(0,0,0,0.13)',
+};
+
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, loading } = useAuth();
 
   const isActive = (path) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    if (path === '/dashboard/account') {
-      // Only highlight account if we're on the dashboard/account route
-      return location.pathname === '/dashboard/account';
-    }
+    if (path === '/') return location.pathname === '/';
+    if (path === '/dashboard/account') return location.pathname === '/dashboard/account';
     return location.pathname.startsWith(path);
   };
 
   const handleNavClick = (path) => {
-    // Don't navigate if still loading authentication
-    if (loading) {
-      return;
-    }
-    
-    if ((path === '/post-ad' || path === '/dashboard' || path === '/dashboard/my-ads' || path === '/messages') && !isAuthenticated) {
+    if (loading) return;
+    if (
+      (path === '/post-ad' || path === '/dashboard' || path === '/dashboard/my-ads' || path === '/messages') &&
+      !isAuthenticated
+    ) {
       navigate('/login');
       return;
     }
@@ -32,31 +49,9 @@ const BottomNav = () => {
   };
 
   const navItems = [
-    {
-      id: 'home',
-      label: 'Home',
-      icon: Home,
-      path: '/',
-    },
-    {
-      id: 'chat',
-      label: 'Chat',
-      icon: MessageCircle,
-      path: '/messages',
-    },
-    {
-      id: 'rent',
-      label: 'Rent Out',
-      icon: Plus,
-      path: '/post-ad',
-      isMain: true,
-    },
-    {
-      id: 'my-ads',
-      label: 'My Rentals',
-      icon: Package,
-      path: '/dashboard/my-ads',
-    },
+    { id: 'home', label: 'Home', icon: Home, path: '/' },
+    { id: 'chat', label: 'Chat', icon: MessageCircle, path: '/messages' },
+    { id: 'my-ads', label: 'My Rentals', icon: Package, path: '/dashboard/my-ads' },
     {
       id: 'account',
       label: 'Account',
@@ -68,67 +63,74 @@ const BottomNav = () => {
 
   return (
     <>
-      {/* Background extension below navigation */}
-      <div className="bottom-nav-extension fixed left-0 right-0 bottom-0 md:hidden z-40 rounded-b-2xl" style={{ height: '40px', backgroundColor: 'white' }}></div>
-      <nav 
-        className="bottom-nav fixed left-0 right-0 md:hidden z-50 bg-white border-t border-gray-200 shadow-lg rounded-t-2xl"
-        style={{ bottom: '40px' }}
+      {/* Background extension below nav for safe area */}
+      <div
+        className="bottom-nav-extension fixed left-0 right-0 bottom-0 md:hidden z-40"
+        style={{ height: 40, backgroundColor: tokens.surface }}
+      />
+
+      {/* Bottom nav — 4 items, no center bump */}
+      <nav
+        className="bottom-nav fixed left-0 right-0 md:hidden z-50"
+        style={{
+          bottom: 40,
+          background: tokens.surface,
+          borderTop: `1px solid ${tokens.border}`,
+          boxShadow: tokens.shadowMd,
+          borderRadius: '20px 20px 0 0',
+        }}
       >
-        <div className="flex justify-between items-center h-16 px-4">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            height: 64,
+            paddingLeft: 8,
+            paddingRight: 8,
+          }}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
-
-            if (item.isMain) {
-              // Plus button with three-color border
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.path)}
-                  className="relative flex flex-col items-center justify-center -mt-8 group ml-4"
-                >
-                  {/* Main button with gradient border */}
-                  <div className="relative">
-                    {/* Three-color gradient border */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 p-[3px]">
-                      <div className="h-full w-full bg-white rounded-full"></div>
-                    </div>
-                    
-                    {/* Inner white circle with black plus icon */}
-                    <div className="relative bg-white rounded-full p-4 shadow-lg group-active:scale-95 transition-transform m-[3px]">
-                      <Icon size={26} className="text-[#002f34]" strokeWidth={2.5} />
-                    </div>
-                  </div>
-                  
-                  {/* Label */}
-                  <span className="text-[9px] font-semibold text-gray-700 mt-1.5">
-                    {item.label}
-                  </span>
-                </button>
-              );
-            }
 
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.path)}
                 disabled={item.disabled}
-                className={`flex flex-col items-center justify-center gap-1 py-2 px-3 transition-all ${
-                  item.disabled ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'
-                } ${item.id === 'chat' ? 'mr-1' : ''}`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 4,
+                  padding: '8px 12px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: item.disabled ? 'not-allowed' : 'pointer',
+                  opacity: item.disabled ? 0.5 : 1,
+                  transition: 'transform 0.1s',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+                onPointerDown={e => { if (!item.disabled) e.currentTarget.style.transform = 'scale(0.93)'; }}
+                onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
               >
                 <Icon
                   size={20}
-                  className={`transition-colors ${
-                    active ? 'text-[#002f34]' : 'text-gray-500'
-                  }`}
+                  color={active ? tokens.primary : tokens.text}
                   strokeWidth={active ? 2.5 : 2}
+                  style={{ transition: 'color 0.15s' }}
                 />
-                
                 <span
-                  className={`text-[9px] font-semibold transition-colors ${
-                    active ? 'text-[#002f34]' : 'text-gray-500'
-                  }`}
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    color: active ? tokens.primary : tokens.text,
+                    transition: 'color 0.15s',
+                    letterSpacing: '0.01em',
+                  }}
                 >
                   {item.label}
                 </span>
@@ -137,9 +139,43 @@ const BottomNav = () => {
           })}
         </div>
       </nav>
+
+      {/* Floating Action Button — bottom-right */}
+      <div className='md:hidden'>
+        <button
+          onClick={() => handleNavClick('/post-ad')}
+          className="md:hidden"
+          style={{
+            position: 'fixed',
+            right: 20,
+            bottom: 80,       /* sits above the nav bar */
+            zIndex: 60,
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            background: tokens.primary,
+            border: 'none',
+            boxShadow: `0 4px 20px rgba(255,90,31,0.45)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'transform 0.15s, background 0.15s',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+          onPointerDown={e => { e.currentTarget.style.transform = 'scale(0.93)'; }}
+          onPointerUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = tokens.primary; }}
+          onPointerLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = tokens.primaryDark; }}
+          onMouseLeave={e => { e.currentTarget.style.background = tokens.primary; }}
+          aria-label="Rent Out — post an ad"
+        >
+          <Plus size={26} color="#fff" strokeWidth={2.5} />
+        </button>
+      </div>
+
     </>
   );
 };
 
 export default BottomNav;
-

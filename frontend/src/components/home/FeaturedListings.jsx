@@ -1,207 +1,326 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Heart, Loader2 } from 'lucide-react';
+import { MapPin, Heart, SlidersHorizontal, ChevronRight } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import Card from '../common/Card';
 import Button from '../common/Button';
-import StarRating from '../common/StarRating';
-import ImageCarousel from '../common/ImageCarousel';
 import { FeaturedListingsSkeleton } from '../common/SkeletonLoader';
 import { useHeroData } from '../../hooks/useHeroData';
-import { format } from 'date-fns';
 
-const FeaturedListings = memo(() => {
-  const { toggleFavorite, isFavorite, getAverageRating, getReviewsCount, setSelectedCategory, addToRecentlyViewed, setFeaturedItemsData, location, userCoordinates } = useApp();
-  const navigate = useNavigate();
-  const [animatingHeart, setAnimatingHeart] = useState(null);
-  
-  // Use optimized hero data hook with current location and coordinates
-  const { data, loading: heroLoading, errors } = useHeroData(location, userCoordinates);
-  const { featuredListings: featuredItems } = data;
-  const { featuredListings: listingsLoading } = heroLoading;
-  const { featuredListings: error } = errors;
+const tokens = {
+  primary: '#FF5A1F',
+  primaryDark: '#E04A10',
+  primaryLight: '#FFF1EC',
+  secondary: '#3D5AF1',
+  secondaryLight: '#EEF1FF',
+  success: '#16a34a',
+  bg: '#F4F5F7',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F8F9FB',
+  text: '#1A1A2E',
+  textMuted: '#6B7280',
+  textFaint: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
+  radius: '14px',
+  radiusSm: '10px',
+  radiusLg: '20px',
+  shadow: '0 2px 12px rgba(0,0,0,0.07)',
+  shadowMd: '0 4px 24px rgba(0,0,0,0.10)',
+  shadowLg: '0 8px 40px rgba(0,0,0,0.13)',
+};
 
-  // Debug: Log featured items count
-  useEffect(() => {
-    console.log('FeaturedListings - Total items:', featuredItems?.length || 0);
-    console.log('FeaturedListings - Items:', featuredItems);
-  }, [featuredItems]);
+const filters = ['All', 'Vehicles', 'Electronics', 'Furniture', 'Cameras', 'Tools'];
 
-  // Update AppContext with featured items when they load
-  useEffect(() => {
-    if (featuredItems && featuredItems.length > 0) {
-      console.log('FeaturedListings: Setting featured items in AppContext:', featuredItems);
-      setFeaturedItemsData(featuredItems);
-    }
-  }, [featuredItems, setFeaturedItemsData]);
+// ─── Product Card ────────────────────────────────────────────────────────────
 
-  const handleItemClick = (itemId) => {
-    console.log('FeaturedListings: Item clicked, adding to recently viewed:', itemId);
-    addToRecentlyViewed(itemId); // Add to recently viewed
-    navigate(`/item/${itemId}`);
-  };
-
-  const handleFavoriteClick = (e, itemId) => {
-    e.stopPropagation();
-    toggleFavorite(itemId);
-    
-    // Trigger animation
-    setAnimatingHeart(itemId);
-    setTimeout(() => setAnimatingHeart(null), 600);
-  };
-
-  const handleViewAll = () => {
-    setSelectedCategory(null); // Clear category filter to show all products
-    navigate('/listings');
-  };
+const ProductCard = memo(({ item, isFav, animating, onToggleFav, onClick }) => {
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <div className="py-12 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Featured Listings</h2>
-          {featuredItems.length > 0 && (
-          <button 
-            onClick={handleViewAll}
-            className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition flex items-center gap-1"
+    <div
+      onClick={() => onClick(item.id)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: tokens.surface,
+        borderRadius: tokens.radius,
+        border: `1px solid ${tokens.border}`,
+        cursor: 'pointer',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'box-shadow 0.2s, transform 0.2s',
+        boxShadow: hovered ? tokens.shadowLg : tokens.shadow,
+        transform: hovered ? 'translateY(-2px)' : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Image */}
+      <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: tokens.borderLight }}>
+        <img
+          src={item.images?.[0]?.url || item.images?.[0]}
+          alt={item.title}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            transition: 'transform 0.5s ease',
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
+          }}
+        />
+
+        {/* Heart button — over image */}
+        <button
+          onClick={(e) => onToggleFav(e, item.id)}
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            zIndex: 2,
+            background: 'rgba(255,255,255,0.90)',
+            border: 'none',
+            borderRadius: '50%',
+            width: 34,
+            height: 34,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+          }}
+        >
+          <Heart
+            size={15}
+            style={{
+              fill: isFav ? '#ef4444' : 'none',
+              color: isFav ? '#ef4444' : tokens.textFaint,
+              transform: animating ? 'scale(1.5)' : 'scale(1)',
+              transition: 'transform 0.3s, color 0.2s, fill 0.2s',
+            }}
+          />
+        </button>
+      </div>
+
+      {/* Card body */}
+      <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+
+        {/* Title — 2 lines */}
+        <h3
+          style={{
+            fontSize: 15,
+            fontWeight: 700,
+            color: tokens.text,
+            margin: 0,
+            lineHeight: 1.35,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          {item.title}
+        </h3>
+
+        {/* Description snippet */}
+        {item.description && (
+          <p
+            style={{
+              fontSize: 12,
+              color: '#313131',
+              margin: 0,
+              lineHeight: 1.4,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
           >
-            View All
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+            {item.description}
+          </p>
+        )}
+
+        {/* Price */}
+        <div style={{ marginTop: 6 }}>
+          <span style={{ fontSize: 24, fontWeight: 700, color: tokens.primary }}>
+            ₹{item.price.toLocaleString()}
+          </span>
+          <span style={{ fontSize: 16, color: tokens.textMuted, marginLeft: 2 }}>/day</span>
+        </div>
+
+        {/* Location + Date row */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 6,
+            gap: 6,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'black', minWidth: 0 }}>
+            <MapPin size={12} style={{ flexShrink: 0 }} />
+            <span
+              style={{
+                fontSize: 12,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                color: '#212121'
+              }}
+            >
+              {item.location}
+            </span>
+          </div>
+
+          {/* Date posted */}
+          {item.createdAt && (
+            <span style={{ fontSize: 11, color: tokens.textFaint, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {new Date(item.createdAt).toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}
+            </span>
           )}
         </div>
 
-        {listingsLoading ? (
-          <FeaturedListingsSkeleton count={8} />
-        ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-red-500 text-lg mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        ) : featuredItems.length === 0 ? (
-          <div className="text-center py-12 px-4">
-            <div className="max-w-md mx-auto">
-              <MapPin className="mx-auto text-gray-400 mb-4" size={48} />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No data found in your location
-              </h3>
-              <p className="text-gray-500 text-sm mb-6">
-                {location ? (
-                  <>We couldn't find any listings near <span className="font-medium">{location}</span>. Try exploring other areas or check back later.</>
-                ) : (
-                  <>We couldn't find any listings in your area. Make sure your location is set correctly.</>
-                )}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button 
-                  onClick={() => navigate('/listings')}
-                  variant="primary"
-                >
-                  Browse All Listings
-                </Button>
-                {location && (
-                  <Button 
-                    onClick={() => window.location.reload()}
-                    variant="outline"
-                  >
-                    Refresh
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
-                {featuredItems.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => handleItemClick(item.id)}
-                    className="relative bg-white rounded-2xl overflow-hidden cursor-pointer premium-card animate-slide-up border border-gray-100"
-                  >
-                    {/* Favorite Button */}
-                      <button
-                        onClick={(e) => handleFavoriteClick(e, item.id)}
-                        className={`absolute top-0.5 right-0.5 z-10 bg-white/90 backdrop-blur-sm p-2 sm:p-3 rounded-full shadow-lg hover:scale-110 transition-all hover:bg-white ${
-                          animatingHeart === item.id ? 'heart-pulse' : ''
-                        }`}
-                      >
-                        <Heart
-                          size={18}
-                          className={`sm:w-6 sm:h-6 transition-all ${
-                            isFavorite(item.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'
-                          } ${animatingHeart === item.id ? 'heart-animate' : ''}`}
-                        />
-                      </button>
-
-                    {/* Image Carousel */}
-                    <div className="aspect-video bg-gray-100 overflow-hidden">
-                      <ImageCarousel 
-                        images={item.images} 
-                        video={item.video}
-                        className="w-full h-full"
-                      />
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-3 sm:p-4 md:p-5">
-                      <h3 className="font-semibold text-sm sm:text-base md:text-lg text-gray-900 mb-1 sm:mb-2 line-clamp-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-4 line-clamp-1 sm:line-clamp-2 leading-relaxed hidden sm:block">
-                        {item.description}
-                      </p>
-                      
-                      {/* Rating */}
-                      {item.totalReviews > 0 && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <StarRating 
-                            rating={item.averageRating} 
-                            size={14}
-                            showNumber={false}
-                            className="sm:hidden"
-                          />
-                          <StarRating 
-                            rating={item.averageRating} 
-                            size={16}
-                            showNumber={true}
-                            className="hidden sm:flex"
-                          />
-                          <span className="text-[10px] sm:text-xs text-gray-500">
-                            ({item.totalReviews})
-                          </span>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between mb-2 sm:mb-3">
-                        <span className="text-base sm:text-xl md:text-2xl font-bold text-blue-600">
-                          ₹{item.price.toLocaleString()}/day
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm">
-                        <div className="flex items-center text-gray-500 truncate">
-                          <MapPin size={12} className="mr-1 flex-shrink-0 sm:w-3.5 sm:h-3.5" />
-                          <span className="truncate">{item.location}</span>
-                        </div>
-                        <div className="text-[10px] sm:text-xs text-gray-400">
-                          {format(new Date(item.postedDate), 'dd/MM/yyyy')}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
 });
 
+ProductCard.displayName = 'ProductCard';
+
+// ─── FeaturedListings ────────────────────────────────────────────────────────
+
+const FeaturedListings = memo(() => {
+  const {
+    toggleFavorite,
+    isFavorite,
+    setSelectedCategory,
+    addToRecentlyViewed,
+    setFeaturedItemsData,
+    location,
+    userCoordinates,
+  } = useApp();
+
+  const navigate = useNavigate();
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [animatingHeart, setAnimatingHeart] = useState(null);
+  const [viewAllHovered, setViewAllHovered] = useState(false);
+
+  const { data, loading: heroLoading, errors } = useHeroData(location, userCoordinates);
+  const featuredItems = data?.featuredListings || [];
+  const listingsLoading = heroLoading?.featuredListings;
+  const error = errors?.featuredListings;
+
+  useEffect(() => {
+    if (featuredItems.length > 0) {
+      setFeaturedItemsData(featuredItems);
+    }
+  }, [featuredItems, setFeaturedItemsData]);
+
+  const handleItemClick = useCallback((itemId) => {
+    addToRecentlyViewed(itemId);
+    navigate(`/item/${itemId}`);
+  }, [addToRecentlyViewed, navigate]);
+
+  const handleFavoriteClick = useCallback((e, itemId) => {
+    e.stopPropagation();
+    toggleFavorite(itemId);
+    setAnimatingHeart(itemId);
+    setTimeout(() => setAnimatingHeart(null), 600);
+  }, [toggleFavorite]);
+
+  const handleViewAll = useCallback(() => {
+    setSelectedCategory(null);
+    navigate('/listings');
+  }, [setSelectedCategory, navigate]);
+
+  const visibleItems = (activeFilter === 'All'
+    ? featuredItems
+    : featuredItems.filter((item) => item.category === activeFilter)
+  ).slice(0, 20).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  return (
+    <section style={{ padding: '32px 16px 40px', background: '#fff' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+
+        {/* Section header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: tokens.text }}>
+            Featured Listings
+          </h2>
+          <button
+            onClick={handleViewAll}
+            onMouseEnter={() => setViewAllHovered(true)}
+            onMouseLeave={() => setViewAllHovered(false)}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 100,
+              border: `2px solid ${tokens.primary}`,
+              color: viewAllHovered ? '#fff' : tokens.primary,
+              background: viewAllHovered ? tokens.primary : 'transparent',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'all 0.18s ease',
+            }}
+          >
+            View All <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {/* Content: loading / error / grid */}
+        {listingsLoading ? (
+          <FeaturedListingsSkeleton count={10} />
+        ) : error ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '48px 16px',
+              background: tokens.surfaceAlt,
+              borderRadius: tokens.radiusLg,
+              border: `1.5px dashed ${tokens.border}`,
+            }}
+          >
+            <p style={{ color: '#ef4444', fontWeight: 700, marginBottom: 16 }}>{error}</p>
+            <Button
+              onClick={() => window.location.reload()}
+              style={{ background: tokens.primary, color: '#fff', border: 'none', borderRadius: 100, padding: '10px 28px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Try Again
+            </Button>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: 16,
+            }}
+          >
+            {visibleItems.map((item) => (
+              <ProductCard
+                key={item.id}
+                item={item}
+                isFav={isFavorite(item.id)}
+                animating={animatingHeart === item.id}
+                onToggleFav={handleFavoriteClick}
+                onClick={handleItemClick}
+              />
+            ))}
+          </div>
+        )}
+
+      </div>
+    </section>
+  );
+});
+
 FeaturedListings.displayName = 'FeaturedListings';
-
 export default FeaturedListings;
-

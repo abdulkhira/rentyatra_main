@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Loader2, AlertCircle, RefreshCw, CheckCircle, Undo2 } from 'lucide-react';
 import apiService from '../../../services/api';
 
 const EditBannerModal = ({ isOpen, onClose, onBannerUpdated, banner }) => {
@@ -31,10 +31,8 @@ const EditBannerModal = ({ isOpen, onClose, onBannerUpdated, banner }) => {
   };
 
   const handleImageChange = (e) => {
-    console.log('Image change triggered:', e.target.files);
     const file = e.target.files[0];
     if (file) {
-      console.log('File selected:', file.name, file.size, file.type);
       if (!file.type.startsWith('image/')) {
         setError('Please select a valid image file');
         return;
@@ -53,12 +51,17 @@ const EditBannerModal = ({ isOpen, onClose, onBannerUpdated, banner }) => {
       };
       reader.readAsDataURL(file);
       setError('');
-      console.log('Image set in form data');
     } else {
-      console.log('No file selected');
+      // Revert to original if cancelled
       setFormData(prev => ({ ...prev, image: null }));
       setImagePreview(banner?.banner || null);
     }
+  };
+
+  const handleRevertImage = () => {
+    setFormData(prev => ({ ...prev, image: null }));
+    setImagePreview(banner?.banner || null);
+    document.getElementById('edit-banner-image').value = '';
   };
 
   const handleSubmit = async (e) => {
@@ -71,23 +74,14 @@ const EditBannerModal = ({ isOpen, onClose, onBannerUpdated, banner }) => {
         throw new Error('Banner title is required');
       }
 
-      console.log('Updating banner data:', formData);
-
       // Create data object for API call
       const submitData = {
         title: formData.title,
         ...(formData.image && { image: formData.image }) // Only include image if a new one is selected
       };
 
-      console.log('Submit data for update:', submitData);
-      console.log('Form data image:', formData.image);
-      console.log('Banner ID:', banner._id);
-
       const response = await apiService.updateBanner(banner._id, submitData);
-      
-      console.log('Banner updated successfully:', response);
-      console.log('Updated banner data:', response.data);
-      
+
       // Notify parent component
       onBannerUpdated(response.data);
       handleClose();
@@ -114,152 +108,166 @@ const EditBannerModal = ({ isOpen, onClose, onBannerUpdated, banner }) => {
   if (!isOpen || !banner) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Edit Banner</h2>
+        <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center border border-indigo-100">
+              <ImageIcon className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Edit Banner</h2>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Update Hero Media</p>
+            </div>
+          </div>
           <button
             onClick={handleClose}
             disabled={loading}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+            className="p-3 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="w-6 h-6 text-slate-400" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-sm">{error}</p>
+        {/* Form Content */}
+        <div className="overflow-y-auto flex-1">
+          <form id="edit-banner-form" onSubmit={handleSubmit} className="p-8 space-y-8">
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                <p className="text-rose-700 text-sm font-bold">{error}</p>
+              </div>
+            )}
+
+            {/* Banner Title */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 ml-1 block">
+                Banner Title <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="Enter banner title"
+                className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                required
+                disabled={loading}
+              />
             </div>
-          )}
 
-          {/* Banner Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Banner Title *
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder="Enter banner title"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-              disabled={loading}
-            />
-          </div>
+            {/* Banner Image Area */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 ml-1 block">
+                  Banner Image
+                </label>
+                {formData.image && (
+                  <button
+                    type="button"
+                    onClick={handleRevertImage}
+                    className="text-[10px] font-bold uppercase tracking-widest text-rose-500 hover:text-rose-700 flex items-center gap-1 transition-colors"
+                  >
+                    <Undo2 className="w-3 h-3" /> Revert to Original
+                  </button>
+                )}
+              </div>
 
-          {/* Banner Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Banner Image
-            </label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg relative">
-              {imagePreview ? (
-                <div className="relative w-full h-48 flex items-center justify-center">
-                  <img src={imagePreview} alt="Banner Preview" className="max-h-full max-w-full object-contain rounded-lg" />
-                  <div className="absolute top-2 right-2 flex space-x-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        document.getElementById('file-upload-edit').click();
-                      }}
-                      className="bg-blue-500 text-white rounded-full p-1 hover:bg-blue-600 transition-colors"
-                      title="Change Image"
-                    >
-                      <Upload className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData(prev => ({ ...prev, image: null }));
-                        setImagePreview(banner?.banner || null);
-                      }}
-                      className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                      title="Remove Image"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
+              {!imagePreview ? (
+                <div className="relative group">
                   <input
-                    id="file-upload-edit"
-                    name="image"
                     type="file"
-                    className="sr-only"
-                    onChange={handleImageChange}
                     accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
+                    id="edit-banner-image-empty"
                     disabled={loading}
                   />
+                  <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50 group-hover:border-indigo-400 group-hover:bg-indigo-50/50 transition-all duration-200">
+                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <Upload className="h-8 w-8 text-indigo-500" />
+                    </div>
+                    <p className="text-base font-bold text-slate-700">
+                      Drag & Drop or <span className="text-indigo-600">Click to Upload</span>
+                    </p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
+                      PNG, JPG, GIF (Max 10MB)
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-1 text-center">
-                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600">
-                    <label
-                      htmlFor="file-upload"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
-                    >
-                      <span>Upload a file</span>
+                <div className="relative w-full h-64 rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner group bg-slate-50">
+                  <img
+                    src={imagePreview}
+                    alt="Banner preview"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
+                    <label className="cursor-pointer bg-white/90 backdrop-blur-md text-slate-800 px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white transition-colors shadow-lg">
+                      <RefreshCw className="w-4 h-4" />
+                      Change Image
                       <input
-                        id="file-upload"
-                        name="image"
+                        id="edit-banner-image"
                         type="file"
-                        className="sr-only"
-                        onChange={handleImageChange}
                         accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
                         disabled={loading}
                       />
                     </label>
-                    <p className="pl-1">or drag and drop</p>
                   </div>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                 </div>
               )}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Leave empty to keep the current image, or upload a new one to replace it.
-              {formData.image && (
-                <span className="block text-green-600 font-medium mt-1">
-                  ✓ New image selected: {formData.image.name}
-                </span>
-              )}
-            </p>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={loading}
-              className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !formData.title.trim()}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center space-x-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Updating...</span>
-                </>
+              {/* Status Indicator */}
+              {formData.image ? (
+                <div className="bg-emerald-50 text-emerald-700 px-4 py-3 rounded-2xl flex items-center gap-2 text-xs font-bold border border-emerald-100 animate-in slide-in-from-top-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  New image ready to save: {formData.image.name}
+                </div>
               ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  <span>Update Banner</span>
-                </>
+                <p className="text-xs font-bold text-slate-400 ml-1">
+                  Leave empty to keep the current active banner.
+                </p>
               )}
-            </button>
-          </div>
-        </form>
+            </div>
+          </form>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-6 border-t border-slate-50 bg-slate-50/50 flex gap-3">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={loading}
+            className="flex-1 py-4 text-slate-500 font-bold hover:bg-slate-100 rounded-2xl transition-all disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="edit-banner-form"
+            disabled={loading || !formData.title.trim()}
+            className="flex-[2] py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50 disabled:hover:bg-indigo-600 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Updating...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-5 w-5" />
+                <span>Save Changes</span>
+              </>
+            )}
+          </button>
+        </div>
+
       </div>
     </div>
   );

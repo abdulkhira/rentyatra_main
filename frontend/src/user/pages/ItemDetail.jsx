@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Heart, MessageCircle, Share2, Phone, Mail, Star, ChevronLeft, Package, Calendar, Shield, Truck } from 'lucide-react';
+import { MapPin, Heart, MessageCircle, Share2, Star, ChevronLeft, Package, Calendar, Shield, Truck, BadgeCheck, Clock, X, Info } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 import Card from '../../components/common/Card';
@@ -13,6 +13,29 @@ import SafetyTipsModal from '../../components/common/SafetyTipsModal';
 import { format } from 'date-fns';
 import apiService from '../../services/api';
 
+const tokens = {
+  primary: '#FF5A1F',
+  primaryDark: '#E04A10',
+  primaryLight: '#FFF1EC',
+  secondary: '#3D5AF1',
+  secondaryLight: '#EEF1FF',
+  success: '#16a34a',
+  bg: '#F4F5F7',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F8F9FB',
+  text: '#1A1A2E',
+  textMuted: '#6B7280',
+  textFaint: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
+  radius: '14px',
+  radiusSm: '10px',
+  radiusLg: '20px',
+  shadow: '0 2px 12px rgba(0,0,0,0.07)',
+  shadowMd: '0 4px 24px rgba(0,0,0,0.10)',
+  shadowLg: '0 8px 40px rgba(0,0,0,0.13)',
+};
+
 const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -24,7 +47,15 @@ const ItemDetail = () => {
   const [isRentalRequest, setIsRentalRequest] = useState(false);
   const [error, setError] = useState(null);
   const [showSafetyModal, setShowSafetyModal] = useState(false);
-  
+  // 1. Add this hook at the top of your component (after state declarations)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
   // Create media array (video + images)
   const getMediaArray = (currentItem) => {
     const media = [];
@@ -43,9 +74,6 @@ const ItemDetail = () => {
   // Get current item (either regular item or rental request) - memoized to prevent infinite re-renders
   const currentItem = useMemo(() => {
     if (isRentalRequest && rentalRequest) {
-      console.log('Rental request data:', rentalRequest);
-      console.log('Rental request user:', rentalRequest.user);
-      
       // Transform rental request to match item structure
       return {
         id: rentalRequest._id,
@@ -107,26 +135,17 @@ const ItemDetail = () => {
   useEffect(() => {
     const fetchRentalRequest = async () => {
       if (!item && id) {
-        console.log('No regular item found, trying to fetch rental request with ID:', id);
         setLoading(true);
         setError(null);
         try {
-          console.log('Debug - User info:', { user, userId: user?.id, isAuthenticated });
-          console.log('Debug - Requesting rental request with ID:', id);
           const response = await apiService.getPublicRentalRequest(id, user?.id);
-          console.log('Debug - API response:', response);
           if (response.success) {
             setRentalRequest(response.data.request);
             setIsRentalRequest(true);
           }
         } catch (error) {
           console.error('Error fetching rental request:', error);
-          console.error('ID that failed:', id);
-          
-          // Check if this might be a product ID instead of rental request ID
           if (error.message.includes('not found') && id) {
-            console.log('This might be a product ID. Attempting to find rental request by product ID...');
-            // TODO: Implement search by product ID if needed
             setError('Item not found. The rental request may be pending approval or has been removed.');
           } else {
             setError('Item not found. The rental request may be pending approval or has been removed.');
@@ -138,7 +157,7 @@ const ItemDetail = () => {
     };
 
     fetchRentalRequest();
-  }, [item, id]);
+  }, [item, id, user?.id]);
 
   // Track recently viewed items
   useEffect(() => {
@@ -150,11 +169,11 @@ const ItemDetail = () => {
   // Show loading while fetching rental request
   if (!item && loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold">Loading...</h2>
-        </Card>
+      <div className="min-h-screen bg-[#f0f0f5] flex items-center justify-center font-sans">
+        <div className="p-8 text-center bg-white rounded-3xl shadow-sm border border-gray-100">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#fc8019] to-[#ffc107] rounded-full mx-auto mb-4 animate-bounce shadow-sm"></div>
+          <p className="text-gray-500 font-bold tracking-tight">Loading details...</p>
+        </div>
       </div>
     );
   }
@@ -162,19 +181,26 @@ const ItemDetail = () => {
   // Show not found if neither item nor rental request found
   if (!item && !rentalRequest && !loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4">
-            {error ? 'Item not available' : 'Item not found'}
-          </h2>
-          <p className="text-gray-600 mb-6">
-            {error || 'The item you are looking for does not exist or has been removed.'}
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Button onClick={() => navigate('/listings')}>Browse Listings</Button>
-            <Button variant="outline" onClick={() => navigate('/')}>Go Home</Button>
+      <div className="min-h-screen bg-[#f0f0f5] flex items-center justify-center font-sans px-4">
+        <div className="p-8 md:p-12 text-center bg-white rounded-3xl shadow-sm border border-gray-100 max-w-lg w-full">
+          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Package size={36} className="text-gray-400" />
           </div>
-        </Card>
+          <h2 className="text-2xl md:text-3xl font-extrabold mb-3 text-gray-900 tracking-tight">
+            {error ? 'Item Unavailable' : 'Item Not Found'}
+          </h2>
+          <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+            {error || 'The item you are looking for does not exist or has been removed from our platform.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={() => navigate('/listings')} className="bg-[#fc8019] hover:bg-orange-600 border-none rounded-xl font-bold py-3">
+              Browse Listings
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/')} className="rounded-xl font-bold py-3 text-gray-700 hover:bg-gray-50 border-gray-200">
+              Go Home
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -184,37 +210,25 @@ const ItemDetail = () => {
       navigate('/login');
       return;
     }
-    
     // Show safety tips modal first
     setShowSafetyModal(true);
   };
 
   const handleContinueToChat = () => {
     setShowSafetyModal(false);
-    
-    // Check if owner exists and has an ID
+
     if (!currentItem.owner) {
-      console.error('Owner information not available');
       alert('Owner information not available');
       return;
     }
-    
-    // Get the owner ID (try both _id and id fields)
+
     const ownerId = currentItem.owner._id || currentItem.owner.id;
-    
+
     if (!ownerId) {
-      console.error('Owner ID not found');
-      console.log('Owner object:', currentItem.owner);
       alert('Owner ID not found');
       return;
     }
-    
-    console.log('Chat with owner:', currentItem.owner);
-    console.log('Owner ID:', ownerId);
-    console.log('Owner name:', currentItem.owner.name);
-    console.log('Owner email:', currentItem.owner.email);
-    
-    // Navigate to chat with the owner
+
     navigate(`/chat/${ownerId}`);
   };
 
@@ -231,402 +245,301 @@ const ItemDetail = () => {
     }
   };
 
-  // Get related products (same category, excluding current item)
+  // Get related products
   const relatedProducts = items
     .filter((i) => i.category === currentItem.category && i.id !== currentItem.id)
     .slice(0, 4);
 
+  // Replace the entire return statement's JSX structure in ItemDetail.jsx
+  // All inline styles now use the tokens object consistently
+
   return (
-    <div className="min-h-screen bg-gray-50 py-4 md:py-6 px-3 md:px-4 pb-20 md:pb-6">
-      <div className="max-w-7xl mx-auto">
+    <div style={{ minHeight: '100vh', background: tokens.bg, padding: '24px 16px 80px', fontFamily: 'sans-serif' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+
         {/* Back Button */}
         <button
-          onClick={() => {
-            const currentPath = window.location.pathname;
-            
-            // If already on home page, just scroll to top
-            if (currentPath === '/') {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              return;
-            }
-            
-            // Navigate to home page
-            navigate('/', { replace: false });
-            
-            // Scroll to hero section after navigation
-            // Use multiple timeouts to ensure DOM is ready
-            setTimeout(() => {
-              const heroSection = document.getElementById('hero-section');
-              if (heroSection) {
-                heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              } else {
-                // If hero section not found, scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }
-            }, 150);
-            
-            // Fallback scroll after longer delay
-            setTimeout(() => {
-              const heroSection = document.getElementById('hero-section');
-              if (heroSection) {
-                const rect = heroSection.getBoundingClientRect();
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                window.scrollTo({ 
-                  top: scrollTop + rect.top - 80, // 80px offset for navbar
-                  behavior: 'smooth' 
-                });
-              } else {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }
-            }, 300);
+          onClick={() => navigate(-1)}
+          style={{
+            width: 40, height: 40, borderRadius: '50%',
+            background: tokens.surface, border: `1px solid ${tokens.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: tokens.textMuted, marginBottom: 20,
+            boxShadow: tokens.shadow, transition: 'all .2s',
           }}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-3 md:mb-4 text-sm md:text-base"
+          onMouseEnter={e => { e.currentTarget.style.borderColor = tokens.primary; e.currentTarget.style.color = tokens.primary; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = tokens.border; e.currentTarget.style.color = tokens.textMuted; }}
         >
-          <ChevronLeft size={18} className="md:w-5 md:h-5" />
-          <span>Back</span>
+          <ChevronLeft size={22} />
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Left Column - Images and Details */}
-          <div className="lg:col-span-2 space-y-3 md:space-y-6">
-            {/* Image Gallery */}
-            <Card className="overflow-hidden">
-              {/* Main Media Display */}
-              <div className="bg-gray-200 relative">
+        {/* Two-column grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? "1fr" : 'minmax(0,1fr) 320px',
+          gap: 20,
+        }}>
+          {/* ── LEFT COLUMN ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Image Gallery Card */}
+            <div style={{ background: tokens.surface, borderRadius: tokens.radiusLg, border: `1px solid ${tokens.border}`, boxShadow: tokens.shadow, overflow: 'hidden' }}>
+              {/* Main image */}
+              <div style={{ aspectRatio: '16/9', background: tokens.borderLight, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {getMediaArray(currentItem)[selectedImage]?.type === 'video' ? (
-                  <video
-                    src={getMediaArray(currentItem)[selectedImage].src}
-                    className="w-full h-auto max-h-64 object-contain"
-                    controls
-                  />
+                  <video src={getMediaArray(currentItem)[selectedImage].src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} controls />
                 ) : (
-                  <img
-                    src={getMediaArray(currentItem)[selectedImage]?.src || currentItem.images[0]}
-                    alt={currentItem.title}
-                    className="w-full h-auto max-h-64 object-contain"
-                  />
+                  <img src={getMediaArray(currentItem)[selectedImage]?.src || currentItem.images[0]} alt={currentItem.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 )}
               </div>
 
-              {/* Thumbnail Images + Video */}
+              {/* Thumbnails */}
               {getMediaArray(currentItem).length > 1 && (
-                <div className="flex gap-1.5 md:gap-2 p-2 md:p-4 overflow-x-auto hide-scrollbar">
+                <div style={{ display: 'flex', gap: 8, padding: '12px 14px', overflowX: 'auto' }}>
                   {getMediaArray(currentItem).map((media, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
-                      className={`relative flex-shrink-0 w-14 h-14 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 ${
-                        selectedImage === index ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
-                      }`}
+                      style={{
+                        width: 64, height: 48, borderRadius: tokens.radiusSm,
+                        border: `2px solid ${selectedImage === index ? tokens.primary : 'transparent'}`,
+                        overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
+                        background: tokens.borderLight, padding: 0,
+                        opacity: selectedImage === index ? 1 : 0.65,
+                        transition: 'all .15s',
+                      }}
                     >
                       {media.type === 'video' ? (
-                        <>
-                          <video src={media.src} className="w-full h-full object-contain" />
-                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                            <div className="w-6 h-6 md:w-8 md:h-8 bg-white/90 rounded-full flex items-center justify-center">
-                              <svg className="w-3 h-3 md:w-4 md:h-4 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
-                              </svg>
-                            </div>
-                          </div>
-                        </>
+                        <video src={media.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <img src={media.src} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-contain" />
+                        <img src={media.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       )}
                     </button>
                   ))}
                 </div>
               )}
-            </Card>
+            </div>
 
-            {/* Item Details */}
-            <Card className="p-3 md:p-6">
-              <div className="flex justify-between items-start mb-3 md:mb-4">
-                <div className="flex-1 min-w-0 pr-2">
-                  <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 md:mb-2 line-clamp-2">
-                    {currentItem.title}
-                  </h1>
-                  
-                  {/* Status Indicator for Rental Requests */}
-                  {isRentalRequest && rentalRequest?.status && (
-                    <div className="mb-2">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        rentalRequest.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        rentalRequest.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        rentalRequest.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {rentalRequest.status === 'pending' && '⏳ Pending Approval'}
-                        {rentalRequest.status === 'approved' && '✅ Approved'}
-                        {rentalRequest.status === 'rejected' && '❌ Rejected'}
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center text-gray-600 text-xs md:text-sm">
-                    <MapPin size={14} className="mr-1 flex-shrink-0 md:w-4 md:h-4" />
-                    <span className="truncate">{currentItem.location}</span>
-                    <span className="mx-1 md:mx-2">•</span>
-                    <span className="whitespace-nowrap">{format(new Date(currentItem.postedDate), 'dd/MM/yyyy')}</span>
-                  </div>
-                </div>
-                <div className="flex gap-1 md:gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => toggleFavorite(currentItem.id)}
-                    className="p-1.5 md:p-2 hover:bg-gray-100 rounded-full transition"
-                  >
-                    <Heart
-                      size={18}
-                      className={`md:w-6 md:h-6 ${isFavorite(currentItem.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
-                    />
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="p-1.5 md:p-2 hover:bg-gray-100 rounded-full transition"
-                  >
-                    <Share2 size={18} className="text-gray-600 md:w-6 md:h-6" />
-                  </button>
-                </div>
-              </div>
+            {/* Item Details Card */}
+            <div style={{ background: tokens.surface, borderRadius: tokens.radiusLg, border: `1px solid ${tokens.border}`, boxShadow: tokens.shadow }}>
+              <div style={{ padding: '20px 20px 4px' }}>
 
-              <div className="mb-4 md:mb-6">
-                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-2">
-                  <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-blue-600">
-                    ₹{currentItem.price.toLocaleString()}<span className="text-xs md:text-sm text-gray-600 "> / day</span>
-                  </span>
-                  
-                </div>
-                {/* Rating Display */}
-                {getReviewsCount(currentItem.id) > 0 && (
-                  <div className="flex items-center gap-2">
-                    <StarRating 
-                      rating={getAverageRating(currentItem.id)} 
-                      size={18}
-                      showNumber={true}
-                    />
-                    <span className="text-sm text-gray-600">
-                      ({getReviewsCount(currentItem.id)} {getReviewsCount(currentItem.id) === 1 ? 'review' : 'reviews'})
+                {/* Status badge */}
+                {isRentalRequest && rentalRequest?.status && (
+                  <div style={{ marginBottom: 10 }}>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+                      background: rentalRequest.status === 'approved' ? '#f0fdf4' : rentalRequest.status === 'pending' ? '#fefce8' : '#fef2f2',
+                      color: rentalRequest.status === 'approved' ? '#16a34a' : rentalRequest.status === 'pending' ? '#854d0e' : '#dc2626',
+                      border: `1px solid ${rentalRequest.status === 'approved' ? '#bbf7d0' : rentalRequest.status === 'pending' ? '#fde047' : '#fecaca'}`,
+                    }}>
+                      {rentalRequest.status === 'pending' && <Clock size={11} />}
+                      {rentalRequest.status === 'approved' && <BadgeCheck size={11} />}
+                      {rentalRequest.status === 'rejected' && <X size={11} />}
+                      {rentalRequest.status.charAt(0).toUpperCase() + rentalRequest.status.slice(1)}
                     </span>
                   </div>
                 )}
+
+                {/* Title */}
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: tokens.text, lineHeight: 1.25, marginBottom: 10 }}>
+                  {currentItem.title}
+                </h1>
+
+                {/* Meta chips */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, color: tokens.textMuted, background: tokens.surfaceAlt, padding: '4px 10px', borderRadius: 20, border: `1px solid ${tokens.borderLight}` }}>
+                    <MapPin size={14} style={{ color: tokens.textFaint }} />
+                    {currentItem.location}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, color: tokens.textMuted, background: tokens.surfaceAlt, padding: '4px 10px', borderRadius: 20, border: `1px solid ${tokens.borderLight}` }}>
+                    <Calendar size={14} style={{ color: tokens.textFaint }} />
+                    Listed {format(new Date(currentItem.postedDate), 'dd MMM yyyy')}
+                  </div>
+                </div>
+
+                {/* Price + Rating */}
+                <div style={{
+                  background: tokens.surfaceAlt, borderRadius: tokens.radius,
+                  border: `1px solid ${tokens.borderLight}`, padding: '14px 16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  marginBottom: 16, flexWrap: 'wrap', gap: 10,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: tokens.textFaint, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>Rental Price</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                      <span style={{ fontSize: 30, fontWeight: 800, color: tokens.primary }}>₹{currentItem.price.toLocaleString()}</span>
+                      <span style={{ fontSize: 13, color: tokens.textMuted, fontWeight: 600, textTransform: 'uppercase' }}>/ {currentItem.pricePeriod || 'day'}</span>
+                    </div>
+                  </div>
+                  {getReviewsCount(currentItem.id) > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: tokens.surface, padding: '6px 12px', borderRadius: 20, border: `1px solid ${tokens.borderLight}` }}>
+                      <StarRating rating={getAverageRating(currentItem.id)} size={16} showNumber={false} />
+                      <span style={{ fontWeight: 800, fontSize: 14, color: tokens.text }}>{getAverageRating(currentItem.id).toFixed(1)}</span>
+                      <span style={{ fontSize: 12, color: tokens.textFaint }}>({getReviewsCount(currentItem.id)})</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div style={{ marginBottom: 16 }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 800, color: tokens.text, marginBottom: 8, letterSpacing: '-.01em' }}>Description</h2>
+                  <p style={{ fontSize: 14, lineHeight: 1.75, color: tokens.textMuted, whiteSpace: 'pre-line' }}>
+                    {currentItem.description}
+                  </p>
+                </div>
+
+                {/* Details grid */}
+                <h2 style={{ fontSize: 16, fontWeight: 800, color: tokens.text, marginBottom: 10 }}>Details</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4 }}>
+                  {[
+                    { label: 'Category', value: currentItem.category },
+                    { label: 'Condition', value: 'Excellent' },
+                    { label: 'Listed On', value: format(new Date(currentItem.postedDate), 'dd MMM yyyy') },
+                    { label: 'Time', value: format(new Date(currentItem.postedDate), 'hh:mm a') },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ background: tokens.surfaceAlt, borderRadius: tokens.radiusSm, padding: '10px 12px', border: `1px solid ${tokens.borderLight}` }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: tokens.textFaint, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: tokens.text, textTransform: 'capitalize' }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Quick Info Cards
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4 md:mb-6">
-                <div className="bg-blue-50 rounded-lg p-2 md:p-3 text-center">
-                  <Package size={16} className="mx-auto mb-1 text-blue-600 md:w-5 md:h-5" />
-                  <p className="text-[10px] md:text-xs text-gray-600">Good Condition</p>
-                </div>
-                <div className="bg-green-50 rounded-lg p-2 md:p-3 text-center">
-                  <Calendar size={16} className="mx-auto mb-1 text-green-600 md:w-5 md:h-5" />
-                  <p className="text-[10px] md:text-xs text-gray-600">Available Now</p>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-2 md:p-3 text-center">
-                  <Shield size={16} className="mx-auto mb-1 text-purple-600 md:w-5 md:h-5" />
-                  <p className="text-[10px] md:text-xs text-gray-600">Verified Owner</p>
-                </div>
-                <div className="bg-orange-50 rounded-lg p-2 md:p-3 text-center">
-                  <Truck size={16} className="mx-auto mb-1 text-orange-600 md:w-5 md:h-5" />
-                  <p className="text-[10px] md:text-xs text-gray-600">Pickup Available</p>
-                </div>
-              </div> */}
-
-              <div className="border-t pt-3 md:pt-6">
-                <h2 className="text-base md:text-lg lg:text-xl font-semibold mb-2 md:mb-3">Description</h2>
-                <p className="text-xs md:text-sm lg:text-base text-gray-700 whitespace-pre-line leading-relaxed">
-                  {currentItem.description}
-                </p>
+              {/* Divider + actions */}
+              <div style={{ height: 1, background: tokens.borderLight, margin: '14px 0' }} />
+              <div style={{ display: 'flex', gap: 8, padding: '0 20px 18px' }}>
+                <button
+                  onClick={() => toggleFavorite(currentItem.id)}
+                  style={{ width: 40, height: 40, borderRadius: '50%', border: `1px solid ${tokens.border}`, background: tokens.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all .2s' }}
+                >
+                  <Heart size={17} style={{ fill: isFavorite(currentItem.id) ? '#ef4444' : 'none', color: isFavorite(currentItem.id) ? '#ef4444' : tokens.textFaint }} />
+                </button>
+                <button
+                  onClick={handleShare}
+                  style={{ width: 40, height: 40, borderRadius: '50%', border: `1px solid ${tokens.border}`, background: tokens.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all .2s' }}
+                >
+                  <Share2 size={17} style={{ color: tokens.textFaint }} />
+                </button>
               </div>
-
-              <div className="border-t pt-3 md:pt-6 mt-3 md:mt-6">
-                <h2 className="text-base md:text-lg lg:text-xl font-semibold mb-3 md:mb-4">Product Details</h2>
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  <div className="bg-gray-50 rounded-lg p-2 md:p-3">
-                    <span className="text-[10px] md:text-xs text-gray-600 block mb-1">Category</span>
-                    <p className="text-xs md:text-sm font-semibold capitalize">{currentItem.category}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2 md:p-3">
-                    <span className="text-[10px] md:text-xs text-gray-600 block mb-1">Condition</span>
-                    <p className="text-xs md:text-sm font-semibold">Excellent</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2 md:p-3">
-                    <span className="text-[10px] md:text-xs text-gray-600 block mb-1">Listed On</span>
-                    <p className="text-xs md:text-sm font-semibold">
-                      {format(new Date(currentItem.postedDate), 'dd MMM yyyy')}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2 md:p-3">
-                    <span className="text-[10px] md:text-xs text-gray-600 block mb-1">Posted Time</span>
-                    <p className="text-xs md:text-sm font-semibold">
-                      {format(new Date(currentItem.postedDate), 'hh:mm a')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            </div>
           </div>
 
-          {/* Right Column - Owner Info */}
-          <div className="space-y-3 md:space-y-6">
-            
-            {/* Owner Card - Only show if current user is not the owner */}
+          {/* ── RIGHT COLUMN ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Owner Card */}
             {(() => {
-              // For rental requests, check if current user is the poster
-              if (isRentalRequest) {
-                const currentUserId = user?.id || user?._id;
-                const posterId = rentalRequest?.user?._id || rentalRequest?.user?.id;
-                const isOwnRentalRequest = currentUserId === posterId;
-                return !isOwnRentalRequest;
-              }
-              
-              // For regular items, check if current user is the owner
-              const currentUserId = user?.id || user?._id;
+              const myId = user?.id || user?._id;
               const ownerId = currentItem.owner?._id || currentItem.owner?.id;
-              const isOwnItem = currentUserId === ownerId;
-              return !isOwnItem;
-            })() && (
-              <Card className="p-3 md:p-6">
-                <h2 className="text-base md:text-lg lg:text-xl font-semibold mb-3 md:mb-4">Owner Information for Booking</h2>
-                
-                <div className="flex items-center mb-3 md:mb-4">
-                  {(() => {
-                    const ownerName = (currentItem.owner && currentItem.owner.name) ? currentItem.owner.name : 'User';
-                    const initial = ownerName.charAt(0).toUpperCase();
-                    return (
-                      <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-lg md:text-2xl font-bold flex-shrink-0">
-                        {initial}
+              if (myId === ownerId) return null;
+              const ownerName = currentItem.owner?.name || 'User';
+              return (
+                <div style={{ background: tokens.surface, borderRadius: tokens.radiusLg, border: `1px solid ${tokens.border}`, boxShadow: tokens.shadow, padding: 20 }}>
+                  <h2 style={{ fontSize: 15, fontWeight: 800, color: tokens.text, marginBottom: 14 }}>Owner Details</h2>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <div style={{ width: 50, height: 50, borderRadius: '50%', background: `linear-gradient(135deg, ${tokens.primary}, #ffc107)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, fontWeight: 800, flexShrink: 0 }}>
+                      {ownerName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: tokens.text, marginBottom: 3 }}>{ownerName}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: tokens.success }}>
+                        <Shield size={11} /> Verified User
                       </div>
-                    );
-                  })()}
-                  <div className="ml-3 md:ml-4 min-w-0">
-                    <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">{currentItem.owner?.name || 'User'}</h3>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleContactOwner}
+                    style={{ width: '100%', padding: '12px', borderRadius: tokens.radius, background: tokens.primary, color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14, transition: 'background .2s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = tokens.primaryDark}
+                    onMouseLeave={e => e.currentTarget.style.background = tokens.primary}
+                  >
+                    <MessageCircle size={18} /> Chat with Owner
+                  </button>
+
+                  <div style={{ background: tokens.primaryLight, borderRadius: tokens.radiusSm, border: `1px solid #fed7aa`, padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: tokens.primary, marginBottom: 8 }}>
+                      <Info size={14} /> Safety Tips
+                    </div>
+                    {['Meet in a safe, public place', 'Inspect item before renting', 'Pay only after collecting item', 'Verify owner identity'].map(tip => (
+                      <div key={tip} style={{ fontSize: 11, color: '#92400e', padding: '2px 0', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                        <span style={{ color: tokens.primary, fontWeight: 900, lineHeight: '1.2' }}>•</span> {tip}
+                      </div>
+                    ))}
                   </div>
                 </div>
+              );
+            })()}
 
-                <Button
-                  icon={MessageCircle}
-                  className="w-full mb-4 md:mb-6 text-sm md:text-base"
-                  onClick={handleContactOwner}
-                >
-                  Chat with Owner
-                </Button>
+            {/* Location Card */}
+            <div style={{ background: tokens.surface, borderRadius: tokens.radiusLg, border: `1px solid ${tokens.border}`, boxShadow: tokens.shadow, padding: 20 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 800, color: tokens.text, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <MapPin size={17} style={{ color: tokens.primary }} /> Location
+              </h2>
+              <p style={{ fontSize: 13, fontWeight: 700, color: tokens.text, marginBottom: 10 }}>{currentItem.location}</p>
 
-                <div className="mt-4 md:mt-6 p-3 md:p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-xs md:text-sm mb-2">Safety Tips</h4>
-                  <ul className="text-[10px] md:text-xs text-gray-600 space-y-1">
-                    <li>• Meet in a safe, public place</li>
-                    <li>• Check the item before renting</li>
-                    <li>• Pay only after collecting item</li>
-                    <li>• Verify owner identity</li>
-                  </ul>
-                </div>
-              </Card>
-            )}
-
-            {/* Location Map Card */}
-            <Card className="p-3 md:p-6">
-              <div className="flex items-center gap-2 mb-3 md:mb-4">
-                <MapPin size={20} className="text-indigo-600 md:w-6 md:h-6" />
-                <h2 className="text-base md:text-lg lg:text-xl font-semibold">Location</h2>
-              </div>
-              
-              <div className="mb-3 md:mb-4">
-                <div className="flex items-center gap-2 text-sm md:text-base text-gray-700">
-                  <MapPin size={16} className="text-gray-500 flex-shrink-0 md:w-5 md:h-5" />
-                  <span className="font-medium">{currentItem.location}</span>
-                </div>
-              </div>
-              
-              {/* Map Container */}
-              <div className="w-full h-48 md:h-80 lg:h-96 xl:h-[28rem]">
-                <ServiceRadiusMap 
-                  location={currentItem.location} 
+              <div style={{ width: '100%', height: 180, borderRadius: tokens.radius, overflow: 'hidden', border: `1px solid ${tokens.borderLight}`, marginBottom: 10 }}>
+                <ServiceRadiusMap
+                  location={currentItem.location}
                   coordinates={(() => {
                     if (isRentalRequest && rentalRequest?.location?.coordinates) {
-                      console.log('ItemDetail: Raw coordinates from rental request:', rentalRequest.location.coordinates);
-                      // If coordinates is already an object, use it directly
                       if (typeof rentalRequest.location.coordinates === 'object') {
-                        const coords = {
-                          lat: rentalRequest.location.coordinates.latitude,
-                          lng: rentalRequest.location.coordinates.longitude
-                        };
-                        console.log('ItemDetail: Using object coordinates:', coords);
-                        return coords;
+                        return { lat: rentalRequest.location.coordinates.latitude, lng: rentalRequest.location.coordinates.longitude };
                       }
-                      // If coordinates is a string, try to parse it
-                      try {
-                        const parsed = JSON.parse(rentalRequest.location.coordinates);
-                        console.log('ItemDetail: Parsed string coordinates:', parsed);
-                        return parsed;
-                      } catch (e) {
-                        console.warn('Could not parse coordinates:', rentalRequest.location.coordinates);
-                        return undefined;
-                      }
+                      try { return JSON.parse(rentalRequest.location.coordinates); } catch { return undefined; }
                     }
-                    console.log('ItemDetail: No coordinates found');
                     return undefined;
                   })()}
-                  serviceRadius={(() => {
-                    const radius = isRentalRequest ? (rentalRequest?.location?.serviceRadius || 7) : 7;
-                    console.log('ItemDetail: Service radius:', radius);
-                    return radius;
-                  })()}
+                  serviceRadius={isRentalRequest ? (rentalRequest?.location?.serviceRadius || 7) : 7}
                   title={currentItem.title}
                 />
               </div>
-              
-              <div className="mt-3 md:mt-4 p-3 bg-yellow-50 rounded-lg">
-                <p className="text-[10px] md:text-xs text-yellow-800">
-                  <span className="font-semibold">Note:</span> This is an approximate location. Exact address will be shared after booking confirmation.
+
+              <div style={{ background: tokens.surfaceAlt, borderRadius: tokens.radiusSm, border: `1px solid ${tokens.borderLight}`, padding: '8px 12px' }}>
+                <p style={{ fontSize: 11, color: tokens.textMuted, lineHeight: 1.6 }}>
+                  <strong style={{ color: tokens.text }}>Note:</strong> Approximate location shown. Exact address shared after booking confirmation.
                 </p>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
 
-        {/* Reviews Section */}
-        {currentItem && currentItem.id && (
-          <div className="mt-8 md:mt-12">
-            <ReviewsSection 
-              itemId={currentItem.id} 
-              isRentalRequest={currentItem.isRentalRequest || false}
-            />
+        {/* Reviews */}
+        {currentItem?.id && (
+          <div style={{ marginTop: 32 }}>
+            <ReviewsSection itemId={currentItem.id} isRentalRequest={currentItem.isRentalRequest || false} />
           </div>
         )}
 
-        {/* Related Products Section */}
+        {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="mt-6 md:mt-8">
-            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4 md:mb-6">
-              Related Items
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {relatedProducts.map((relatedItem) => (
+          <div style={{ marginTop: 40 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: tokens.text, marginBottom: 20, letterSpacing: '-.01em' }}>Related Items</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+              {relatedProducts.map(rel => (
                 <div
-                  key={relatedItem.id}
-                  onClick={() => navigate(`/item/${relatedItem.id}`)}
-                  className="bg-white rounded-xl overflow-hidden cursor-pointer premium-card border border-gray-100"
+                  key={rel.id}
+                  onClick={() => navigate(`/item/${rel.id}`)}
+                  style={{ background: tokens.surface, borderRadius: tokens.radius, border: `1px solid ${tokens.border}`, boxShadow: tokens.shadow, overflow: 'hidden', cursor: 'pointer', transition: 'all .2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = tokens.shadowLg; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = tokens.shadow; e.currentTarget.style.transform = 'none'; }}
                 >
-                  {/* Image Carousel */}
-                  <div className="aspect-video bg-gray-100 overflow-hidden">
-                    <ImageCarousel 
-                      images={relatedItem.images} 
-                      video={relatedItem.video}
-                      className="w-full h-full"
-                    />
+                  <div style={{ aspectRatio: '4/3', background: tokens.borderLight, overflow: 'hidden' }}>
+                    <img src={rel.images?.[0]} alt={rel.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
-
-                  {/* Content */}
-                  <div className="p-2 md:p-3">
-                    <h3 className="font-semibold text-xs md:text-sm text-gray-900 mb-1 line-clamp-2">
-                      {relatedItem.title}
-                    </h3>
-                    <p className="text-blue-600 font-bold text-sm md:text-base mb-1">
-                      ₹{relatedItem.price.toLocaleString()}
-                    </p>
-                    <div className="flex items-center text-gray-500 text-[10px] md:text-xs">
-                      <MapPin size={10} className="mr-1 flex-shrink-0 md:w-3 md:h-3" />
-                      <span className="truncate">{relatedItem.location}</span>
+                  <div style={{ padding: '12px 14px' }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: tokens.text, marginBottom: 6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{rel.title}</h3>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 8 }}>
+                      <span style={{ fontSize: 17, fontWeight: 800, color: tokens.text }}>₹{rel.price.toLocaleString()}</span>
+                      <span style={{ fontSize: 10, color: tokens.textFaint, fontWeight: 700, textTransform: 'uppercase' }}>/day</span>
+                    </div>
+                    <div style={{ height: 1, background: tokens.borderLight, marginBottom: 8 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: tokens.textFaint }}>
+                      <MapPin size={11} style={{ flexShrink: 0 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rel.location}</span>
                     </div>
                   </div>
                 </div>
@@ -636,15 +549,9 @@ const ItemDetail = () => {
         )}
       </div>
 
-      {/* Safety Tips Modal */}
-      <SafetyTipsModal
-        isOpen={showSafetyModal}
-        onClose={() => setShowSafetyModal(false)}
-        onContinue={handleContinueToChat}
-      />
+      <SafetyTipsModal isOpen={showSafetyModal} onClose={() => setShowSafetyModal(false)} onContinue={handleContinueToChat} />
     </div>
   );
 };
 
 export default ItemDetail;
-

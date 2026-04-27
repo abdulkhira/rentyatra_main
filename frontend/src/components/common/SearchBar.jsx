@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X, Package, Tag, Clock } from 'lucide-react';
 import apiService from '../../services/api';
 
-const SearchBar = ({ 
-  placeholder = "Search products or categories...", 
+const SearchBar = ({
+  placeholder = "Search products or categories...",
   className = "",
   onSearch,
   showSuggestions = true,
@@ -16,7 +16,7 @@ const SearchBar = ({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [recentSearches, setRecentSearches] = useState([]);
-  
+
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
@@ -80,7 +80,7 @@ const SearchBar = ({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev < suggestions.length - 1 ? prev + 1 : prev
         );
         break;
@@ -109,10 +109,10 @@ const SearchBar = ({
     setQuery(suggestion.text);
     setShowSuggestionsDropdown(false);
     setSelectedIndex(-1);
-    
+
     // Add to recent searches
     addToRecentSearches(suggestion.text);
-    
+
     // Handle navigation based on suggestion type
     if (suggestion.type === 'product') {
       navigate(`/category?productId=${suggestion.id}`);
@@ -130,14 +130,14 @@ const SearchBar = ({
 
     setShowSuggestionsDropdown(false);
     setSelectedIndex(-1);
-    
+
     // Add to recent searches
     addToRecentSearches(query.trim());
 
     try {
       // Try to get specific redirect first
       const redirectResponse = await apiService.handleSearchRedirect(query.trim());
-      
+
       if (redirectResponse.success && redirectResponse.data.redirectUrl) {
         navigate(redirectResponse.data.redirectUrl);
       } else {
@@ -215,9 +215,9 @@ const SearchBar = ({
           onBlur={handleBlur}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          className="w-full px-4 py-2.5 pl-12 pr-4 border-2 border-gray-900 rounded focus:outline-none focus:border-[#23e5db] transition-all text-sm"
+          className="w-full px-4 py-2.5 pl-12 pr-4 border-2 border-gray-900 rounded-4xl focus:outline-none focus:border-[#23e5db] transition-all text-sm"
         />
-        
+
         {query && (
           <button
             type="button"
@@ -231,7 +231,7 @@ const SearchBar = ({
 
       {/* Suggestions Dropdown */}
       {showSuggestionsDropdown && (
-        <div 
+        <div
           ref={suggestionsRef}
           className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 max-h-80 overflow-y-auto search-suggestions"
         >
@@ -272,13 +272,12 @@ const SearchBar = ({
                 <button
                   key={`${suggestion.type}-${suggestion.id || suggestion.text}`}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-left transition-colors ${
-                    selectedIndex === index ? 'bg-blue-50' : ''
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-left transition-colors ${selectedIndex === index ? 'bg-blue-50' : ''
+                    }`}
                 >
                   {suggestion.image ? (
-                    <img 
-                      src={suggestion.image} 
+                    <img
+                      src={suggestion.image}
                       alt={suggestion.text}
                       className="w-8 h-8 object-cover rounded"
                     />

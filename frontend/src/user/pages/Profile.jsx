@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-// Removed demo user import to avoid showing mock data like "Rahul Sharma"
+import { FileText, User } from 'lucide-react';
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
@@ -25,7 +25,7 @@ const Profile = () => {
 
   // Helper function to safely render values (prevent object rendering)
   const safeRender = (value) => {
-    if (value === null || value === undefined) return '—';
+    if (value === null || value === undefined || value === '') return '—';
     if (typeof value === 'object') return '—';
     return String(value);
   };
@@ -37,7 +37,7 @@ const Profile = () => {
       let city = '';
       let state = '';
       let pincode = '';
-      
+
       if (typeof user.address === 'object' && user.address !== null) {
         // If address is an object, extract the street address
         addressString = user.address.street || user.address.address || '';
@@ -51,7 +51,7 @@ const Profile = () => {
         state = user.state || '';
         pincode = user.pincode || '';
       }
-      
+
       // Use real user data from AuthContext
       setProfile({
         name: user.name || '',
@@ -90,19 +90,15 @@ const Profile = () => {
         try {
           setDocumentsLoading(true);
           const response = await api.getUserDocuments();
-          console.log('Documents API response:', response);
-          
+
           if (response && response.success && response.data && response.data.documents) {
-            console.log('Setting user documents:', response.data.documents);
             setUserDocuments(response.data.documents);
           } else {
-            console.warn('Invalid documents response structure:', response);
             setUserDocuments(null);
           }
         } catch (err) {
           console.error('Error fetching documents:', err);
           setUserDocuments(null);
-          // Don't set error for documents, just log it
         } finally {
           setDocumentsLoading(false);
         }
@@ -156,9 +152,8 @@ const Profile = () => {
 
       // Call backend API to update profile
       const response = await api.updateUserProfile(updateData);
-      
+
       if (response.success) {
-        // Update the profile state with the response data
         const updatedProfile = {
           name: response.data.user.name,
           email: response.data.user.email,
@@ -170,17 +165,13 @@ const Profile = () => {
           profileImage: response.data.user.profileImage || '',
           documents: userDocuments || []
         };
-        
-        // Update the profile state
+
         setProfile(updatedProfile);
-        
-        // Update the user data in AuthContext
         updateUser(response.data.user);
-        
+
         setSuccessMessage('Profile updated successfully!');
         setEditMode(false);
-        
-        // Clear success message after 3 seconds
+
         setTimeout(() => {
           setSuccessMessage('');
         }, 3000);
@@ -224,7 +215,6 @@ const Profile = () => {
     } catch (err) {
       console.error('Profile image upload error:', err);
       setError(err.message || 'Failed to upload profile photo');
-      // revert preview on error
       setLocalProfileImage(profile?.profileImage || '');
     } finally {
       setUploadingImage(false);
@@ -240,16 +230,23 @@ const Profile = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <Card className="p-8 text-center">Loading profile...</Card>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#f0f0f5] font-sans">
+      <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-sm max-w-sm w-full">
+        <div className="w-12 h-12 bg-gradient-to-br from-[#fc8019] to-[#ffc107] rounded-full mx-auto mb-4 animate-bounce shadow-sm"></div>
+        <p className="text-gray-500 font-bold">Loading profile...</p>
+      </div>
     </div>
   );
 
   if (error && !useDemoData) return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <Card className="p-6 text-center">
-        <p className="text-red-600 mb-4">{error}</p>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#f0f0f5] font-sans">
+      <Card className="p-8 text-center max-w-md rounded-3xl shadow-sm border border-gray-100 bg-white">
+        <div className="w-16 h-16 mx-auto mb-4 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        </div>
+        <h2 className="text-2xl font-extrabold mb-2 text-gray-900 tracking-tight">Oops!</h2>
+        <p className="text-gray-500 mb-8 font-medium">{error}</p>
+        <Button onClick={() => navigate(-1)} className="w-full bg-[#fc8019] hover:bg-orange-600 rounded-xl font-bold py-3 text-base">Go Back</Button>
       </Card>
     </div>
   );
@@ -261,68 +258,66 @@ const Profile = () => {
   // Get Aadhar images from backend documents
   let aadharFront = null;
   let aadharBack = null;
-  
+
   if (userDocuments && userDocuments.aadhar) {
-    // API returns URLs directly as strings, not objects
     const frontUrl = userDocuments.aadhar.frontImage;
     const backUrl = userDocuments.aadhar.backImage;
-    
-    // Only set if URL exists and is a valid string
+
     if (frontUrl && typeof frontUrl === 'string' && frontUrl.trim() !== '') {
       aadharFront = frontUrl;
     }
-    
     if (backUrl && typeof backUrl === 'string' && backUrl.trim() !== '') {
       aadharBack = backUrl;
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8 pb-20 md:pb-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#f0f0f5] font-sans p-4 md:p-8 pb-20 md:pb-8">
+      <div className="max-w-[1000px] mx-auto">
 
-        <div className="mb-6">
-          {/* Back Button - Show on all devices */}
-          <div className="mb-4">
-            <button
-              onClick={() => {
-                // Navigate to dashboard/account page
-                navigate('/dashboard/account');
-              }}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="text-sm font-medium">Back</span>
-            </button>
-          </div>
-          
-          <h1 className="text-xl sm:text-2xl font-bold text-center">{editMode ? 'Edit Profile' : 'My Profile'}</h1>
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/dashboard/account')}
+            className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900">
+            {editMode ? 'Edit Profile' : 'My Profile'}
+          </h1>
+          <div className="w-10"></div> {/* Spacer for centering */}
         </div>
 
         {/* Success Message */}
         {successMessage && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-300 rounded-lg">
-            <p className="text-green-800 text-sm">{successMessage}</p>
+          <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-500 shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <p className="text-green-800 text-sm font-bold">{successMessage}</p>
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-300 rounded-lg">
-            <p className="text-red-800 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3">
+            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-500 shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <p className="text-red-800 text-sm font-bold">{error}</p>
           </div>
         )}
 
         {editMode ? (
           /* Edit Form */
-          <Card className="p-4 sm:p-6">
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+            <form onSubmit={handleEditSubmit} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Name */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">
                     Full Name
                   </label>
                   <input
@@ -330,14 +325,14 @@ const Profile = () => {
                     name="name"
                     value={editFormData.name || ''}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
                     required
                   />
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">
                     Email Address
                   </label>
                   <input
@@ -345,29 +340,43 @@ const Profile = () => {
                     name="email"
                     value={editFormData.email || ''}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
                     required
                   />
                 </div>
 
+                {/* Phone Number - Read Only */}
+                <div>
+                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">
+                    Phone Number (Verified)
+                  </label>
+                  <input
+                    type="tel"
+                    value={profile?.phone || ''}
+                    className="w-full p-3.5 bg-gray-100 border border-gray-200 rounded-xl text-sm font-bold text-gray-500 cursor-not-allowed"
+                    disabled
+                    readOnly
+                  />
+                </div>
+
                 {/* Address */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    Address
+                <div className="md:col-span-2">
+                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">
+                    Street Address
                   </label>
                   <textarea
                     name="address"
                     value={editFormData.address || ''}
                     onChange={handleEditChange}
-                    rows={3}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows={2}
+                    className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
                     required
                   />
                 </div>
 
                 {/* City */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">
                     City
                   </label>
                   <input
@@ -375,14 +384,14 @@ const Profile = () => {
                     name="city"
                     value={editFormData.city || ''}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
                     required
                   />
                 </div>
 
                 {/* State */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">
                     State
                   </label>
                   <input
@@ -390,14 +399,14 @@ const Profile = () => {
                     name="state"
                     value={editFormData.state || ''}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
                     required
                   />
                 </div>
 
                 {/* Pincode */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-2">
                     Pincode
                   </label>
                   <input
@@ -405,231 +414,213 @@ const Profile = () => {
                     name="pincode"
                     value={editFormData.pincode || ''}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#fc8019]/20 focus:border-[#fc8019] transition-all"
                     required
                   />
                 </div>
-
-                {/* Phone Number - Read Only */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    Phone Number (Cannot be changed)
-                  </label>
-                  <input
-                    type="tel"
-                    value={profile?.phone || ''}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                    disabled
-                    readOnly
-                  />
-                </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 pt-4 border-t">
-                <Button 
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100 mt-8">
+                <Button
                   type="button"
                   onClick={handleCancelEdit}
-                  className="bg-gray-600 hover:bg-gray-700 text-sm py-2 order-2 sm:order-1"
+                  className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm py-3 px-8 rounded-xl font-bold order-2 sm:order-1 transition-colors"
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   type="submit"
                   disabled={editLoading}
-                  className="bg-green-600 hover:bg-green-700 text-sm py-2 order-1 sm:order-2"
+                  className="bg-[#fc8019] hover:bg-orange-600 text-white text-sm py-3 px-8 rounded-xl font-bold border-none order-1 sm:order-2 shadow-sm"
                 >
-                  {editLoading ? 'Saving...' : 'Save Changes'}
+                  {editLoading ? 'Saving...' : 'Save Details'}
                 </Button>
               </div>
             </form>
-          </Card>
+          </div>
         ) : (
           /* Profile Overview */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            <Card className="p-4 lg:p-6">
-              <div className="flex flex-col items-center text-center">
-                <div
-                  className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full overflow-hidden bg-gray-100 mb-3 lg:mb-4 cursor-pointer relative group"
-                  onClick={() => !uploadingImage && fileInputRef.current && fileInputRef.current.click()}
-                  title="Click to change photo"
-                >
-                  {localProfileImage || profileImage ? (
-                    // eslint-disable-next-line jsx-a11y/img-redundant-alt
-                    <img src={localProfileImage || profileImage} alt="Profile image" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xl sm:text-2xl lg:text-3xl text-gray-500">{safeRender(name).charAt(0)}</div>
-                  )}
-                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs">{uploadingImage ? 'Uploading...' : 'Change'}</div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const f = e.target.files && e.target.files[0];
-                      if (f) handleProfileImageUpload(f);
-                    }}
-                  />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Left Column: Avatar Card */}
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col items-center text-center h-fit">
+              <div
+                className="w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 border-2 border-dashed border-gray-300 hover:border-[#fc8019] mb-5 cursor-pointer relative group transition-colors"
+                onClick={() => !uploadingImage && fileInputRef.current && fileInputRef.current.click()}
+                title="Click to change photo"
+              >
+                {localProfileImage || profileImage ? (
+                  <img src={localProfileImage || profileImage} alt="Profile image" className="w-full h-full object-cover rounded-full" />
+                ) : (
+                  <div className="w-full h-full bg-orange-50 rounded-full flex items-center justify-center text-3xl font-extrabold text-[#fc8019]">
+                    {safeRender(name).charAt(0)}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                  <span className="text-white text-xs font-bold uppercase tracking-wider">
+                    {uploadingImage ? 'Uploading...' : 'Change'}
+                  </span>
                 </div>
-                <h2 className="font-bold text-base sm:text-lg">{safeRender(name)}</h2>
-                <p className="text-xs sm:text-sm text-gray-500">{safeRender(email)}</p>
-                <p className="mt-2 lg:mt-3 text-xs sm:text-sm text-gray-700">{safeRender(phone)}</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files && e.target.files[0];
+                    if (f) handleProfileImageUpload(f);
+                  }}
+                />
               </div>
-            </Card>
+              <h2 className="font-extrabold text-xl sm:text-2xl tracking-tight text-gray-900">{safeRender(name)}</h2>
+              <p className="text-sm font-medium text-gray-500 mt-1">{safeRender(email)}</p>
+              <div className="mt-4 inline-flex items-center gap-1.5 bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-100">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                <span className="text-xs font-bold uppercase tracking-wider">Verified User</span>
+              </div>
+            </div>
 
-            <Card className="p-4 lg:col-span-2 lg:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Contact & Address</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-gray-400">Full name</p>
-                  <p className="font-medium text-sm sm:text-base">{safeRender(name)}</p>
+            {/* Right Column: Details & Docs */}
+            <div className="lg:col-span-2 space-y-6">
+
+              {/* Contact & Address */}
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight">Contact & Address</h3>
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="text-[#fc8019] hover:text-orange-600 font-bold text-sm flex items-center gap-1 transition-colors"
+                  >
+                    Edit
+                  </button>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400">Phone</p>
-                  <p className="font-medium text-sm sm:text-base">{safeRender(phone)}</p>
-                </div>
-                <div className="sm:col-span-2">
-                  <p className="text-xs text-gray-400">Address</p>
-                  <p className="font-medium text-sm sm:text-base">{safeRender(address)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">City</p>
-                  <p className="font-medium text-sm sm:text-base">{safeRender(city)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">State</p>
-                  <p className="font-medium text-sm sm:text-base">{safeRender(state)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Pincode</p>
-                  <p className="font-medium text-sm sm:text-base">{safeRender(pincode)}</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-4">
+                  <div>
+                    <p className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider mb-1">Phone</p>
+                    <p className="font-bold text-gray-800 text-base">{safeRender(phone)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider mb-1">Pincode</p>
+                    <p className="font-bold text-gray-800 text-base">{safeRender(pincode)}</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider mb-1">Street Address</p>
+                    <p className="font-medium text-gray-800 text-sm sm:text-base leading-relaxed">{safeRender(address)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider mb-1">City</p>
+                    <p className="font-bold text-gray-800 text-base">{safeRender(city)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider mb-1">State</p>
+                    <p className="font-bold text-gray-800 text-base">{safeRender(state)}</p>
+                  </div>
                 </div>
               </div>
 
-              <hr className="my-4 sm:my-6" />
+              {/* Documents Card */}
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+                <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 tracking-tight mb-6 pb-4 border-b border-gray-100">Verification Documents</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-               <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Aadhar Card</h3>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                 <div className="border border-dashed border-gray-200 rounded p-2 sm:p-3 flex items-center justify-center min-h-[120px] sm:min-h-[160px]">
-                   {documentsLoading ? (
-                     <div className="text-center">
-                       <div className="w-8 h-8 mx-auto mb-2 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                       <p className="text-gray-400 text-xs sm:text-sm">Loading...</p>
-                     </div>
-                   ) : aadharFront ? (
-                     <div className="w-full h-full flex flex-col items-center justify-center relative">
-                       <img 
-                         src={aadharFront} 
-                         alt="Aadhar front" 
-                         className="max-h-32 sm:max-h-40 object-contain rounded shadow-sm border border-gray-200" 
-                         onError={(e) => {
-                           console.error('Failed to load Aadhar front image:', aadharFront);
-                           // Hide the broken image and show error message
-                           if (e.target) {
-                             e.target.style.display = 'none';
-                           }
-                           const parent = e.target?.parentElement;
-                           if (parent) {
-                             const errorDiv = parent.querySelector('.aadhar-error-container');
-                             if (errorDiv) {
-                               errorDiv.style.display = 'flex';
-                             }
-                           }
-                         }}
-                         onLoad={() => console.log('Aadhar front image loaded successfully:', aadharFront)}
-                         loading="lazy"
-                         crossOrigin="anonymous"
-                       />
-                       <div className="aadhar-error-container hidden flex-col items-center justify-center absolute inset-0 bg-gray-50 rounded">
-                         <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded-full flex items-center justify-center">
-                           <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                           </svg>
-                         </div>
-                         <p className="text-gray-400 text-xs sm:text-sm text-center">Image not available</p>
-                         <p className="text-gray-300 text-xs text-center mt-1">The image may have been deleted</p>
-                       </div>
-                     </div>
-                   ) : (
-                     <div className="text-center">
-                       <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded-full flex items-center justify-center">
-                         <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                         </svg>
-                       </div>
-                       <p className="text-gray-400 text-xs sm:text-sm">Front image not uploaded</p>
-                     </div>
-                   )}
-                 </div>
-                 <div className="border border-dashed border-gray-200 rounded p-2 sm:p-3 flex items-center justify-center min-h-[120px] sm:min-h-[160px]">
-                   {documentsLoading ? (
-                     <div className="text-center">
-                       <div className="w-8 h-8 mx-auto mb-2 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                       <p className="text-gray-400 text-xs sm:text-sm">Loading...</p>
-                     </div>
-                   ) : aadharBack ? (
-                     <div className="w-full h-full flex flex-col items-center justify-center relative">
-                       <img 
-                         src={aadharBack} 
-                         alt="Aadhar back" 
-                         className="max-h-32 sm:max-h-40 object-contain rounded shadow-sm border border-gray-200" 
-                         onError={(e) => {
-                           console.error('Failed to load Aadhar back image:', aadharBack);
-                           // Hide the broken image and show error message
-                           if (e.target) {
-                             e.target.style.display = 'none';
-                           }
-                           const parent = e.target?.parentElement;
-                           if (parent) {
-                             const errorDiv = parent.querySelector('.aadhar-error-container');
-                             if (errorDiv) {
-                               errorDiv.style.display = 'flex';
-                             }
-                           }
-                         }}
-                         onLoad={() => console.log('Aadhar back image loaded successfully:', aadharBack)}
-                         loading="lazy"
-                         crossOrigin="anonymous"
-                       />
-                       <div className="aadhar-error-container hidden flex-col items-center justify-center absolute inset-0 bg-gray-50 rounded">
-                         <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded-full flex items-center justify-center">
-                           <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                           </svg>
-                         </div>
-                         <p className="text-gray-400 text-xs sm:text-sm text-center">Image not available</p>
-                         <p className="text-gray-300 text-xs text-center mt-1">The image may have been deleted</p>
-                       </div>
-                     </div>
-                   ) : (
-                     <div className="text-center">
-                       <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded-full flex items-center justify-center">
-                         <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                         </svg>
-                       </div>
-                       <p className="text-gray-400 text-xs sm:text-sm">Back image not uploaded</p>
-                     </div>
-                   )}
-                 </div>
-             </div>
-          </Card>
-        </div>
-        )}
+                  {/* Front Image */}
+                  <div>
+                    <p className="text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-3">Aadhar Card Front</p>
+                    <div className="border-2 border-dashed border-gray-200 rounded-2xl p-2 sm:p-3 flex items-center justify-center min-h-[140px] sm:min-h-[160px] bg-gray-50 relative overflow-hidden">
+                      {documentsLoading ? (
+                        <div className="text-center">
+                          <div className="w-8 h-8 mx-auto mb-3 border-2 border-[#fc8019] border-t-transparent rounded-full animate-spin"></div>
+                          <p className="text-gray-400 font-bold text-xs uppercase tracking-wider">Loading...</p>
+                        </div>
+                      ) : aadharFront ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center relative">
+                          <img
+                            src={aadharFront}
+                            alt="Aadhar front"
+                            className="max-h-32 sm:max-h-40 object-cover rounded-xl shadow-sm border border-gray-200 w-full"
+                            onError={(e) => {
+                              if (e.target) e.target.style.display = 'none';
+                              const parent = e.target?.parentElement;
+                              if (parent) {
+                                const errorDiv = parent.querySelector('.aadhar-error-container');
+                                if (errorDiv) errorDiv.style.display = 'flex';
+                              }
+                            }}
+                            loading="lazy"
+                            crossOrigin="anonymous"
+                          />
+                          <div className="aadhar-error-container hidden flex-col items-center justify-center absolute inset-0 bg-gray-50 rounded-xl">
+                            <div className="w-10 h-10 mx-auto mb-2 bg-white rounded-full flex items-center justify-center shadow-sm">
+                              <FileText size={18} className="text-gray-400" />
+                            </div>
+                            <p className="text-gray-400 font-bold text-xs">Image unavailable</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <div className="w-12 h-12 mx-auto mb-3 bg-white shadow-sm rounded-full flex items-center justify-center">
+                            <FileText size={20} className="text-gray-300" />
+                          </div>
+                          <p className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">Not Uploaded</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-        {/* Action Buttons - Bottom of Profile View */}
-        {!editMode && (
-          <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-center">
-            <Button onClick={() => setEditMode(true)} className="bg-blue-600 hover:bg-blue-700 text-sm py-2">
-              Edit Profile
-            </Button>
+                  {/* Back Image */}
+                  <div>
+                    <p className="text-[10px] uppercase font-extrabold text-gray-500 tracking-wider mb-3">Aadhar Card Back</p>
+                    <div className="border-2 border-dashed border-gray-200 rounded-2xl p-2 sm:p-3 flex items-center justify-center min-h-[140px] sm:min-h-[160px] bg-gray-50 relative overflow-hidden">
+                      {documentsLoading ? (
+                        <div className="text-center">
+                          <div className="w-8 h-8 mx-auto mb-3 border-2 border-[#fc8019] border-t-transparent rounded-full animate-spin"></div>
+                          <p className="text-gray-400 font-bold text-xs uppercase tracking-wider">Loading...</p>
+                        </div>
+                      ) : aadharBack ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center relative">
+                          <img
+                            src={aadharBack}
+                            alt="Aadhar back"
+                            className="max-h-32 sm:max-h-40 object-cover rounded-xl shadow-sm border border-gray-200 w-full"
+                            onError={(e) => {
+                              if (e.target) e.target.style.display = 'none';
+                              const parent = e.target?.parentElement;
+                              if (parent) {
+                                const errorDiv = parent.querySelector('.aadhar-error-container');
+                                if (errorDiv) errorDiv.style.display = 'flex';
+                              }
+                            }}
+                            loading="lazy"
+                            crossOrigin="anonymous"
+                          />
+                          <div className="aadhar-error-container hidden flex-col items-center justify-center absolute inset-0 bg-gray-50 rounded-xl">
+                            <div className="w-10 h-10 mx-auto mb-2 bg-white rounded-full flex items-center justify-center shadow-sm">
+                              <FileText size={18} className="text-gray-400" />
+                            </div>
+                            <p className="text-gray-400 font-bold text-xs">Image unavailable</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <div className="w-12 h-12 mx-auto mb-3 bg-white shadow-sm rounded-full flex items-center justify-center">
+                            <FileText size={20} className="text-gray-300" />
+                          </div>
+                          <p className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">Not Uploaded</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
           </div>
         )}
-
       </div>
     </div>
   );
 };
 
 export default Profile;
-

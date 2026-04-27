@@ -1,5 +1,5 @@
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ChevronLeft, Heart } from 'lucide-react';
+import { ChevronLeft, Heart, PackageSearch } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useCategories } from '../../contexts/CategoryContext';
 import { useState, useEffect } from 'react';
@@ -144,20 +144,7 @@ const CategoryDetail = () => {
               tag.toLowerCase().includes(tagParam.toLowerCase())
             )
           );
-          console.log(`Filtered categories by tag "${tagParam}":`, filteredProducts.length);
         }
-
-        console.log('Fetched categories:', fetchedProducts.length);
-        console.log('Fetched categories:', fetchedCategories.length);
-        console.log('Categories:', fetchedCategories.map(c => ({
-          id: c._id,
-          name: c.name,
-          product: c.product?.name,
-          productId: c.product?._id,
-          images: c.images?.length || 0,
-          imageUrl: c.images?.[0]?.url
-        })));
-        console.log('All categories:', fetchedProducts.map(p => ({ id: p._id, name: p.name })));
 
         // Store all data
         setAllProducts(filteredProducts);
@@ -167,7 +154,6 @@ const CategoryDetail = () => {
         if (categoryIdParam) {
           const targetCategory = fetchedCategories.find(category => category._id === categoryIdParam);
           if (targetCategory) {
-            console.log('Found category by ID:', targetCategory);
             setSelectedCategoryLocal(targetCategory);
             setNavigationLevel('rental-requests');
             await fetchRentalRequestsByCategory(targetCategory.name);
@@ -184,19 +170,12 @@ const CategoryDetail = () => {
           const urlParams = new URLSearchParams(location.search);
           const productId = urlParams.get('productId');
 
-          console.log('URL params:', { productId, categorySlug, location: location.search });
-          console.log('Available categories:', filteredProducts.map(p => ({ id: p._id, name: p.name })));
-
           if (productId) {
-            // Find product by ID from query parameter
             initialProduct = filteredProducts.find(product => product._id === productId);
-            console.log('Found product by ID:', initialProduct);
           } else if (categorySlug) {
-            // Fallback to categorySlug parameter
             initialProduct = filteredProducts.find(product =>
               product.name.toLowerCase().replace(/\s+/g, '-') === categorySlug.toLowerCase()
             );
-            console.log('Found product by slug:', initialProduct);
           }
 
           if (initialProduct) {
@@ -205,16 +184,12 @@ const CategoryDetail = () => {
             const productSubcategories = fetchedCategories.filter(category =>
               category.product && category.product._id === initialProduct._id
             );
-            console.log('Product subcategories:', productSubcategories);
             setSubcategories(productSubcategories);
 
             // Automatically navigate to categories view if productId is provided
             if (productId) {
               setNavigationLevel('categories');
-              console.log('Auto-navigating to categories view for product:', initialProduct.name);
             }
-          } else {
-            console.log('No initial product found, showing all categories');
           }
         }
       } catch (err) {
@@ -227,9 +202,6 @@ const CategoryDetail = () => {
 
     fetchProducts();
   }, [categorySlug, location.search]);
-
-
-
 
 
   // Function to handle sidebar product click
@@ -245,10 +217,10 @@ const CategoryDetail = () => {
   // Show loading if data is still loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading categories and categories...</p>
+      <div className="min-h-screen bg-[#f0f0f5] flex items-center justify-center font-sans">
+        <div className="p-8 text-center bg-white rounded-3xl shadow-sm border border-gray-100">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#fc8019] to-[#ffc107] rounded-full mx-auto mb-4 animate-bounce shadow-sm"></div>
+          <p className="text-gray-500 font-bold tracking-tight">Loading categories...</p>
         </div>
       </div>
     );
@@ -257,14 +229,16 @@ const CategoryDetail = () => {
   // Show error if there's an error loading data
   if (error) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold mb-4">Error loading data</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+      <div className="min-h-screen bg-[#f0f0f5] flex items-center justify-center font-sans">
+        <div className="p-8 text-center bg-white rounded-3xl shadow-sm border border-gray-100 max-w-sm w-full">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">❌</span>
+          </div>
+          <h2 className="text-2xl font-extrabold mb-2 text-gray-900 tracking-tight">Oops!</h2>
+          <p className="text-gray-500 mb-6 font-medium">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="w-full px-6 py-3 bg-[#fc8019] text-white font-bold rounded-xl hover:bg-orange-600 transition-colors"
           >
             Retry
           </button>
@@ -274,58 +248,46 @@ const CategoryDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-[#f0f0f5] flex flex-col overflow-x-hidden font-sans">
       {/* Header - Fixed */}
-      <div className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 shadow-sm">
-        <div className="flex items-center h-14 px-4">
+      <div className="bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50 shadow-sm">
+        <div className="max-w-[1200px] mx-auto flex items-center h-16 px-4">
           <button
             onClick={() => navigationLevel === 'categories' ? navigate('/') : goBack()}
-            className="p-2 hover:bg-gray-100 rounded-full transition mr-3"
+            className="w-10 h-10 hover:bg-gray-50 rounded-full flex items-center justify-center transition-colors mr-3 border border-transparent hover:border-gray-200"
           >
             <ChevronLeft size={24} className="text-gray-900" />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900">
-              {navigationLevel === 'products' && (tagParam ? `${tagParam} Categories` : 'Categories')}
-              {navigationLevel === 'categories' && selectedProduct && `${selectedProduct.name} Categories`}
+            <h1 className="text-xl md:text-2xl font-extrabold text-gray-900 tracking-tight line-clamp-1">
+              {navigationLevel === 'products' && (tagParam ? `${tagParam} Categories` : 'Explore Categories')}
+              {navigationLevel === 'categories' && selectedProduct && `${selectedProduct.name}`}
               {navigationLevel === 'rental-requests' && selectedCategoryLocal && `${selectedCategoryLocal.name} Rentals`}
             </h1>
-            {/* Breadcrumb */}
-          {/*  {navigationHistory.length > 0 && (
-              <div className="flex items-center text-sm text-gray-500 mt-1">
-                <span>Categories</span>
-                {navigationHistory.map((history, index) => (
-                  <span key={index} className="flex items-center">
-                    <span className="mx-2">›</span>
-                    <span>{history.item.name}</span>
-                  </span>
-                ))}
-              </div>
-            )}
-             */}
           </div>
         </div>
       </div>
 
       {/* Spacer for fixed header */}
-      <div className="h-14"></div>
+      <div className="h-16"></div>
 
-      <div className="flex flex-1 overflow-x-hidden">
+      <div className="flex flex-1 overflow-x-hidden max-w-[1200px] mx-auto w-full bg-white shadow-sm border-x border-gray-100 min-h-[calc(100vh-4rem)]">
+
         {/* Sidebar - Dynamic Content Based on Navigation Level */}
-        <div className="w-20 md:w-24 bg-blue-50 border-r border-gray-200 overflow-y-auto flex-shrink-0 py-2">
+        <div className="w-[84px] md:w-28 bg-white border-r border-gray-100 overflow-y-auto flex-shrink-0 py-3 custom-scrollbar">
           {loading ? (
             // Loading skeleton
-            <div className="space-y-2 p-2">
+            <div className="space-y-4 p-2">
               {[...Array(8)].map((_, index) => (
                 <div key={index} className="animate-pulse">
-                  <div className="w-12 h-12 bg-gray-200 rounded-lg mx-auto mb-1"></div>
-                  <div className="h-2 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                  <div className="w-12 h-12 md:w-14 md:h-14 bg-gray-100 rounded-full mx-auto mb-2"></div>
+                  <div className="h-2 bg-gray-100 rounded-full w-3/4 mx-auto"></div>
                 </div>
               ))}
             </div>
           ) : error ? (
             <div className="p-2 text-center">
-              <div className="text-[8px] text-red-500">Error loading data</div>
+              <div className="text-[10px] font-bold text-red-500">Error</div>
             </div>
           ) : (
             <>
@@ -333,7 +295,7 @@ const CategoryDetail = () => {
               {(navigationLevel === 'products' || navigationLevel === 'categories') && (
                 allProducts.length === 0 ? (
                   <div className="p-2 text-center">
-                    <div className="text-[8px] text-gray-500">No products found</div>
+                    <div className="text-[10px] font-bold text-gray-400">No items</div>
                   </div>
                 ) : (
                   allProducts.map((product) => {
@@ -344,25 +306,28 @@ const CategoryDetail = () => {
                       <button
                         key={product._id}
                         onClick={() => handleSidebarProductClick(product)}
-                        className={`w-full flex flex-col items-center gap-1 py-3 px-1 mx-1 my-1 transition-all duration-200 ${isSelected
-                          ? 'bg-white shadow-md rounded-lg border-r-2 border-blue-500'
-                          : 'hover:bg-white hover:shadow-sm rounded-lg'
-                          }`}
+                        className="w-full flex flex-col items-center gap-1.5 py-3 transition-all duration-200 relative group"
                       >
-                        {primaryImage ? (
-                          <img
-                            src={primaryImage.url}
-                            alt={product.name}
-                            className={`w-11 h-11 md:w-12 md:h-12 object-contain rounded-lg p-0.5 ${isSelected ? 'ring-2 ring-blue-500' : ''
-                              }`}
-                          />
-                        ) : (
-                          <div className={`w-11 h-11 md:w-12 md:h-12 bg-gray-200 rounded-lg flex items-center justify-center ${isSelected ? 'ring-2 ring-blue-500' : ''
-                            }`}>
-                            <span className="text-[8px] text-gray-400">📦</span>
-                          </div>
+                        {/* Swiggy Orange Active Indicator line */}
+                        {isSelected && (
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#fc8019] rounded-l-full"></div>
                         )}
-                        <span className={`text-[7px] md:text-[8px] font-semibold text-center leading-tight px-0.5 line-clamp-2 ${isSelected ? 'text-blue-600' : 'text-gray-900'
+
+                        <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center p-0.5 transition-colors ${isSelected ? 'bg-orange-50' : 'bg-transparent group-hover:bg-gray-50'
+                          }`}>
+                          {primaryImage ? (
+                            <img
+                              src={primaryImage.url}
+                              alt={product.name}
+                              className={`w-full h-full object-cover rounded-full ${isSelected ? 'border-2 border-[#fc8019]' : 'border border-gray-200 group-hover:border-gray-300'}`}
+                            />
+                          ) : (
+                            <div className={`w-full h-full bg-gray-100 rounded-full flex items-center justify-center ${isSelected ? 'border-2 border-[#fc8019]' : 'border border-gray-200'}`}>
+                              <PackageSearch size={20} className={isSelected ? 'text-[#fc8019]' : 'text-gray-400'} />
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-[9px] md:text-[10px] font-bold text-center leading-tight px-1 line-clamp-2 ${isSelected ? 'text-[#fc8019]' : 'text-gray-600'
                           }`}>
                           {product.name}
                         </span>
@@ -376,7 +341,7 @@ const CategoryDetail = () => {
               {navigationLevel === 'rental-requests' && (
                 subcategories.length === 0 ? (
                   <div className="p-2 text-center">
-                    <div className="text-[8px] text-gray-500">No categories found</div>
+                    <div className="text-[10px] font-bold text-gray-400">No categories</div>
                   </div>
                 ) : (
                   subcategories.map((category) => {
@@ -387,25 +352,28 @@ const CategoryDetail = () => {
                       <button
                         key={category._id}
                         onClick={() => handleSidebarCategoryClick(category)}
-                        className={`w-full flex flex-col items-center gap-1 py-3 px-1 mx-1 my-1 transition-all duration-200 ${isSelected
-                          ? 'bg-white shadow-md rounded-lg border-r-2 border-blue-500'
-                          : 'hover:bg-white hover:shadow-sm rounded-lg'
-                          }`}
+                        className="w-full flex flex-col items-center gap-1.5 py-3 transition-all duration-200 relative group"
                       >
-                        {primaryImage ? (
-                          <img
-                            src={primaryImage.url}
-                            alt={category.name}
-                            className={`w-11 h-11 md:w-12 md:h-12 object-contain rounded-lg ${isSelected ? 'ring-2 ring-blue-500' : ''
-                              }`}
-                          />
-                        ) : (
-                          <div className={`w-11 h-11 md:w-12 md:h-12 bg-gray-200 rounded-lg flex items-center justify-center ${isSelected ? 'ring-2 ring-blue-500' : ''
-                            }`}>
-                            <span className="text-[8px] text-gray-400">📦</span>
-                          </div>
+                        {/* Swiggy Orange Active Indicator line */}
+                        {isSelected && (
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#fc8019] rounded-l-full"></div>
                         )}
-                        <span className={`text-[7px] md:text-[8px] font-semibold text-center leading-tight px-0.5 line-clamp-2 ${isSelected ? 'text-blue-600' : 'text-gray-900'
+
+                        <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center p-0.5 transition-colors ${isSelected ? 'bg-orange-50' : 'bg-transparent group-hover:bg-gray-50'
+                          }`}>
+                          {primaryImage ? (
+                            <img
+                              src={primaryImage.url}
+                              alt={category.name}
+                              className={`w-full h-full object-cover rounded-full ${isSelected ? 'border-2 border-[#fc8019]' : 'border border-gray-200 group-hover:border-gray-300'}`}
+                            />
+                          ) : (
+                            <div className={`w-full h-full bg-gray-100 rounded-full flex items-center justify-center ${isSelected ? 'border-2 border-[#fc8019]' : 'border border-gray-200'}`}>
+                              <PackageSearch size={20} className={isSelected ? 'text-[#fc8019]' : 'text-gray-400'} />
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-[9px] md:text-[10px] font-bold text-center leading-tight px-1 line-clamp-2 ${isSelected ? 'text-[#fc8019]' : 'text-gray-600'
                           }`}>
                           {category.name}
                         </span>
@@ -418,38 +386,47 @@ const CategoryDetail = () => {
           )}
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-4">
-          {/* Banner Ad */}
-          <div className="p-3 md:p-4">
-            <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-lg md:rounded-xl p-4 md:p-6 text-white">
-              <h2 className="text-lg md:text-2xl font-bold mb-1 md:mb-2">Festival Special!</h2>
-              <p className="text-xs md:text-sm mb-3 md:mb-4">Special discounts on all categories</p>
-              <button className="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 px-4 md:py-2 md:px-6 rounded-lg text-xs md:text-sm transition">
-                BOOK NOW
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-8 bg-[#f8f9fa]">
+
+          {/* Swiggy-Style Promotion Banner */}
+          <div className="p-4 md:p-6 pb-2">
+            <div className="bg-gradient-to-r from-[#fc8019] to-[#ffc107] rounded-3xl p-5 md:p-8 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between">
+              {/* Decorative background elements */}
+              <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
+
+              <div className="relative z-10 mb-4 md:mb-0">
+                <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-[10px] font-extrabold uppercase tracking-wider mb-2">Limited Time</div>
+                <h2 className="text-2xl md:text-3xl font-extrabold mb-1 tracking-tight">Festival Special!</h2>
+                <p className="text-white/90 text-sm md:text-base font-medium">Special discounts across all categories.</p>
+              </div>
+
+              <button className="relative z-10 bg-white text-[#fc8019] hover:bg-gray-50 font-extrabold py-2.5 px-6 rounded-xl text-sm md:text-base shadow-sm transition-transform active:scale-95">
+                Explore Now
               </button>
             </div>
           </div>
 
           {/* Dynamic Content Section */}
-          <div className="px-3 md:px-4 py-3 md:py-4">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h3 className="text-base md:text-lg font-bold text-gray-900">
-                {navigationLevel === 'products' && `All Categories (${backendCategories.length})`}
+          <div className="px-4 md:px-6 py-4">
+
+            <div className="mb-5">
+              <h3 className="text-lg md:text-xl font-extrabold text-gray-900 tracking-tight">
+                {navigationLevel === 'products' && `All Options (${backendCategories.length})`}
                 {navigationLevel === 'categories' && selectedProduct && `${selectedProduct.name} Categories (${subcategories.length})`}
-                {navigationLevel === 'rental-requests' && selectedCategoryLocal && `${selectedCategoryLocal.name} Rentals (${rentalRequests.length})`}
+                {navigationLevel === 'rental-requests' && selectedCategoryLocal && `Available Rentals (${rentalRequests.length})`}
               </h3>
             </div>
 
             {(() => {
               if (loading || loadingRentals) {
                 return (
-                  <div className="grid grid-cols-4 gap-3 md:gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                     {[...Array(8)].map((_, index) => (
-                      <div key={index} className="animate-pulse">
-                        <div className="w-full aspect-[3/2] bg-gray-200 rounded-lg mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
-                        <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                      <div key={index} className="animate-pulse bg-white p-3 rounded-2xl border border-gray-100">
+                        <div className="w-full aspect-[4/3] bg-gray-100 rounded-xl mb-3"></div>
+                        <div className="h-4 bg-gray-100 rounded-full w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded-full w-1/2"></div>
                       </div>
                     ))}
                   </div>
@@ -458,11 +435,11 @@ const CategoryDetail = () => {
 
               if (error) {
                 return (
-                  <div className="text-center py-8">
-                    <p className="text-red-500 mb-4">Error loading data: {error}</p>
+                  <div className="text-center py-12 bg-white rounded-3xl border border-gray-100 mx-auto max-w-md">
+                    <p className="text-red-500 font-bold mb-4">Error loading data: {error}</p>
                     <button
                       onClick={() => window.location.reload()}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                      className="px-6 py-2.5 bg-[#fc8019] text-white font-bold rounded-xl hover:bg-orange-600 transition-colors"
                     >
                       Retry
                     </button>
@@ -470,29 +447,44 @@ const CategoryDetail = () => {
                 );
               }
 
-              // Level 1: Show all categories (products)
-              if (navigationLevel === 'products') {
+              // Level 1 & 2: Show Categories Grid (Circular Swiggy style)
+              if (navigationLevel === 'products' || navigationLevel === 'categories') {
+                const itemsToShow = navigationLevel === 'products' ? backendCategories : subcategories;
+
+                if (itemsToShow.length === 0) {
+                  return (
+                    <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
+                      <div className="text-5xl mb-4">📂</div>
+                      <h3 className="text-xl font-extrabold text-gray-900 mb-2 tracking-tight">No categories found</h3>
+                      <p className="text-gray-500 font-medium">Nothing to show here right now.</p>
+                    </div>
+                  );
+                }
+
                 return (
-                  <div className="grid grid-cols-3 gap-4 md:gap-6">
-                    {backendCategories.map((category) => {
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-y-8 gap-x-4">
+                    {itemsToShow.map((category) => {
                       const primaryImage = category.images?.find(img => img.isPrimary) || category.images?.[0];
 
                       return (
                         <button
                           key={category._id}
                           onClick={() => {
-                            // Directly navigate to rental requests for this category
-                            navigateToRentalRequests(category);
+                            if (navigationLevel === 'products') {
+                              navigateToRentalRequests(category);
+                            } else {
+                              handleSidebarCategoryClick(category);
+                            }
                           }}
-                          className="group flex flex-col items-center transition-all duration-300 active:scale-95"
+                          className="group flex flex-col items-center transition-transform active:scale-95"
                         >
-                          {/* Circular Category Icon */}
-                          <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center overflow-hidden group-hover:shadow-lg transition-all duration-300">
+                          {/* Circular Category Image */}
+                          <div className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden group-hover:shadow-md group-hover:border-[#fc8019]/30 transition-all duration-300">
                             {primaryImage && primaryImage.url ? (
                               <img
                                 src={primaryImage.url}
                                 alt={category.name}
-                                className="w-12 h-12 md:w-16 md:h-16 object-contain rounded-full group-hover:scale-105 transition-transform duration-300 p-0.5"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
                                   const fallback = e.target.parentElement.querySelector('.image-fallback');
@@ -501,82 +493,18 @@ const CategoryDetail = () => {
                               />
                             ) : null}
 
-                            {/* Fallback for no image or error */}
+                            {/* Fallback */}
                             <div
-                              className="image-fallback w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center"
+                              className="image-fallback w-full h-full bg-gray-50 rounded-full flex items-center justify-center"
                               style={{ display: primaryImage && primaryImage.url ? 'none' : 'flex' }}
                             >
-                              <div className="text-center">
-                                <div className="text-lg md:text-xl">📦</div>
-                              </div>
+                              <PackageSearch size={28} className="text-gray-300" />
                             </div>
                           </div>
 
                           {/* Category Name */}
-                          <div className="mt-2 text-center">
-                            <h4 className="font-medium text-xs md:text-sm text-gray-800 group-hover:text-blue-600 transition-colors duration-300 leading-tight">
-                              {category.name}
-                            </h4>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              }
-
-              // Level 2: Show subcategories for selected product
-              if (navigationLevel === 'categories') {
-                if (subcategories.length === 0) {
-                  return (
-                    <div className="text-center py-8">
-                      <div className="text-6xl mb-4">📂</div>
-                      <h3 className="text-lg font-medium text-gray-700 mb-2">No categories found</h3>
-                      <p className="text-gray-500">No categories available for {selectedProduct?.name} yet.</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="grid grid-cols-3 gap-4 md:gap-6">
-                    {subcategories.map((category) => {
-                      const primaryImage = category.images?.find(img => img.isPrimary) || category.images?.[0];
-
-                      return (
-                        <button
-                          key={category._id}
-                          onClick={() => handleSidebarCategoryClick(category)}
-                          className="group flex flex-col items-center transition-all duration-300 active:scale-95"
-                        >
-                          {/* Circular Category Icon */}
-                          <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center overflow-hidden group-hover:shadow-lg transition-all duration-300">
-                            {primaryImage && primaryImage.url ? (
-                              <img
-                                src={primaryImage.url}
-                                alt={category.name}
-                                className="w-12 h-12 md:w-16 md:h-16 object-contain rounded-full group-hover:scale-105 transition-transform duration-300 p-0.5"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  const fallback = e.target.parentElement.querySelector('.image-fallback');
-                                  if (fallback) fallback.style.display = 'flex';
-                                }}
-                              />
-                            ) : null}
-
-                            {/* Fallback for no image or error */}
-                            <div
-                              className="image-fallback w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center"
-                              style={{ display: primaryImage && primaryImage.url ? 'none' : 'flex' }}
-                            >
-                              <div className="text-center">
-                                <div className="text-lg md:text-xl">📦</div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Category Name */}
-                          <div className="mt-2 text-center">
-                            <h4 className="font-medium text-xs md:text-sm text-gray-800 group-hover:text-blue-600 transition-colors duration-300 leading-tight">
+                          <div className="mt-3 text-center px-1">
+                            <h4 className="font-bold text-xs md:text-sm text-gray-800 group-hover:text-[#fc8019] transition-colors duration-200 line-clamp-2 leading-tight">
                               {category.name}
                             </h4>
                           </div>
@@ -591,11 +519,11 @@ const CategoryDetail = () => {
               if (navigationLevel === 'rental-requests') {
                 if (rentalRequests.length === 0) {
                   return (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 mb-4">No rental requests found for this category</p>
+                    <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
+                      <p className="text-gray-500 font-bold mb-5">No rentals found for this category.</p>
                       <button
                         onClick={() => navigate('/listings')}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        className="px-6 py-3 bg-[#fc8019] text-white font-bold rounded-xl hover:bg-orange-600 transition-colors shadow-sm"
                       >
                         Browse All Listings
                       </button>
@@ -604,12 +532,12 @@ const CategoryDetail = () => {
                 }
 
                 return (
-                  <div className="grid grid-cols-2 gap-3 md:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {rentalRequests.map((request) => (
                       <div
                         key={request._id}
                         onClick={() => navigate(`/rental/${request._id}`)}
-                        className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer relative"
+                        className="bg-white rounded-2xl shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300 cursor-pointer relative group"
                       >
                         {/* Favorite Button */}
                         <button
@@ -617,31 +545,46 @@ const CategoryDetail = () => {
                             e.stopPropagation();
                             toggleFavorite(request._id);
                           }}
-                          className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-lg hover:scale-110 transition-all hover:bg-white"
+                          className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm hover:scale-110 transition-transform"
                         >
                           <Heart
                             size={16}
-                            className={isFavorite(request._id) ? 'fill-red-500 text-red-500' : 'text-gray-600'}
+                            className={isFavorite(request._id) ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover:text-[#fc8019] transition-colors'}
                           />
                         </button>
 
-                        {request.images && request.images.length > 0 && (
-                          <div className="aspect-square overflow-hidden">
+                        <div className="aspect-[4/3] bg-gray-50 overflow-hidden relative">
+                          {request.images && request.images.length > 0 ? (
                             <img
                               src={request.images.find(img => img.isPrimary)?.url || request.images[0].url}
                               alt={request.title}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-cover"
                             />
-                          </div>
-                        )}
-                        <div className="p-2 md:p-3">
-                          <h3 className="font-semibold text-gray-900 mb-1 text-xs md:text-sm line-clamp-1">{request.title}</h3>
-                          <p className="text-gray-600 text-xs mb-2 line-clamp-2">{request.description}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm md:text-base font-bold text-blue-600">
-                              ₹{request.price?.amount || 0}/{request.price?.period || 'day'}
-                            </span>
-                            <span className="text-xs text-gray-500">
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <PackageSearch size={32} className="text-gray-300" />
+                            </div>
+                          )}
+                          {/* Bottom Orange Accent line on hover */}
+                          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#fc8019] to-[#ffc107] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+                        </div>
+
+                        <div className="p-4">
+                          <h3 className="font-extrabold text-gray-900 mb-1 text-base tracking-tight line-clamp-1 group-hover:text-[#fc8019] transition-colors">{request.title}</h3>
+                          <p className="text-gray-500 text-xs mb-3 font-medium line-clamp-1">{request.description}</p>
+
+                          <div className="w-full h-px bg-gray-100 mb-3"></div>
+
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <span className="text-lg font-extrabold text-gray-900 tracking-tight">
+                                ₹{request.price?.amount || 0}
+                              </span>
+                              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider ml-1">
+                                / {request.price?.period || 'day'}
+                              </span>
+                            </div>
+                            <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
                               {request.location?.city &&
                                 request.location.city !== 'Unknown' &&
                                 request.location.city !== 'Not specified' &&
@@ -668,5 +611,3 @@ const CategoryDetail = () => {
 };
 
 export default CategoryDetail;
-
-

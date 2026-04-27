@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Shield, Eye, EyeOff, ArrowLeft, AlertCircle, CheckCircle, User } from 'lucide-react';
+import { Mail, Lock, Shield, Eye, EyeOff, AlertCircle, CheckCircle, User, Package } from 'lucide-react';
+import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { preventBackNavigation } from '../../utils/historyUtils';
 
 const AdminSignup = () => {
@@ -15,7 +16,7 @@ const AdminSignup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -32,32 +33,32 @@ const AdminSignup = () => {
       setError('Please enter your full name');
       return false;
     }
-    
+
     if (!formData.email.trim()) {
       setError('Please enter your email address');
       return false;
     }
-    
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       setError('Please enter a valid email address');
       return false;
     }
-    
+
     if (!formData.password.trim()) {
       setError('Please enter a password');
       return false;
     }
-    
+
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
       return false;
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return false;
     }
-    
+
     return true;
   };
 
@@ -65,13 +66,13 @@ const AdminSignup = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
       const response = await fetch(`${apiUrl}/admin/signup`, {
@@ -81,12 +82,12 @@ const AdminSignup = () => {
         },
         body: JSON.stringify(formData),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
-        setSuccess('Admin account created successfully! Redirecting to login...');
-        
+        setSuccess('Account provisioned successfully! Initializing secure routing...');
+
         // Clear form data
         setFormData({
           name: '',
@@ -94,211 +95,251 @@ const AdminSignup = () => {
           password: '',
           confirmPassword: ''
         });
-        
+
         // Prevent back navigation after successful signup
         preventBackNavigation();
-        
+
         setTimeout(() => {
           navigate('/admin/login');
         }, 1500);
       } else {
-        setError(data.message || 'Signup failed. Please try again.');
+        setError(data.message || 'Account provisioning failed. Please try again.');
       }
     } catch (error) {
       console.error('Admin signup error:', error);
-      setError('Network error. Please check if the server is running.');
+      setError('Connection failed. Please check your network.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
-      {/* Right Side - Signup Form */}
-      <div className="flex-1 flex items-center justify-center md:p-12 relative min-h-screen md:min-h-0">
-        {/* Mobile Background */}
-        <div className="md:hidden absolute inset-0 bg-gradient-to-br from-blue-800 via-indigo-900 to-purple-900">
-          <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:40px_40px]"></div>
-        </div>
-        
-        <div className="w-full md:max-w-md relative z-10 h-full md:h-auto flex items-center">
-          <div className="w-full bg-white md:rounded-3xl md:shadow-2xl p-6 md:p-10 md:border border-gray-100 relative overflow-hidden min-h-screen md:min-h-0 flex flex-col justify-center">
-            {/* Decorative Elements */}
-            <div className="hidden md:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 opacity-10 blur-3xl rounded-full"></div>
-            <div className="hidden md:block absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-indigo-500 to-pink-600 opacity-10 blur-3xl rounded-full"></div>
-            
-            <div className="relative z-10">
-              {/* Header */}
-              <div className="mb-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                    <Shield className="text-white" size={20} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-black text-gray-900">
-                      Admin Signup
-                    </h2>
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#F8FAFC]">
 
-              {/* Error Message */}
-              {error && (
-                <div className="mb-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl animate-slide-up">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-red-700 text-sm font-medium">{error}</p>
-                  </div>
-                </div>
-              )}
+      {/* Left Side - Brand & Visuals (Hidden on small screens) */}
+      <div className="hidden md:flex md:w-1/2 lg:w-3/5 bg-[#0B1120] relative flex-col justify-between p-12 overflow-hidden">
+        {/* Decorative Orbs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600 rounded-full blur-[120px] opacity-40 mix-blend-screen"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-600 rounded-full blur-[120px] opacity-30 mix-blend-screen"></div>
+        <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] bg-blue-600 rounded-full blur-[100px] opacity-20 mix-blend-screen"></div>
 
-              {/* Success Message */}
-              {success && (
-                <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl animate-slide-up">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle size={20} className="text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-green-700 text-sm font-medium">{success}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Signup Form */}
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Name Input */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-800">
-                    Full Name
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                      <User className="text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                    </div>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="John Doe"
-                      className="w-full pl-12 pr-4 py-3.5 text-sm border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400 font-medium bg-gray-50 focus:bg-white"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Email Input */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-800">
-                    Admin Email
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                      <Mail className="text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                    </div>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="admin@rentyatra.com"
-                      className="w-full pl-12 pr-4 py-3.5 text-sm border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400 font-medium bg-gray-50 focus:bg-white"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Password Input */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-800">
-                    Password
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                      <Lock className="text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                    </div>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      placeholder="Enter your password"
-                      className="w-full pl-12 pr-12 py-3.5 text-sm border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400 font-medium bg-gray-50 focus:bg-white"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Confirm Password Input */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-gray-800">
-                    Confirm Password
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                      <Lock className="text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                    </div>
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      placeholder="Confirm your password"
-                      className="w-full pl-12 pr-12 py-3.5 text-sm border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400 font-medium bg-gray-50 focus:bg-white"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-
-                {/* Signup Button */}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3.5 text-base font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 shadow-lg shadow-blue-500/50 hover:shadow-xl hover:shadow-blue-600/50 transition-all rounded-xl disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Creating Account...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <Shield size={18} />
-                      <span>Create Admin Account</span>
-                    </div>
-                  )}
-                </button>
-              </form>
-
-              {/* Login Link */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="text-center">
-                  <p className="text-gray-600 text-sm mb-3">
-                    Already have an admin account?
-                  </p>
-                  <Link 
-                    to="/admin/login" 
-                    className="inline-flex items-center justify-center gap-2 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all"
-                  >
-                    <span>Login to Admin Panel</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
+        {/* Brand Header */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Package className="h-6 w-6 text-white" />
           </div>
+          <span className="text-3xl font-black tracking-tight text-white">RentYatra</span>
+        </div>
+
+        {/* Hero Copy */}
+        <div className="relative z-10 max-w-xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-black uppercase tracking-widest mb-6">
+            <Shield className="w-4 h-4" /> Registration Protocol
+          </div>
+          <h1 className="text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight mb-6">
+            Initialize Admin<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
+              Privileges
+            </span>
+          </h1>
+          <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-md">
+            Set up your secure administrative credentials to access the centralized command center and manage the platform.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10 flex items-center gap-2 text-slate-500 text-sm font-bold">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+          System Ready for Onboarding
+        </div>
+      </div>
+
+      {/* Right Side - Signup Form */}
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12 relative min-h-screen md:min-h-0">
+
+        {/* Mobile Brand Header (Only visible on small screens) */}
+        <div className="md:hidden absolute top-8 left-8 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Package className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-2xl font-black tracking-tight text-slate-900">RentYatra</span>
+        </div>
+
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-slate-100 p-8 sm:p-12">
+
+            {/* Form Header */}
+            <div className="mb-10">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Create Account</h2>
+              <p className="text-slate-500 font-medium mt-2">Set up your admin identity and security key</p>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                  <p className="text-rose-700 text-sm font-bold">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {success && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <p className="text-emerald-700 text-sm font-bold">{success}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Signup Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+              {/* Name Input */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block">
+                  Full Name
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2">
+                    <User className="text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="John Doe"
+                    className="w-full pl-14 pr-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                    required
+                    disabled={isLoading || success}
+                  />
+                </div>
+              </div>
+
+              {/* Email Input */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block">
+                  Admin Email
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2">
+                    <Mail className="text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="admin@rentyatra.com"
+                    className="w-full pl-14 pr-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                    required
+                    disabled={isLoading || success}
+                  />
+                </div>
+              </div>
+
+              {/* Password Input */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block">
+                  Security Key
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2">
+                    <Lock className="text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="••••••••••••"
+                    className="w-full pl-14 pr-14 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                    required
+                    minLength={6}
+                    disabled={isLoading || success}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                    disabled={isLoading || success}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password Input */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block">
+                  Confirm Security Key
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2">
+                    <Lock className="text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
+                  </div>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    placeholder="••••••••••••"
+                    className="w-full pl-14 pr-14 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                    required
+                    disabled={isLoading || success}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                    disabled={isLoading || success}
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Signup Button */}
+              <button
+                type="submit"
+                disabled={isLoading || success}
+                className="w-full py-4 mt-6 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-70 disabled:hover:bg-indigo-600 flex items-center justify-center gap-2 group"
+              >
+                {isLoading || success ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>{success ? 'Provisioning...' : 'Processing...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Create Admin Account</span>
+                    <Shield className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Login Link */}
+            <div className="mt-8 text-center">
+              <p className="text-slate-500 text-sm font-medium">
+                Already have administrative access?{' '}
+                <Link
+                  to="/admin/login"
+                  className="text-indigo-600 font-bold hover:text-indigo-700 hover:underline transition-all"
+                >
+                  Sign In
+                </Link>
+              </p>
+            </div>
+
+          </div>
+
+          <p className="text-center text-slate-400 text-xs font-bold mt-8 uppercase tracking-widest">
+            Restricted Access Zone
+          </p>
         </div>
       </div>
     </div>

@@ -8,6 +8,28 @@ import SearchBar from '../common/SearchBar';
 import LocationSearch from '../home/LocationSearch';
 import rentyatralogo from '../../assets/rentyatralogo.jpg.png';
 
+const tokens = {
+  primary: '#FF5A1F',       // Warm orange (Swiggy-inspired)
+  primaryDark: '#E04A10',
+  primaryLight: '#FFF1EC',
+  secondary: '#3D5AF1',     // Electric blue accent
+  secondaryLight: '#EEF1FF',
+  success: '#16a34a',
+  bg: '#F4F5F7',            // Page background
+  surface: '#FFFFFF',
+  surfaceAlt: '#F8F9FB',
+  text: '#1A1A2E',
+  textMuted: '#6B7280',
+  textFaint: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
+  radius: '14px',
+  radiusSm: '10px',
+  radiusLg: '20px',
+  shadow: '0 2px 12px rgba(0,0,0,0.07)',
+  shadowMd: '0 4px 24px rgba(0,0,0,0.10)',
+  shadowLg: '0 8px 40px rgba(0,0,0,0.13)',
+};
 
 const Navbar = () => {
   const [showFavoritesDropdown, setShowFavoritesDropdown] = useState(false);
@@ -28,20 +50,44 @@ const Navbar = () => {
   }, []); // Empty dependency array
 
   return (
-    <nav className="sticky-header bg-white border-b border-gray-200 shadow-sm backdrop-blur-sm bg-white/95">
+    <nav className="sticky-header bg-white border-b border-gray-200 shadow-sm backdrop-blur-sm bg-white/95"
+      style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        background: tokens.surface, borderBottom: `1px solid ${tokens.border}`,
+        boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+      }}
+    >
       <div className="max-w-7xl mx-auto px-2 md:px-3">
         {/* Mobile Layout - Two Rows */}
         <div className="md:hidden">
           {/* Top Row - Logo and Location */}
           <div className="flex items-center justify-between h-14">
             <Link to="/" className="flex items-center flex-shrink-0">
-              <img src={rentyatralogo} alt="RentYatra Logo" className="h-28 w-auto relative top-2 left-2" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: `linear-gradient(135deg, ${tokens.primary}, ${tokens.primaryDark})`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>R</span>
+                </div>
+                <span style={{ fontSize: 20, fontWeight: 800, color: tokens.text, letterSpacing: '-0.02em' }}>
+                  Rent<span style={{ color: tokens.primary }}>Yatra</span>
+                </span>
+              </div>
             </Link>
             <div className="relative">
               <button
                 onClick={() => setShowLocationMenu(!showLocationMenu)}
                 className="flex items-center gap-1.5 px-1.5 py-1 hover:bg-gray-100 rounded transition"
                 title={location || 'New Palasia, Indore'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px',
+                  borderRadius: 100, border: `1.5px solid ${tokens.border}`,
+                  background: tokens.surfaceAlt, cursor: 'pointer',
+                  fontSize: 13, fontWeight: 600, color: tokens.text,
+                  flexShrink: 0, transition: 'border-color 0.15s',
+                }}
               >
                 <MapPin size={18} className="text-gray-700 flex-shrink-0" />
                 <span className="text-xs font-medium text-gray-900 truncate max-w-[120px]">
@@ -169,7 +215,18 @@ const Navbar = () => {
         <div className="hidden md:flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center flex-shrink-0">
-            <img src={rentyatralogo} alt="RentYatra Logo" className="h-42 w-48 relative top-3" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: `linear-gradient(135deg, ${tokens.primary}, ${tokens.primaryDark})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>R</span>
+              </div>
+              <span style={{ fontSize: 20, fontWeight: 800, color: tokens.text, letterSpacing: '-0.02em' }}>
+                Rent<span style={{ color: tokens.primary }}>Yatra</span>
+              </span>
+            </div>
           </Link>
 
           {/* Location Selector */}
@@ -177,6 +234,13 @@ const Navbar = () => {
             <button
               onClick={() => setShowLocationMenu(!showLocationMenu)}
               className="flex items-center gap-1.5 px-3 py-2 hover:bg-gray-100 rounded transition"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px',
+                borderRadius: 100, border: `1.5px solid ${tokens.border}`,
+                background: tokens.surfaceAlt, cursor: 'pointer',
+                fontSize: 13, fontWeight: 600, color: tokens.text,
+                flexShrink: 0, transition: 'border-color 0.15s',
+              }}
             >
               <MapPin size={18} className="text-gray-700 flex-shrink-0" />
               <span className="text-sm font-medium text-gray-900 truncate max-w-[200px]" title={location || 'New Palasia, Indore'}>
@@ -199,7 +263,9 @@ const Navbar = () => {
           />
 
           {/* Right Side - Login/User and Icons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+          >
             {/* Pricing Link */}
             {/* <Link 
               to="/subscription" 
@@ -214,10 +280,24 @@ const Navbar = () => {
                 onClick={() => navigate('/favorites')}
                 className="p-2 hover:bg-gray-100 rounded-full transition relative"
                 title="Favorites"
+                style={{
+                  width: 40, height: 40, borderRadius: '50%',
+                  border: `1.5px solid ${tokens.border}`, background: tokens.surface,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
+                }}
               >
                 <Heart className="text-gray-700" size={22} />
                 {getFavoritesCount() >= 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                    style={{
+                      position: 'absolute', top: -3, right: -3,
+                      background: tokens.primary, color: '#fff',
+                      borderRadius: '50%', width: 16, height: 16,
+                      fontSize: 9, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: `2px solid ${tokens.surface}`,
+                    }}>
                     {getFavoritesCount()}
                   </span>
                 )}
@@ -312,13 +392,21 @@ const Navbar = () => {
                 <Button
                   icon={Plus}
                   onClick={() => navigate('/post-ad')}
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold shadow-md px-4 py-1.5 text-sm"
-                >
+                  className="bg-gradient-to-r from-orange-600 to-orange-600 hover:from-orange-500 hover:to-orange-500 text-gray-900 font-bold shadow-md px-4 py-1.5 text-sm">
                   RENT OUT
                 </Button>
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 rounded-full transition">
-                    <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+                    <div
+                      // className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-xs"
+                      style={{
+                        width: 36, height: 36, borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${tokens.secondary}, #6366f1)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', fontWeight: 700, color: '#fff', fontSize: 14,
+                        border: `2px solid ${tokens.border}`,
+                      }}
+                    >
                       {user?.name?.charAt(0)}
                     </div>
                     <ChevronDown size={16} className="text-gray-700" />
@@ -327,16 +415,20 @@ const Navbar = () => {
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="font-semibold text-gray-900">{user?.name}</p>
                     </div>
-                    <Link to="/dashboard" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/dashboard"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       My Dashboard
                     </Link>
-                    <Link to="/my-featured-ads" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/my-featured-ads"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       My Featured Ads
                     </Link>
-                    <Link to="/messages" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/messages"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       Messages
                     </Link>
-                    <Link to="/dashboard/profile" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/dashboard/profile"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       Profile
                     </Link>
                     {/* <Link to="/subscription" className="block px-4 py-2.5 hover:bg-blue-50 text-blue-600 text-sm font-semibold">
@@ -345,25 +437,32 @@ const Navbar = () => {
                     <Link to="/my-subscription" className="block px-4 py-2.5 hover:bg-blue-50 text-blue-600 text-sm">
                       ⭐ My Subscription
                     </Link> */}
-                    <Link to="/buy-boost" className="block px-4 py-2.5 hover:bg-orange-50 text-orange-600 text-sm font-semibold">
+                    <Link to="/buy-boost"
+                      className="block px-4 py-2.5 hover:bg-orange-50 text-orange-600 text-sm font-semibold">
                       🚀 Buy Boost
                     </Link>
-                    <Link to="/my-boost" className="block px-4 py-2.5 hover:bg-orange-50 text-orange-600 text-sm">
+                    <Link to="/my-boost"
+                      className="block px-4 py-2.5 hover:bg-orange-50 text-orange-600 text-sm">
                       🚀 My Boost
                     </Link>
-                    <Link to="/terms-and-conditions" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/terms-and-conditions"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       Terms & Conditions
                     </Link>
-                    <Link to="/privacy-policy" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/privacy-policy"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       Privacy Policy
                     </Link>
-                    <Link to="/faqs" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/faqs"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       FAQs
                     </Link>
-                    <Link to="/support-ticket" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/support-ticket"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       Contact Us
                     </Link>
-                    <Link to="/about-us" className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
+                    <Link to="/about-us"
+                      className="block px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm">
                       About Us
                     </Link>
                     <button
@@ -386,7 +485,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-    </nav>
+    </nav >
   );
 };
 

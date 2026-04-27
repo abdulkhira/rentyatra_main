@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useAdminAuth } from '../../../contexts/AdminAuthContext';
 import apiService from '../../../services/api';
-import { Lock, Eye, EyeOff, Save, X, Shield, Key, AlertCircle } from 'lucide-react';
+import {
+  Lock, Eye, EyeOff, Save, X, Shield, Key, AlertCircle,
+  User, Mail, Calendar, ShieldCheck, CheckCircle
+} from 'lucide-react';
 
 function AdminSettingsView() {
   const { admin } = useAdminAuth();
@@ -70,7 +73,7 @@ function AdminSettingsView() {
           newPassword: '',
           confirmPassword: ''
         });
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000);
       } else {
@@ -95,226 +98,254 @@ function AdminSettingsView() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">Admin Settings</h1>
-        <p className="text-slate-600 mt-2">Manage your account settings and security preferences</p>
-        
-        {/* Success Message */}
-        {success && (
-          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">{success}</p>
-          </div>
-        )}
-        
-        {/* Error Message */}
-        {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 font-medium">{error}</p>
-          </div>
-        )}
-      </div>
+    <div className="p-4 md:p-8 bg-[#F8FAFC] min-h-screen space-y-8 animate-in fade-in duration-500">
 
-      {/* Account Information */}
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200">
-        <div className="p-8">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Shield className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-800">Account Information</h2>
-              <p className="text-slate-600">Your basic account details</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Name</label>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p className="text-slate-800 font-medium">{admin?.name || 'Not available'}</p>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p className="text-slate-800 font-medium">{admin?.email || 'Not available'}</p>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Role</label>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p className="text-slate-800 font-medium capitalize">{admin?.role || 'Admin'}</p>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Member Since</label>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p className="text-slate-800 font-medium">
-                  {admin?.createdAt ? new Date(admin.createdAt).toLocaleDateString() : 'Not available'}
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Admin Settings</h1>
+          <p className="text-slate-500 font-medium">Manage your account security and preferences</p>
         </div>
       </div>
 
-      {/* Password Change Section */}
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200">
-        <div className="p-8">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Key className="h-6 w-6 text-orange-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-800">Change Password</h2>
-              <p className="text-slate-600">Update your account password for better security</p>
-            </div>
-          </div>
+      {/* Notifications */}
+      {success && (
+        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 shadow-sm">
+          <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+          <p className="text-emerald-700 font-bold text-sm">{success}</p>
+        </div>
+      )}
+      {error && (
+        <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 shadow-sm">
+          <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+          <p className="text-rose-700 font-bold text-sm">{error}</p>
+        </div>
+      )}
 
-          <form onSubmit={handlePasswordChange} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
-              <div className="relative">
-                <input
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter your current password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                >
-                  {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        {/* Left Column: Identity & Security Status (Takes up 5 columns) */}
+        <div className="lg:col-span-5 space-y-8">
+
+          {/* Account Information */}
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-50 flex items-center gap-4 bg-white">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                <User className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">Identity Details</h2>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">Read-Only Overview</p>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">New Password</label>
-              <div className="relative">
-                <input
-                  type={showNewPassword ? 'text' : 'password'}
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter your new password"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                >
-                  {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Confirm New Password</label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Confirm your new password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Password Requirements */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start space-x-2">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="p-8 space-y-4 bg-slate-50/30">
+              <div className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 shadow-sm">
+                <User className="w-5 h-5 text-slate-400" />
                 <div>
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">Password Requirements:</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• At least 6 characters long</li>
-                    <li>• Must be different from current password</li>
-                    <li>• Use a combination of letters, numbers, and symbols for better security</li>
-                  </ul>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Full Name</p>
+                  <p className="text-sm font-bold text-slate-800">{admin?.name || 'Not available'}</p>
+                </div>
+              </div>
+              <div className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 shadow-sm">
+                <Mail className="w-5 h-5 text-slate-400" />
+                <div className="overflow-hidden">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Email Address</p>
+                  <p className="text-sm font-bold text-slate-800 truncate">{admin?.email || 'Not available'}</p>
+                </div>
+              </div>
+              <div className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 shadow-sm">
+                <Shield className="w-5 h-5 text-slate-400" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Access Role</p>
+                  <p className="text-sm font-bold text-slate-800 capitalize">{admin?.role || 'Admin'}</p>
+                </div>
+              </div>
+              <div className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 shadow-sm">
+                <Calendar className="w-5 h-5 text-slate-400" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Member Since</p>
+                  <p className="text-sm font-bold text-slate-800">
+                    {admin?.createdAt ? new Date(admin.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not available'}
+                  </p>
                 </div>
               </div>
             </div>
-
-            <div className="flex space-x-4">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Changing Password...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-5 w-5 mr-2" />
-                    Change Password
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={isLoading}
-                className="flex items-center px-6 py-3 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X className="h-5 w-5 mr-2" />
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      {/* Security Information */}
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200">
-        <div className="p-8">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Lock className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-800">Security Information</h2>
-              <p className="text-slate-600">Your account security status</p>
-            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-green-800">Email Verified</span>
+          {/* Security Information */}
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-50 flex items-center gap-4 bg-white">
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+                <ShieldCheck className="w-6 h-6" />
               </div>
-              <p className="text-sm text-green-700">Your email address is verified and secure</p>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium text-blue-800">Account Active</span>
+              <div>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">Security Status</h2>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">System Verification</p>
               </div>
-              <p className="text-sm text-blue-700">Your admin account is active and operational</p>
             </div>
+
+            <div className="p-8 space-y-4 bg-slate-50/30">
+              <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5 flex gap-4 items-start">
+                <CheckCircle className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-black text-emerald-900 mb-1">Email Verified</p>
+                  <p className="text-xs font-medium text-emerald-700 leading-snug">Your administrative email address has been verified and is secured.</p>
+                </div>
+              </div>
+              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 flex gap-4 items-start">
+                <Lock className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-black text-blue-900 mb-1">Account Active</p>
+                  <p className="text-xs font-medium text-blue-700 leading-snug">Your admin account privileges are currently active and fully operational.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Password Management (Takes up 7 columns) */}
+        <div className="lg:col-span-7">
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden h-full">
+            <div className="p-8 border-b border-slate-50 flex items-center gap-4 bg-white">
+              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                <Key className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">Change Password</h2>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">Update credentials</p>
+              </div>
+            </div>
+
+            <form onSubmit={handlePasswordChange} className="p-8 space-y-8">
+
+              <div className="space-y-6">
+                {/* Current Password */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block">
+                    Current Password <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      name="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={handleInputChange}
+                      className="w-full pl-5 pr-14 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                      placeholder="Enter your current password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <hr className="border-slate-100" />
+
+                {/* New Password */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 ml-1 block">
+                    New Password <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      name="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={handleInputChange}
+                      className="w-full pl-5 pr-14 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                      placeholder="Create a new secure password"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm New Password */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-indigo-500 ml-1 block">
+                    Confirm New Password <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={handleInputChange}
+                      className="w-full pl-5 pr-14 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium"
+                      placeholder="Repeat your new password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Password Requirements Info Box */}
+                <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 mt-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-black text-indigo-900 mb-2">Security Requirements</h4>
+                      <ul className="text-xs font-medium text-indigo-700/80 space-y-1.5">
+                        <li className="flex items-center gap-2"><div className="w-1 h-1 rounded-full bg-indigo-400"></div> Minimum 6 characters long</li>
+                        <li className="flex items-center gap-2"><div className="w-1 h-1 rounded-full bg-indigo-400"></div> Must be different from your current password</li>
+                        <li className="flex items-center gap-2"><div className="w-1 h-1 rounded-full bg-indigo-400"></div> Recommend mixing numbers, symbols, and letters</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex gap-3 pt-6 border-t border-slate-50">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                  className="flex-1 py-4 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all disabled:opacity-50"
+                >
+                  Clear Fields
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-[2] py-4 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50 disabled:hover:bg-indigo-600 flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      <span>Update Password</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
           </div>
         </div>
       </div>
